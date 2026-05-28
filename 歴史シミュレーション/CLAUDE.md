@@ -215,8 +215,13 @@ DALL-E 3 で人物イラストを生成し `scenarios/<シナリオ>/images/` �
 - 例（桂太郎シナリオ）：制約の中の合理性 / 情報の非対称性 / 「勝利」の多面性 / 転換点の機会の窓
 
 ### 人物写真
-- **Wikimedia Commons のパブリックドメイン写真を使用**
-- URL は Wikipedia の各人物記事から実際に使われているサムネイル URL を取得すること（URL を推測すると 404 になることが多い）
+- **必ず `images/` フォルダにローカル保存した画像を使用すること**（外部URLを直接 `photo:` に書かない）
+  - 理由：GitHub Pages 等で公開した場合、Wikimedia Commons はホットリンクをブロックし画像が黒くなる
+- 画像の取得手順：
+  1. `WebFetch` で `https://en.wikipedia.org/wiki/[人物名]` を開く
+  2. サムネイル URL（`upload.wikimedia.org/wikipedia/commons/thumb/...`）を確認する
+  3. PowerShell で `Invoke-WebRequest -Uri <URL> -OutFile "images/<名前>.jpg"` でダウンロードする
+  4. `photo: 'images/<名前>.jpg'` と設定する
 - `onerror` は必ず `onPhotoError(this)` を使う。`this.style.display='none'` だけでは画像エリアが空白になる
   ```javascript
   function onPhotoError(img) {
@@ -227,11 +232,8 @@ DALL-E 3 で人物イラストを生成し `scenarios/<シナリオ>/images/` �
     img.parentNode.appendChild(sil);
   }
   ```
-- 写真がない場合はシルエットSVGを使用（`SILHOUETTE_SVG` 定数を参照）
+- 写真がない場合は `photo: null` でシルエットSVGを使用（`SILHOUETTE_SVG` 定数を参照）
 - ページ末尾に必ずクレジット表記を入れる：「写真：Wikimedia Commons / パブリックドメイン」
-- 写真URLの正しい取得方法：
-  1. `WebFetch` で `https://en.wikipedia.org/wiki/[人物名]` を開く
-  2. 返ってきたサムネイル URL（`upload.wikimedia.org/wikipedia/commons/thumb/...`）をそのままコピー
 
 ### タイマー
 - グループ審議用タイマー：デフォルト1分（`TIMER_TOTAL = 60`）
@@ -245,7 +247,7 @@ DALL-E 3 で人物イラストを生成し `scenarios/<シナリオ>/images/` �
 - **単体HTMLファイルで完結させる**（外部CSS・JS不要）
 - ファイル名は `index.html` に統一
 - インターネット接続がない環境でも動作する設計を維持する
-  - 写真のみオンライン依存（授業前に `images/` フォルダへダウンロード保存可）
+  - 写真は `images/` フォルダにローカル保存すること（外部URLをHTMLに直書きしない）
 
 ---
 
