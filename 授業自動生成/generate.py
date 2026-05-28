@@ -39,7 +39,7 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = "claude-sonnet-4-6"
 
 BASE_DIR   = Path(__file__).parent
-INPUT_DIR  = BASE_DIR / "input"
+INPUT_DIR  = BASE_DIR.parent / "教科書"
 OUTPUT_DIR = BASE_DIR / "output"
 BOOKS_DIR  = BASE_DIR.parent / "books"
 
@@ -665,10 +665,10 @@ def main():
 
     session_dirs = [d for d in sorted(INPUT_DIR.iterdir()) if d.is_dir()]
     if not session_dirs:
-        sprint("\n[注意] input/ に授業回フォルダがありません。")
-        sprint("  例: input/01_産業革命/ フォルダを作成し、教科書画像（4枚程度）を入れてください。")
+        sprint("\n[注意] 教科書/ に授業回フォルダがありません。")
+        sprint("  例: 教科書/01_産業革命/ フォルダを作成し、教科書画像（4枚程度）を入れてください。")
         sprint("\nフォルダ構造:")
-        sprint("  input/")
+        sprint("  教科書/  ← プロジェクトルート直下")
         sprint("    01_産業革命/")
         sprint("      p001.jpg")
         sprint("      p002.jpg")

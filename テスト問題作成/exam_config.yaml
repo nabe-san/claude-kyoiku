@@ -35,7 +35,7 @@ sources:
   external:
     past_exams: []  # 今回は教科書のみ使用
     textbooks:
-      - "C:\\Users\\kengo\\OneDrive\\デスクトップ\\claude開発\\テスト問題作成\\教科書\\教科書 JPEG　前期中間２"
+      - "C:\\Users\\kengo\\OneDrive\\デスクトップ\\claude開発\\教科書\\教科書 JPEG　前期中間２"
     worksheets: []  # 今回は教科書のみ使用
 
 instructions: |

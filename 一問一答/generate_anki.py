@@ -42,7 +42,7 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 MODEL = "claude-sonnet-4-6"
 
 BASE_DIR   = Path(__file__).parent
-INPUT_DIR  = BASE_DIR / "input"
+INPUT_DIR  = BASE_DIR.parent / "教科書"
 OUTPUT_DIR = BASE_DIR / "output"
 
 IMAGE_EXTS     = {".jpg", ".jpeg", ".JPG", ".JPEG", ".png", ".PNG"}
@@ -328,7 +328,7 @@ def watch_loop():
     print("=" * 60)
     print("  教科書画像 → 一問一答カード 自動生成ツール")
     print()
-    print("  【入力】input/<授業回フォルダ>/ に画像を入れる")
+    print("  【入力】教科書/<授業回フォルダ>/ に画像を入れる  ← プロジェクトルート直下")
     print("  【出力】output/<授業回フォルダ>/ に Word が出力される")
     print()
     print("  5分ごとに input/ を監視します。Ctrl+C で停止。")
@@ -342,8 +342,8 @@ def watch_loop():
             imgs = [f for f in d.iterdir() if f.is_file() and _is_image(f)]
             print(f"    {d.name}/  ({len(imgs)}枚の画像)")
     else:
-        print(f"\n  [注意] input/ に授業回フォルダがありません。")
-        print(f"  例: input/01_日露戦争/ フォルダを作成して画像を入れてください。")
+        print(f"\n  [注意] 教科書/ に授業回フォルダがありません。")
+        print(f"  例: 教科書/01_日露戦争/ フォルダを作成して画像を入れてください。")
 
     print()
 

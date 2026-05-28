@@ -34,7 +34,7 @@ INPUT_DIR    = BASE_DIR / "input"
 OUTPUT_DIR   = BASE_DIR / "output"
 TEMPLATES_DIR = BASE_DIR / "templates"
 CONFIG_PATH  = BASE_DIR / "exam_config.yaml"
-CACHE_DIR    = BASE_DIR / "教科書" / "分析キャッシュ"
+CACHE_DIR    = BASE_DIR.parent / "教科書" / "分析キャッシュ"
 
 MODEL      = "claude-sonnet-4-6"
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
