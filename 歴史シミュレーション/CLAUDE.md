@@ -67,42 +67,7 @@ HTML単体ファイルで動作し、授業でブラウザから即時利用で�
 
 ## キャラクター画像生成ツール（generate_images.py）
 
-OpenAI DALL-E 3 で人物イラストを生成し、`scenarios/<シナリオ>/images/` に PNG で保存する。
-
-### 前提
-
-- `歴史シミュレーション/.env` に `OPENAI_API_KEY=sk-...` を設定（スライド作成/.env と共通可）
-- `pip install openai python-dotenv`
-
-### 実行例
-
-```bash
-cd 歴史シミュレーション
-
-# シナリオ内の全キャラクターを生成
-python generate_images.py --scenario 01_日露戦争_桂太郎
-
-# 時代を明示して生成（省略時は "Meiji era Japan, circa 1900"）
-python generate_images.py --scenario 02_国民国家_ビスマルク --period "German Empire, Bismarck era, 1870s"
-
-# 特定キャラクターのみ再生成
-python generate_images.py --scenario 01_日露戦争_桂太郎 --keys katsura,komura --force
-
-# 生成後に index.html の photo パスを自動更新
-python generate_images.py --scenario 01_日露戦争_桂太郎 --update-html
-```
-
-### 画風（STYLE_PROMPT）
-
-全シナリオ共通で「浮世絵風・水彩・琥珀色」に統一している。変更する場合は `generate_images.py` の `STYLE_PROMPT` 定数を編集する。
-
-### コスト目安
-
-DALL-E 3（standard 品質・1024×1024）で **$0.04 / 枚**。3〜5人で $0.12〜0.20 程度。
-
-### index.html との連携
-
-`--update-html` を付けると `CHARS` オブジェクトの `photo:` を自動で `'images/<key>.png'` に書き換える。付けない場合は変更箇所のみ表示し、手動更新する。既存の Wikimedia URL はバックアップとして手動でコメントに残しておくとよい。
+DALL-E 3 で人物イラストを生成し `scenarios/<シナリオ>/images/` に保存する。詳細は `python generate_images.py --help` 参照。
 
 ---
 
@@ -224,44 +189,6 @@ DALL-E 3（standard 品質・1024×1024）で **$0.04 / 枚**。3〜5人で $0.1
 | `.char-silhouette` height | `370px` |
 | `.vn-box` min-height | `160px`、padding `0 32px 28px` |
 
-### ダイアログボックス CSS テンプレート（`.vn-box` 〜 `.vn-text em`）
-新シナリオでは必ず以下のブロックをそのまま使用する：
-
-```css
-/* ── Dialogue box — parchment ── */
-.vn-box {
-  background:
-    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(150,110,40,.035) 39px, rgba(150,110,40,.035) 40px),
-    linear-gradient(180deg, #f5ead2 0%, #ecddc0 60%, #e6d6ae 100%);
-  border-top: none;
-  padding: 0 32px 28px; min-height: 160px; position: relative; cursor: pointer;
-  box-shadow: inset 0 16px 24px rgba(0,0,0,.05);
-}
-.vn-box::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, transparent 0%, #c8a84b 8%, #8b2020 28%, #c8a84b 50%, #8b2020 72%, #c8a84b 92%, transparent 100%);
-}
-.vn-box::after {
-  content: '❧';
-  position: absolute; bottom: 18px; right: 52px;
-  color: rgba(140,100,30,.18); font-size: 26px; pointer-events: none;
-}
-.vn-name {
-  display: inline-block; font-size: 16px; font-weight: bold; letter-spacing: 2px;
-  padding: 12px 40px 12px 24px; margin-bottom: 16px;
-  background: linear-gradient(135deg, #1e1208 0%, #2e1c0c 100%);
-  color: #f0e6d0;
-  border-left: 3px solid #c8a84b;
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
-  box-shadow: 4px 4px 14px rgba(0,0,0,.4);
-  text-shadow: 0 1px 4px rgba(0,0,0,.6);
-}
-.vn-name.hidden { display: none; }
-.vn-text { font-size: 19px; line-height: 2.0; color: #1e1208; min-height: 72px; padding: 0 4px; }
-.vn-text em { color: #8b2020; font-style: normal; font-weight: bold; }
-```
-
 ### フォントサイズ基準
 | 用途 | サイズ |
 |---|---|
@@ -328,3 +255,4 @@ DALL-E 3（standard 品質・1024×1024）で **$0.04 / 枚**。3〜5人で $0.1
 |---|---|---|---|---|---|
 | `01_日露戦争_桂太郎` | 第1回 | 桂太郎 | 1901〜1905年 | ② 因果と帰結、④ 歴史的パースペクティブ | 完成 |
 | `02_国民国家_ビスマルク` | 第2回 | ビスマルク | 1862〜1871年 | ⑧ 国民国家とナショナリズム、② 因果と帰結 | 完成 |
+| `03_日露戦争後_孫文` | 第3回 | 孫文 | 1905〜1912年 | ⑧ 国民国家とナショナリズム、② 因果と帰結 | 完成 |
