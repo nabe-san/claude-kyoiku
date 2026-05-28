@@ -9,7 +9,15 @@
       "PowerShell(\\(Get-Item \"c:\\\\Users\\\\kengo\\\\OneDrive\\\\デスクトップ\\\\claude開発\\\\授業自動生成\\\\output\\\\第7回 日露戦争\\\\文字資料.docx\"\\).Length)",
       "Bash(Get-Content .gitignore)",
       "Bash(Select-String \"vscode\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(git config *)",
+      "PowerShell(git config --global credential.helper)",
+      "PowerShell(Get-Command git-credential-manager -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command git-credential-manager-core -ErrorAction SilentlyContinue)"
     ]
   }
 }

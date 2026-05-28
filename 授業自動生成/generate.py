@@ -41,7 +41,7 @@ MODEL = "claude-sonnet-4-6"
 BASE_DIR   = Path(__file__).parent
 INPUT_DIR  = BASE_DIR / "input"
 OUTPUT_DIR = BASE_DIR / "output"
-BOOKS_DIR  = BASE_DIR.parent / "歴史シミュレーション" / "books"
+BOOKS_DIR  = BASE_DIR.parent / "books"
 
 IMAGE_EXTS   = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_IMAGE_PX = 1568
