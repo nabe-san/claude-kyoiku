@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>桂太郎と日露戦争の選択</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1c1510;
+  color: #f0e6d3;
+  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+}
+#app { max-width: 800px; width: 100%; min-height: 100vh; padding: 0 20px 60px; }
+.page-enter { animation: pageIn 0.45s ease both; }
+@keyframes pageIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Fullscreen btn ── */
+#fsBtn {
+  position:fixed; top:14px; right:16px;
+  background:rgba(28,21,16,.88); border:1px solid #3a2a1a; color:#5a4a3a;
+  width:36px; height:36px; border-radius:4px; cursor:pointer; font-size:17px;
+  display:flex; align-items:center; justify-content:center;
+  z-index:200; transition:all .2s; backdrop-filter:blur(4px);
+}
+#fsBtn:hover { border-color:#c8a84b; color:#c8a84b; }
+
+/* ── Click hint ── */
+#clickHint {
+  position:fixed; bottom:26px; left:50%; transform:translateX(-50%);
+  font-size:11px; color:#5a4a3a; letter-spacing:3px;
+  pointer-events:none; z-index:100; opacity:0; transition:opacity .4s; white-space:nowrap;
+}
+#clickHint.show { opacity:1; animation:hintP 2.5s ease infinite; }
+@keyframes hintP { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* ── Header/Timeline ── */
+.game-header { text-align:center; padding:20px 0 8px; border-bottom:1px solid #c8a84b33; margin-bottom:16px; }
+.game-label { font-size:11px; color:#8a7a6a; letter-spacing:4px; }
+.timeline { display:flex; justify-content:space-between; padding:10px 0 4px; margin-bottom:20px; font-size:11px; gap:4px; }
+.tl-item { flex:1; text-align:center; color:#4a3a2a; white-space:nowrap; padding:4px 2px; border-bottom:2px solid #2a1a0a; transition:all .3s; }
+.tl-item.past  { color:#6a5a4a; border-color:#6a5a4a; }
+.tl-item.active{ color:#c8a84b; border-color:#c8a84b; font-weight:bold; }
+
+/* ── Scene header ── */
+.scene-header { background:#221812; border-left:3px solid #c8a84b; padding:12px 18px; margin-bottom:16px; }
+.scene-year  { font-size:11px; color:#c8a84b; letter-spacing:2px; margin-bottom:4px; }
+.scene-title { font-size:20px; font-weight:bold; }
+
+/* ================================================================
+   VISUAL NOVEL SCENE
+   ================================================================ */
+.vn-scene { border:1px solid #2a1a0a; border-radius:4px; overflow:hidden; margin-bottom:16px; }
+
+/* ── Stage ── */
+.vn-stage {
+  height:230px; position:relative; overflow:hidden;
+  background: radial-gradient(ellipse at 50% 100%, #3a2008 0%, #1a0c04 45%, #060302 100%);
+  display:flex; align-items:flex-end; justify-content:center;
+}
+/* warm spotlight glow */
+.vn-stage::before {
+  content:''; position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
+  width:200px; height:280px;
+  background:radial-gradient(ellipse at center bottom, rgba(200,168,75,.1) 0%, transparent 65%);
+  pointer-events:none;
+}
+/* floor shadow */
+.vn-stage::after {
+  content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  width:90px; height:14px;
+  background:rgba(0,0,0,.55); border-radius:50%; filter:blur(8px);
+}
+
+/* ── Character sprite ── */
+.vn-sprite {
+  position:relative; z-index:2;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.vn-sprite svg { display:block; height:200px; width:auto; filter:drop-shadow(0 6px 14px rgba(0,0,0,.7)); }
+.vn-sprite.out { opacity:0; transform:translateY(16px); }
+
+/* ── Status overlay (shown on stage when status line) ── */
+.vn-status-overlay {
+  position:absolute; inset:0; z-index:4;
+  background:rgba(6,3,1,.88);
+  display:flex; flex-direction:column; justify-content:center;
+  padding:18px 24px;
+  animation:fadeIn .3s ease both;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.vso-title { font-size:10px; color:#c8a84b; letter-spacing:3px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #c8a84b33; }
+.vso-item { font-size:13px; color:#b0a090; padding:3px 0 3px 14px; position:relative; line-height:1.65; }
+.vso-item::before { content:'・'; position:absolute; left:0; color:#c8a84b; }
+
+/* ── Dialogue box ── */
+.vn-box {
+  background:rgba(10,6,2,.97); border-top:1px solid #3a2010;
+  padding:14px 22px 20px; min-height:116px; position:relative; cursor:pointer;
+}
+.vn-name {
+  display:inline-block; font-size:13px; font-weight:bold;
+  padding:3px 20px 3px 12px; border-radius:2px 0 0 2px; margin-bottom:10px; letter-spacing:1px;
+  clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0 100%);
+}
+.vn-name.hidden { display:none; }
+.vn-text { font-size:15px; line-height:1.9; color:#f0e6d3; min-height:58px; }
+.vn-text em { color:#e8d0a0; font-style:normal; font-weight:bold; }
+.vn-arrow {
+  position:absolute; bottom:14px; right:22px; font-size:13px; color:#5a4a3a;
+  animation:arrowBob 1.6s ease infinite;
+}
+.vn-arrow.pause { animation:none; opacity:.25; }
+@keyframes arrowBob { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(4px);opacity:1} }
+
+/* ── Continue button ── */
+.continue-btn {
+  display:block; width:100%; background:#1e1610; border:1px solid #c8a84b; color:#c8a84b;
+  padding:13px; font-family:inherit; font-size:14px; cursor:pointer; letter-spacing:3px;
+  border-radius:3px; transition:background .15s, color .15s, opacity .5s; margin-bottom:40px;
+}
+.continue-btn:hover { background:#c8a84b; color:#1c1510; }
+.continue-btn.hidden-btn { opacity:0; pointer-events:none; }
+
+/* ── Decision ── */
+.decision-tag { display:inline-block; background:#c8a84b; color:#1c1510; padding:3px 12px; font-size:11px; letter-spacing:2px; border-radius:2px; margin-bottom:12px; }
+.decision-context { font-size:14px; color:#a09080; margin-bottom:18px; line-height:1.7; }
+.choices { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+.choice-btn {
+  background:#241a10; border:1px solid #c8a84b55; color:#f0e6d3;
+  padding:14px 18px 14px 50px; text-align:left; cursor:pointer;
+  font-family:inherit; font-size:14px; line-height:1.65; border-radius:3px; position:relative;
+  opacity:0; transform:translateX(-14px);
+  transition:opacity .35s ease, transform .35s ease, background .15s, border-color .15s;
+}
+.choice-btn.in { opacity:1; transform:translateX(0); }
+.choice-btn.in:hover { background:#3a2810; border-color:#c8a84b; transform:translateX(3px); }
+.choice-btn::before { content:attr(data-label); position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#c8a84b; font-weight:bold; font-size:15px; font-family:serif; }
+.keyboard-hint { text-align:center; font-size:11px; color:#4a3a2a; letter-spacing:2px; margin-bottom:20px; opacity:0; animation:fadeHint .5s ease 1.2s forwards; }
+@keyframes fadeHint { to{opacity:1} }
+
+/* ── Timer ── */
+.timer-area { display:flex; align-items:center; gap:16px; padding:12px 16px; margin-bottom:18px; background:#181208; border:1px solid #2a1a08; border-radius:4px; }
+.timer-circle { position:relative; width:64px; height:64px; cursor:pointer; flex-shrink:0; }
+.timer-ring { width:64px; height:64px; display:block; }
+.timer-bg { fill:none; stroke:#2e1e0a; stroke-width:5; }
+.timer-progress { fill:none; stroke:#c8a84b; stroke-width:5; stroke-linecap:round; stroke-dasharray:138.23; stroke-dashoffset:0; transition:stroke-dashoffset .9s linear; transform-origin:32px 32px; transform:rotate(-90deg); }
+.timer-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+.timer-min { font-size:14px; color:#c8a84b; font-weight:bold; line-height:1; }
+.timer-sub { font-size:8px; color:#6a5a4a; letter-spacing:1px; margin-top:3px; }
+.timer-desc { flex:1; }
+.timer-desc-title { font-size:11px; color:#8a7a6a; letter-spacing:1px; margin-bottom:4px; }
+.timer-desc-hint  { font-size:11px; color:#5a4a3a; }
+.timer-reset-btn { background:transparent; border:1px solid #3a2a1a; color:#6a5a4a; padding:6px 12px; border-radius:3px; cursor:pointer; font-family:inherit; font-size:12px; letter-spacing:1px; transition:all .15s; }
+.timer-reset-btn:hover { border-color:#c8a84b; color:#c8a84b; }
+.timer-circle.paused .timer-progress { stroke:#6a5a4a; }
+.timer-circle.paused .timer-min { color:#6a5a4a; }
+.timer-circle.warning .timer-min { color:#e06060; animation:blink 1s ease infinite; }
+.timer-circle.done .timer-progress { stroke:#3a2a1a; }
+.timer-circle.done .timer-min { color:#4a3a2a; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Result ── */
+.result-player { background:#10182a; border:1px solid #3a6090; border-radius:3px; padding:14px 18px; margin-bottom:12px; }
+.result-label { font-size:10px; letter-spacing:2px; margin-bottom:8px; color:#5a90c0; }
+.result-player-text { font-size:14px; font-weight:bold; color:#d0e0f0; }
+.result-consequence { background:#14141e; border-left:2px solid #3a6090; padding:12px 16px; margin-bottom:18px; font-size:13px; line-height:1.75; color:#a0b0c0; }
+.divider { border:none; border-top:1px solid #3a3020; margin:16px 0; }
+.match-indicator { text-align:center; padding:8px 12px; font-size:13px; margin-bottom:14px; border-radius:3px; letter-spacing:1px; }
+.match-indicator.match   { background:#102a1a; color:#50c878; border:1px solid #50c87844; }
+.match-indicator.mismatch{ background:#2a1a08; color:#e0a040; border:1px solid #e0a04044; }
+.result-history { background:#101e16; border:1px solid #3a7050; border-radius:3px; padding:16px 18px; margin-bottom:18px; }
+.result-history.match { border-color:#50c878; }
+.result-history-label { font-size:10px; color:#50c878; letter-spacing:2px; margin-bottom:10px; }
+.result-history-choice { font-size:14px; font-weight:bold; color:#a0e0b8; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #3a7050; }
+.result-history-text { font-size:13px; line-height:1.85; color:#b0c8b8; }
+.result-history-text p { margin-bottom:.8em; }
+.result-history-text p:last-child { margin-bottom:0; }
+.result-history-sub { color:#80a890; font-size:12px; }
+
+/* ── Title ── */
+.title-screen { text-align:center; padding:80px 20px 60px; }
+.title-kamon  { font-size:40px; margin-bottom:24px; opacity:.6; letter-spacing:8px; }
+.title-main   { font-size:30px; line-height:1.4; margin-bottom:6px; letter-spacing:2px; }
+.title-sub    { font-size:12px; color:#8a7a6a; letter-spacing:6px; margin-bottom:40px; }
+.title-desc   { font-size:13px; color:#907860; line-height:1.9; max-width:480px; margin:0 auto 16px; text-align:left; }
+.title-note   { font-size:11px; color:#6a5a4a; margin-bottom:40px; line-height:1.8; }
+.start-btn    { background:#c8a84b; border:none; color:#1c1510; padding:14px 52px; font-family:inherit; font-size:15px; cursor:pointer; letter-spacing:5px; border-radius:2px; transition:all .15s; }
+.start-btn:hover { background:#e0c060; transform:translateY(-2px); }
+
+/* ── Ending ── */
+.ending-section { margin-bottom:26px; }
+.ending-section-title { font-size:11px; color:#c8a84b; letter-spacing:3px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #c8a84b33; }
+.narration { background:#1e1410; border:1px solid #2a2018; padding:18px 22px; margin-bottom:16px; line-height:1.95; font-size:15px; }
+.narration p { margin-bottom:1em; }
+.narration p:last-child { margin-bottom:0; }
+.emphasis { color:#e8d0a0; font-weight:bold; }
+.score-display { text-align:center; padding:28px; margin-bottom:18px; background:#1e1810; border:1px solid #c8a84b33; border-radius:3px; }
+.score-num   { font-size:52px; color:#c8a84b; font-weight:bold; }
+.score-denom { font-size:24px; color:#6a5a4a; }
+.score-label { font-size:12px; color:#8a7a6a; margin-top:4px; letter-spacing:1px; }
+.score-eval  { font-size:13px; color:#a09080; margin-top:10px; line-height:1.7; }
+.choice-record { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid #2a1e10; font-size:13px; }
+.choice-record:last-child { border-bottom:none; }
+.record-badge { flex-shrink:0; font-size:11px; padding:2px 8px; border-radius:2px; margin-top:2px; }
+.record-badge.match   { background:#102a1a; color:#50c878; }
+.record-badge.mismatch{ background:#2a1a08; color:#e0a040; }
+.record-decision { font-size:11px; color:#6a5a4a; margin-bottom:3px; }
+.record-text { color:#c0b0a0; }
+.question-box { background:#1e1410; border-left:3px solid #c8a84b; padding:18px 22px; line-height:1.9; font-size:14px; }
+.q-item { margin-bottom:14px; padding-left:22px; position:relative; }
+.q-item:last-child { margin-bottom:0; }
+.q-item::before { content:attr(data-n); position:absolute; left:0; color:#c8a84b; font-weight:bold; }
+.restart-btn { display:block; width:100%; background:transparent; border:1px solid #4a3a2a; color:#6a5a4a; padding:12px; font-family:inherit; font-size:13px; cursor:pointer; letter-spacing:3px; border-radius:3px; transition:all .15s; margin-top:20px; margin-bottom:40px; }
+.restart-btn:hover { border-color:#c8a84b; color:#c8a84b; }
+</style>
+</head>
+<body>
+<button id="fsBtn" onclick="toggleFullscreen()" title="全画面 (F)">⛶</button>
+<div id="clickHint">▼ クリック または スペース</div>
+<div id="app"></div>
+
+<script>
+// ================================================================
+// CHARACTERS — SVG Sprites
+// ================================================================
+const CHARS = {
+
+  katsura: {
+    name:'桂太郎', role:'内閣総理大臣', color:'#7a1a1a',
+    svg:`<svg viewBox="0 0 90 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- Military jacket -->
+  <path d="M0 170 L0 90 Q0 78 18 72 L45 67 L72 72 Q90 78 90 90 L90 170Z" fill="#17213a"/>
+  <!-- White collar/lapels -->
+  <path d="M31 72 L45 87 L59 72 L56 70 L45 84 L34 70Z" fill="#ddd5b5"/>
+  <!-- Gold epaulettes -->
+  <rect x="0" y="90" width="16" height="8" rx="3" fill="#b89030"/>
+  <rect x="74" y="90" width="16" height="8" rx="3" fill="#b89030"/>
+  <!-- Medals -->
+  <circle cx="20" cy="110" r="5.5" fill="#c8a84b" stroke="#8a6010" stroke-width="1"/>
+  <circle cx="34" cy="110" r="5.5" fill="#c0c0c0" stroke="#808080" stroke-width="1"/>
+  <circle cx="48" cy="110" r="5.5" fill="#7a1a1a" stroke="#501010" stroke-width="1"/>
+  <!-- Red accent stripe -->
+  <rect x="0" y="128" width="90" height="3" fill="#7a1a1a" opacity=".7"/>
+  <!-- Neck -->
+  <rect x="37" y="58" width="16" height="16" rx="3" fill="#c08060"/>
+  <!-- Head -->
+  <ellipse cx="45" cy="37" rx="24" ry="28" fill="#c08060"/>
+  <!-- Ears -->
+  <ellipse cx="21" cy="37" rx="4" ry="6" fill="#c08060"/>
+  <ellipse cx="69" cy="37" rx="4" ry="6" fill="#c08060"/>
+  <!-- Hair -->
+  <path d="M21 24 Q27 6 45 4 Q63 6 69 24 Q64 13 45 11 Q26 13 21 24Z" fill="#160800"/>
+  <!-- Eyes -->
+  <ellipse cx="37" cy="35" rx="5.5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="53" cy="35" rx="5.5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="38" cy="36" rx="3" ry="3.5" fill="#160800"/>
+  <ellipse cx="54" cy="36" rx="3" ry="3.5" fill="#160800"/>
+  <!-- Heavy eyebrows -->
+  <path d="M30 27 L43 25" stroke="#160800" stroke-width="3" stroke-linecap="round"/>
+  <path d="M47 25 L60 27" stroke="#160800" stroke-width="3" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M43 43 L45 47 L47 43" stroke="#9a6a40" stroke-width="1.5" fill="none"/>
+  <!-- Thick mustache -->
+  <path d="M32 52 Q38 50 45 52 Q52 50 58 52 Q52 57 45 55 Q38 57 32 52Z" fill="#160800"/>
+</svg>`
+  },
+
+  komura: {
+    name:'小村寿太郎', role:'外務大臣', color:'#7a6a20',
+    svg:`<svg viewBox="0 0 90 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- Slim dark suit -->
+  <path d="M12 170 L12 92 Q12 80 27 74 L45 69 L63 74 Q78 80 78 92 L78 170Z" fill="#1e1e1e"/>
+  <!-- White shirt -->
+  <path d="M34 74 L45 87 L56 74 L53 72 L45 84 L37 72Z" fill="#e5e0d0"/>
+  <!-- Gold cravat -->
+  <path d="M42 74 L45 90 L48 74Z" fill="#8a7020" opacity=".9"/>
+  <!-- Pocket square -->
+  <polygon points="61,84 67,82 67,90 61,88" fill="#d0c890"/>
+  <!-- Neck -->
+  <rect x="39" y="61" width="12" height="15" rx="3" fill="#c08060"/>
+  <!-- Head — slightly smaller (Komura was short) -->
+  <ellipse cx="45" cy="39" rx="21" ry="24" fill="#c08060"/>
+  <ellipse cx="24" cy="39" rx="4" ry="5.5" fill="#c08060"/>
+  <ellipse cx="66" cy="39" rx="4" ry="5.5" fill="#c08060"/>
+  <!-- Hair -->
+  <path d="M24 27 Q30 10 45 8 Q60 10 66 27 Q62 16 45 14 Q28 16 24 27Z" fill="#160800"/>
+  <!-- Round glasses (distinctive) -->
+  <circle cx="37" cy="37" r="8" fill="none" stroke="#c8a84b" stroke-width="1.8"/>
+  <circle cx="53" cy="37" r="8" fill="none" stroke="#c8a84b" stroke-width="1.8"/>
+  <line x1="45" y1="37" x2="45" y2="37" stroke="#c8a84b" stroke-width="1.8"/>
+  <line x1="29" y1="36" x2="25" y2="35" stroke="#c8a84b" stroke-width="1.5"/>
+  <line x1="61" y1="36" x2="65" y2="35" stroke="#c8a84b" stroke-width="1.5"/>
+  <!-- Eyes behind glasses -->
+  <ellipse cx="37" cy="38" rx="2.5" ry="3" fill="#160800"/>
+  <ellipse cx="53" cy="38" rx="2.5" ry="3" fill="#160800"/>
+  <!-- Eyebrows -->
+  <path d="M30 28 Q37 26 43 28" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M47 28 Q53 26 60 28" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M43 44 L45 47 L47 44" stroke="#9a6a40" stroke-width="1.2" fill="none"/>
+  <!-- Thin mustache -->
+  <path d="M38 52 Q45 50 52 52" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>`
+  },
+
+  kodama: {
+    name:'児玉源太郎', role:'参謀次長', color:'#1e4a20',
+    svg:`<svg viewBox="0 0 90 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- Army jacket -->
+  <path d="M2 170 L2 90 Q2 78 20 72 L45 67 L70 72 Q88 78 88 90 L88 170Z" fill="#283818"/>
+  <!-- Belt -->
+  <rect x="2" y="130" width="86" height="8" fill="#1a2808" rx="1"/>
+  <rect x="40" y="128" width="10" height="12" rx="1" fill="#c8a84b"/>
+  <!-- Collar -->
+  <path d="M32 72 L45 86 L58 72 L55 70 L45 83 L35 70Z" fill="#d5cdb5"/>
+  <!-- Shoulder boards -->
+  <rect x="2" y="90" width="15" height="7" rx="2" fill="#1e4a20" stroke="#c8a84b" stroke-width="1.2"/>
+  <rect x="73" y="90" width="15" height="7" rx="2" fill="#1e4a20" stroke="#c8a84b" stroke-width="1.2"/>
+  <!-- Medals -->
+  <circle cx="22" cy="108" r="5" fill="#c8a84b"/>
+  <circle cx="34" cy="108" r="5" fill="#1e4a20" stroke="#c8a84b" stroke-width="1.5"/>
+  <circle cx="46" cy="108" r="5" fill="#c8a84b"/>
+  <!-- Neck -->
+  <rect x="38" y="59" width="14" height="15" rx="3" fill="#c08060"/>
+  <!-- Head (square jaw) -->
+  <ellipse cx="45" cy="37" rx="23" ry="26" fill="#c08060"/>
+  <ellipse cx="22" cy="37" rx="4" ry="6" fill="#c08060"/>
+  <ellipse cx="68" cy="37" rx="4" ry="6" fill="#c08060"/>
+  <!-- Hair short military -->
+  <path d="M22 25 Q28 7 45 5 Q62 7 68 25 Q64 13 45 11 Q26 13 22 25Z" fill="#160800"/>
+  <!-- Eyes -->
+  <ellipse cx="37" cy="34" rx="5.5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="53" cy="34" rx="5.5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="38" cy="35" rx="3" ry="3.5" fill="#160800"/>
+  <ellipse cx="54" cy="35" rx="3" ry="3.5" fill="#160800"/>
+  <!-- Eyebrows -->
+  <path d="M30 26 L43 24" stroke="#160800" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M47 24 L60 26" stroke="#160800" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M43 42 L45 46 L47 42" stroke="#9a6a40" stroke-width="1.5" fill="none"/>
+  <!-- Mustache -->
+  <path d="M34 50 Q39 48 45 50 Q51 48 56 50 Q51 55 45 53 Q39 55 34 50Z" fill="#160800"/>
+</svg>`
+  },
+
+  takahashi: {
+    name:'高橋是清', role:'外債調達担当', color:'#1a3060',
+    svg:`<svg viewBox="0 0 90 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- Heavier navy suit -->
+  <path d="M0 170 L0 94 Q0 80 18 74 L45 69 L72 74 Q90 80 90 94 L90 170Z" fill="#1a2540"/>
+  <!-- White collar -->
+  <path d="M32 74 L45 88 L58 74 L55 72 L45 85 L35 72Z" fill="#e0ddd0"/>
+  <!-- Gold cravat wide -->
+  <path d="M40 74 L45 92 L50 74Z" fill="#8a7040"/>
+  <!-- Watch chain -->
+  <path d="M45 98 Q56 104 62 110" stroke="#c8a84b" stroke-width="1.5" fill="none"/>
+  <circle cx="63" cy="111" r="4" fill="none" stroke="#c8a84b" stroke-width="1.5"/>
+  <!-- Neck (wider) -->
+  <rect x="36" y="60" width="18" height="17" rx="4" fill="#c08060"/>
+  <!-- Head (larger/rounder) -->
+  <ellipse cx="45" cy="37" rx="27" ry="29" fill="#c08060"/>
+  <ellipse cx="18" cy="37" rx="5" ry="7" fill="#c08060"/>
+  <ellipse cx="72" cy="37" rx="5" ry="7" fill="#c08060"/>
+  <!-- Hair -->
+  <path d="M18 25 Q24 6 45 4 Q66 6 72 25 Q67 13 45 11 Q23 13 18 25Z" fill="#160800"/>
+  <!-- Eyes -->
+  <ellipse cx="36" cy="34" rx="6" ry="5.5" fill="#f0ebe0"/>
+  <ellipse cx="54" cy="34" rx="6" ry="5.5" fill="#f0ebe0"/>
+  <ellipse cx="37" cy="35" rx="3.5" ry="3.5" fill="#160800"/>
+  <ellipse cx="55" cy="35" rx="3.5" ry="3.5" fill="#160800"/>
+  <!-- Eyebrows -->
+  <path d="M29 25 Q36 23 42 25" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M48 25 Q54 23 61 25" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Nose (prominent) -->
+  <path d="M42 42 L45 47 L48 42" stroke="#9a6a40" stroke-width="1.5" fill="none"/>
+  <!-- Walrus mustache -->
+  <path d="M29 53 Q36 50 45 52 Q54 50 61 53 Q55 59 45 57 Q35 59 29 53Z" fill="#160800"/>
+  <!-- Chin beard -->
+  <path d="M35 62 Q45 67 55 62 Q50 70 45 68 Q40 70 35 62Z" fill="#160800"/>
+</svg>`
+  },
+
+  official: {
+    name:'大蔵省担当者', role:'', color:'#404040',
+    svg:`<svg viewBox="0 0 90 170" xmlns="http://www.w3.org/2000/svg">
+  <!-- Generic dark suit -->
+  <path d="M8 170 L8 92 Q8 80 24 74 L45 69 L66 74 Q82 80 82 92 L82 170Z" fill="#252525"/>
+  <!-- White collar -->
+  <path d="M34 74 L45 87 L56 74 L53 72 L45 84 L37 72Z" fill="#ddd8c8"/>
+  <!-- Dark tie -->
+  <path d="M43 74 L45 90 L47 74Z" fill="#333"/>
+  <!-- Neck -->
+  <rect x="39" y="61" width="12" height="15" rx="3" fill="#c08060"/>
+  <!-- Head -->
+  <ellipse cx="45" cy="39" rx="22" ry="25" fill="#c08060"/>
+  <ellipse cx="23" cy="39" rx="4" ry="6" fill="#c08060"/>
+  <ellipse cx="67" cy="39" rx="4" ry="6" fill="#c08060"/>
+  <!-- Hair -->
+  <path d="M23 27 Q29 9 45 7 Q61 9 67 27 Q63 15 45 13 Q27 15 23 27Z" fill="#160800"/>
+  <!-- Eyes -->
+  <ellipse cx="37" cy="37" rx="5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="53" cy="37" rx="5" ry="5" fill="#f0ebe0"/>
+  <ellipse cx="38" cy="38" rx="3" ry="3" fill="#160800"/>
+  <ellipse cx="54" cy="38" rx="3" ry="3" fill="#160800"/>
+  <!-- Eyebrows -->
+  <path d="M31 29 L43 27" stroke="#160800" stroke-width="2" stroke-linecap="round"/>
+  <path d="M47 27 L59 29" stroke="#160800" stroke-width="2" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M43 44 L45 47 L47 44" stroke="#9a6a40" stroke-width="1.2" fill="none"/>
+  <!-- Simple mustache -->
+  <path d="M38 52 Q45 50 52 52" stroke="#160800" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>`
+  }
+};
+
+// ================================================================
+// STATE
+// ================================================================
+let S = { passage:'title', showResult:false, pendingChoice:null, matches:0, log:[] };
+const TL = ['就任\n1901','交渉\n1903','開戦\n1904','戦況\n1905','講和\n1905','条約'];
+
+// ================================================================
+// STORY DATA  (lines-based VN format)
+// ================================================================
+const P = {
+
+  intro: {
+    type:'story', tl:0,
+    year:'1901年（明治34年）5月', title:'桂太郎、首相に就任',
+    lines:[
+      {speaker:null, text:'あなたは<em>桂太郎</em>。1901年5月、第1次桂内閣の内閣総理大臣として執務室に立った長州閥の軍人政治家だ。'},
+      {speaker:null, text:'元老・山縣有朋の後ろ盾を得て政権を掌握したあなたが直面するのは、ただちに<em>ロシアの南下政策</em>という巨大な難問だった。義和団事件（1900年）を口実に満洲へ進駐したロシアは、撤退約束を反故にし、さらに鴨緑江沿岸へ触手を伸ばしている。'},
+      {speaker:null, text:'1902年1月、イギリスとの間に<em>日英同盟</em>を締結し、外交的地盤を固めた。しかしロシアは満洲に居座り続けている。'},
+    ],
+    next:'sit1903'
+  },
+
+  sit1903: {
+    type:'story', tl:1,
+    year:'1903年（明治36年）夏', title:'交渉か、戦争か',
+    lines:[
+      {speaker:'komura', text:'「閣下、ローゼン公使との交渉はまたしても膠着しました」'},
+      {speaker:null, text:'外務大臣・小村寿太郎が淡々と報告する。ロシアは満洲撤退の約束（1902年）を完全に無視した。それどころか鴨緑江流域への進出が確認されている。'},
+      {speaker:null, text:'8月12日、日本はロシアに交渉案を提示した。骨子は「<em>満韓交換論</em>」──満洲はロシアの管轄、朝鮮は日本の優越権という相互承認だ。しかしロシアの修正回答は受け入れがたいものだった。'},
+      {type:'status', title:'現在の状況', items:[
+        '日英同盟（1902年）：イギリスの外交的支持は確保済み',
+        '陸軍参謀本部：「シベリア鉄道が完成する前に決断を」',
+        '財政的制約：戦争となれば外債調達が不可欠（高橋是清が調達交渉中）',
+        '元老・山縣有朋：「満韓交換論」を基本に交渉を続けるべきとの立場',
+      ]},
+    ],
+    next:'dec1'
+  },
+
+  dec1: {
+    type:'decision', tl:1,
+    tag:'決断①', year:'1903年（明治36年）夏〜秋', title:'対露交渉の方針',
+    context:'ロシアとの交渉が膠着している。あなた（桂太郎）はどの方針で臨むか。',
+    choices:[
+      {label:'A', text:'「満韓交換論」を基本に粘り強く交渉を続けながら、同時に開戦準備を進める', isH:true,
+       pc:'交渉継続と開戦準備の並行を選んだ。ロシアへ3度目の交渉案を提示する一方、陸海軍に準備を命じた。',
+       ht:`<p>交渉を尽くした、という事実は国際社会──特にイギリス──への説明上、不可欠だった。元老・山縣有朋や伊藤博文を説得するためにも、段階的なプロセスを経る必要があった。</p><p class="result-history-sub">1903年8月〜12月に計3回の交渉が行われたが、ロシアは基本的立場を変えなかった。桂は外交と軍事準備を並行させながら、1904年2月の開戦へと向かった。</p>`,
+       next:'sit1904'},
+      {label:'B', text:'ロシアへ即座に最後通牒を送り、期限内に回答がなければ開戦する', isH:false,
+       pc:'強硬手段を選んだ。しかし元老・山縣有朋から猛反発を受け、イギリス外務省からも懸念が伝えられた。',
+       ht:`<p>即時強硬策は国際的孤立と元老の反対を招くリスクがあった。日英同盟を有効に活用するには「誠実な交渉を行った」という実績が必要だった。</p><p class="result-history-sub">桂は「交渉を尽くしながら開戦準備を進める」二重戦略を選んだ。</p>`,
+       next:'sit1904'},
+      {label:'C', text:'朝鮮の権益のみに絞った妥協案を提示し、満洲はロシアの管轄に委ねる', isH:false,
+       pc:'妥協案を提示したが、山縣有朋は「満洲のロシアを認めれば長期的に朝鮮も危うくなる」と強く反対した。',
+       ht:`<p>満洲でのロシア軍駐留を認めることは、長期的な朝鮮への脅威を放置することになる。山縣有朋の「主権線・利益線」論では朝鮮の防衛は満洲問題と不可分だった。</p><p class="result-history-sub">桂は「満韓交換論」を基本に交渉継続を選んだ。</p>`,
+       next:'sit1904'},
+    ]
+  },
+
+  sit1904: {
+    type:'story', tl:2,
+    year:'1904年（明治37年）2月', title:'交渉の終わり',
+    lines:[
+      {speaker:null, text:'3回に及ぶ交渉でロシアの誠意ある回答は得られなかった。むしろロシアは旅順港の要塞を強化し、義勇兵を韓国国境へ送り込んでいる。'},
+      {speaker:'kodama', text:'「シベリア鉄道は3〜4年で完成します。その後は日本が戦争を選んでも、もはや勝ち目はありません」'},
+      {speaker:null, text:'陸軍参謀次長・児玉源太郎が断言する。元老・伊藤博文はなおも慎重姿勢を崩さないが、山縣有朋は開戦を認める方向に傾いた。'},
+      {speaker:'takahashi', text:'「ロンドンとニューヨークで外債6億円、調達の目処が立ちました。ただし戦争が2年を超えれば限界に達します」'},
+      {speaker:null, text:'1904年1月18日のロシア最終回答は、日本の核心的要求をほぼ無視したものだった。御前会議の招集が迫っている。'},
+    ],
+    next:'dec2'
+  },
+
+  dec2: {
+    type:'decision', tl:2,
+    tag:'決断②', year:'1904年（明治37年）2月', title:'開戦か、交渉継続か',
+    context:'ロシアの最終回答は不満足なものだった。御前会議を前に、あなた（桂太郎）はどう判断するか。',
+    choices:[
+      {label:'A', text:'御前会議で開戦を決定し、海軍に旅順港への先制攻撃を命じる', isH:true,
+       pc:'開戦を決断した。2月4日の御前会議で承認を得、6日に国交断絶。8日夜、海軍が旅順港を奇襲した。10日、正式宣戦布告。',
+       ht:`<p>シベリア鉄道完成前のこの時期が最後の機会だった。外債調達の目処が立ち、3回の外交交渉を尽くした今が決断の時だった。</p><p class="result-history-sub">元老・山縣有朋も開戦を承認。2月4日の御前会議で正式決定された。</p>`,
+       next:'sit1905'},
+      {label:'B', text:'外交的解決の余地を探る。もう少し時間をかけてロシアと交渉する', isH:false,
+       pc:'慎重姿勢を続けた。しかし月が経つにつれシベリア鉄道の完成が近づき、ロシアの極東駐留兵力は増加した。',
+       ht:`<p>時間はロシアに有利だった。交渉継続はシベリア鉄道完成後の軍事的不利を意味した。</p><p class="result-history-sub">桂は御前会議で開戦を決定した。2月6日国交断絶、8日旅順奇襲、10日宣戦布告。</p>`,
+       next:'sit1905'},
+    ]
+  },
+
+  sit1905: {
+    type:'story', tl:3,
+    year:'1905年（明治38年）春', title:'勝利の陰で',
+    lines:[
+      {speaker:null, text:'1905年1月、旅順要塞陥落。3月の<em>奉天会戦</em>に勝利。5月の<em>日本海海戦</em>では東郷平八郎率いる連合艦隊がバルチック艦隊を壊滅させた。'},
+      {speaker:null, text:'新聞は連日「大勝利」を伝え、国民は歓喜している。しかし執務室に届く報告は、まったく別の現実を示していた。'},
+      {type:'status', title:'戦争の実態（国民には知らされていない）', items:[
+        '戦費総額：既に約15億円（国家予算の約6〜7倍）に達する',
+        '外債の追加調達：高橋是清が限界まで調達済み。新規は極めて困難',
+        '陸軍の損耗：死傷者は10万人超。予備役動員でも補充が困難な状況',
+        'ロシア：国内で革命運動が起きるが、ニコライ2世は依然継戦を主張',
+      ]},
+      {speaker:'official', text:'「閣下、これ以上の戦争継続は財政的に不可能です」'},
+      {speaker:null, text:'大蔵省の担当者が静かに告げる。日本は軍事的には「勝っている」。しかし<em>これ以上戦争を続けることができない</em>ことを、あなたは知っている。だがそれを公表すれば、ロシアの継戦派を勢いづかせ、講和の機会を遠ざける。'},
+    ],
+    next:'dec3'
+  },
+
+  dec3: {
+    type:'decision', tl:3,
+    tag:'決断③', year:'1905年（明治38年）春', title:'講和への道をどう切り開くか',
+    context:'財政的に戦争継続は限界だ。しかしそれを表に出さずに講和を実現するには？あなた（桂太郎）の選択は。',
+    choices:[
+      {label:'A', text:'秘密裏にアメリカのルーズベルト大統領を通じた講和仲介工作を進める', isH:true,
+       pc:'秘密の仲介工作を選んだ。金子堅太郎をワシントンへ送り込み、ルーズベルトの仲介意欲を引き出す動きを始めた。',
+       ht:`<p>日本の財政的限界を公表すればロシアの継戦派が勢いづく。金子堅太郎はハーバード大学でルーズベルトと同期──この人脈を活用した秘密外交こそが桂の選んだ道だった。</p><p class="result-history-sub">1905年6月、ルーズベルトが正式に仲介を申し出た。全権代表は小村寿太郎が務めた。</p>`,
+       next:'sitPorts'},
+      {label:'B', text:'日本海海戦の大勝利を活かし、より有利な条件をロシアから引き出してから講和する（継戦）', isH:false,
+       pc:'継戦を選んだ。しかし大蔵省から「外債の追加調達は事実上不可能」という報告が届く。「勝っているうちに」と思っても、その勝利を維持する体力がない。',
+       ht:`<p>「より有利な条件」を追求する財政的・軍事的体力が、日本にはなかった。</p><p class="result-history-sub">桂は秘密裏のルーズベルト仲介工作を選んだ。</p>`,
+       next:'sitPorts'},
+      {label:'C', text:'ロシア皇帝ニコライ2世に直接、講和提案の書簡を送る', isH:false,
+       pc:'直接外交を選んだ。しかし書簡はロシア外交当局に握りつぶされ、国際社会には「日本が先に講和を求めた」という印象を与えてしまった。',
+       ht:`<p>日本から先に講和を持ちかければ「日本も限界だ」とロシアに知られる。第三者を通じた仲介でこそ、交渉の主導権を保てる。</p><p class="result-history-sub">桂は秘密裏のルーズベルト仲介工作を選んだ。</p>`,
+       next:'sitPorts'},
+    ]
+  },
+
+  sitPorts: {
+    type:'story', tl:4,
+    year:'1905年（明治38年）8月 ── ポーツマス（米国）', title:'ポーツマス講和会議',
+    lines:[
+      {speaker:null, text:'アメリカ東部の港町ポーツマス。全権代表・小村寿太郎がロシア全権・ウィッテ伯爵と対峙している。'},
+      {speaker:null, text:'日本の当初要求：賠償金12億円・樺太全島・旅順大連の租借権移転・長春以南の鉄道利権。'},
+      {speaker:null, text:'しかしロシアの回答は明確だった。「<em>賠償金は一切支払わない。樺太も交渉の対象外だ</em>」。ウィッテはルーズベルトにも働きかけ、国際世論にもロシアへの同情論が出てきた。'},
+      {speaker:'komura', text:'「……閣下、賠償金はロシアが絶対拒否。樺太は北緯50度以南のみ可能。このままでは交渉決裂です。いかがいたしましょうか」'},
+    ],
+    next:'dec4'
+  },
+
+  dec4: {
+    type:'decision', tl:4,
+    tag:'決断④', year:'1905年（明治38年）8月', title:'賠償金問題の決断',
+    context:'ロシアは賠償金を絶対拒否している。この条件で受諾するか、交渉を決裂させて戦争を続けるか。',
+    choices:[
+      {label:'A', text:'賠償金なしでよい。樺太南半分（北緯50度以南）で講和を受諾せよ', isH:true,
+       pc:'受諾を命じた。9月5日、ポーツマス条約が調印された。旅順・大連・南満洲鉄道・朝鮮への優越権・樺太南半分──成果は確保した。しかし賠償金はゼロだった。',
+       ht:`<p>財政的に戦争継続は物理的に不可能だった。賠償金なしでも、朝鮮・旅順・大連・南満洲鉄道という当初目標は達成できる。</p><p class="result-history-sub">この決断は深刻な結果をもたらした。条約調印のその日、東京・日比谷では焼き討ち事件が起きた。</p>`,
+       next:'ending'},
+      {label:'B', text:'賠償金なしでは受諾できない。交渉を決裂させ、戦争を続ける', isH:false,
+       pc:'決裂を選んだ。しかし追加の外債は調達できず、陸軍の予備兵力も枯渇しつつある。財政崩壊に向かうだけだ。',
+       ht:`<p>財政的実態を知る桂にとって、継戦という選択肢は事実上存在しなかった。</p><p class="result-history-sub">9月5日ポーツマス条約調印。同日東京で日比谷焼き討ち事件が発生した。</p>`,
+       next:'ending'},
+    ]
+  }
+};
+
+// ================================================================
+// VN SYSTEM
+// ================================================================
+let vn = { lines:[], idx:0, active:false, passageNext:'' };
+
+function startVN(p) {
+  vn.lines = p.lines;
+  vn.idx = 0;
+  vn.active = true;
+  vn.passageNext = p.next;
+  showVNLine();
+  showClickHint();
+}
+
+function showVNLine() {
+  if (vn.idx >= vn.lines.length) { endVN(); return; }
+  const line = vn.lines[vn.idx];
+  const spriteEl  = document.getElementById('vnSprite');
+  const nameEl    = document.getElementById('vnName');
+  const textEl    = document.getElementById('vnText');
+  const arrowEl   = document.getElementById('vnArrow');
+  const stageEl   = document.getElementById('vnStage');
+
+  // Remove old status overlay
+  const oldOv = stageEl ? stageEl.querySelector('.vn-status-overlay') : null;
+  if (oldOv) oldOv.remove();
+
+  // ── Status line ──
+  if (line.type === 'status') {
+    if (spriteEl) { spriteEl.classList.add('out'); }
+    if (nameEl) { nameEl.className='vn-name hidden'; }
+    if (textEl) { textEl.textContent=''; }
+    // Show status as stage overlay
+    if (stageEl) {
+      const ov = document.createElement('div');
+      ov.className = 'vn-status-overlay';
+      ov.innerHTML = `<div class="vso-title">${line.title}</div>` +
+        line.items.map(i=>`<div class="vso-item">${i}</div>`).join('');
+      stageEl.appendChild(ov);
+    }
+    if (arrowEl) arrowEl.className = 'vn-arrow';
+    return;
+  }
+
+  // ── Remove status overlay when leaving status ──
+  // ── Normal dialogue/narration line ──
+  const char = line.speaker ? CHARS[line.speaker] : null;
+
+  // Update sprite
+  if (spriteEl) {
+    if (char) {
+      if (spriteEl.dataset.speaker !== line.speaker) {
+        spriteEl.dataset.speaker = line.speaker;
+        spriteEl.classList.add('out');
+        setTimeout(() => {
+          spriteEl.innerHTML = char.svg;
+          spriteEl.classList.remove('out');
+        }, 200);
+      } else {
+        spriteEl.classList.remove('out');
+      }
+    } else {
+      spriteEl.classList.add('out');
+      spriteEl.dataset.speaker = '';
+    }
+  }
+
+  // Update speaker name
+  if (nameEl) {
+    if (char) {
+      nameEl.className = 'vn-name';
+      nameEl.textContent = char.name;
+      nameEl.style.background = char.color;
+      nameEl.style.color = '#f0e6d3';
+    } else {
+      nameEl.className = 'vn-name hidden';
+    }
+  }
+
+  // Typewriter text
+  if (textEl) startTyping(textEl, line.text);
+  if (arrowEl) arrowEl.className = 'vn-arrow pause';
+}
+
+function advanceVN() {
+  if (!vn.active) return;
+  if (isTyping()) { skipTyping(); return; }
+  // Resume arrow animation
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow';
+  vn.idx++;
+  showVNLine();
+}
+
+function endVN() {
+  vn.active = false;
+  hideClickHint();
+  const btn = document.getElementById('vnNextBtn');
+  if (btn) btn.classList.remove('hidden-btn');
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow hidden';
+}
+
+// ================================================================
+// TYPEWRITER
+// ================================================================
+const TYPE = { timer:null, el:null, fullHtml:'', plain:'', idx:0 };
+const TYPE_SPEED = 38; // ms per char
+
+function startTyping(el, html) {
+  clearInterval(TYPE.timer);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  TYPE.plain = tmp.textContent;
+  TYPE.fullHtml = html;
+  TYPE.el = el;
+  TYPE.idx = 0;
+  el.textContent = '';
+
+  TYPE.timer = setInterval(() => {
+    TYPE.idx++;
+    if (TYPE.idx >= TYPE.plain.length) {
+      clearInterval(TYPE.timer);
+      TYPE.timer = null;
+      el.innerHTML = TYPE.fullHtml;
+      const arrowEl = document.getElementById('vnArrow');
+      if (arrowEl) arrowEl.className = 'vn-arrow';
+    } else {
+      el.textContent = TYPE.plain.substring(0, TYPE.idx);
+    }
+  }, TYPE_SPEED);
+}
+
+function skipTyping() {
+  if (!TYPE.timer) return;
+  clearInterval(TYPE.timer);
+  TYPE.timer = null;
+  if (TYPE.el) TYPE.el.innerHTML = TYPE.fullHtml;
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow';
+}
+
+function isTyping() { return !!TYPE.timer; }
+
+// ================================================================
+// TIMER
+// ================================================================
+const TIMER_TOTAL = 180;
+const CIRC = 2 * Math.PI * 22; // ≈138.23
+let timerState = { remaining:TIMER_TOTAL, paused:false, id:null };
+
+function startTimer() {
+  clearInterval(timerState.id);
+  timerState.remaining = TIMER_TOTAL;
+  timerState.paused = false;
+  timerState.id = setInterval(() => {
+    if (timerState.paused) return;
+    timerState.remaining = Math.max(0, timerState.remaining - 1);
+    renderTimer();
+    if (timerState.remaining === 0) {
+      clearInterval(timerState.id);
+      const el = document.getElementById('timerCircle');
+      if (el) el.classList.add('done');
+    }
+  }, 1000);
+  renderTimer();
+}
+function stopTimer() { clearInterval(timerState.id); timerState.id = null; }
+function toggleTimerPause() { timerState.paused = !timerState.paused; const el=document.getElementById('timerCircle'); if(el) el.classList.toggle('paused',timerState.paused); }
+function resetTimerBtn(e) { if(e) e.stopPropagation(); stopTimer(); startTimer(); }
+function renderTimer() {
+  const el = document.getElementById('timerCircle'); if(!el) return;
+  const m = Math.floor(timerState.remaining/60), s = timerState.remaining%60;
+  const t = el.querySelector('.timer-min'); if(t) t.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  const ring = el.querySelector('.timer-progress'); if(ring) ring.style.strokeDashoffset = CIRC*(1-timerState.remaining/TIMER_TOTAL);
+  el.classList.toggle('warning', timerState.remaining>0 && timerState.remaining<=30);
+}
+
+// ================================================================
+// FULLSCREEN
+// ================================================================
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen().catch(()=>{});
+}
+
+// ================================================================
+// CLICK HINT
+// ================================================================
+function showClickHint() { document.getElementById('clickHint').classList.add('show'); }
+function hideClickHint() { document.getElementById('clickHint').classList.remove('show'); }
+
+// ================================================================
+// KEYBOARD + CLICK
+// ================================================================
+document.addEventListener('click', e => {
+  if (e.target.closest('button, a')) return;
+  if (vn.active) advanceVN();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); return; }
+  if ((e.key === ' ' || e.key === 'Enter') && vn.active) { e.preventDefault(); advanceVN(); return; }
+  const p = P[S.passage];
+  if (p && p.type === 'decision' && !S.showResult) {
+    const map = {a:0,A:0,'1':0,b:1,B:1,'2':1,c:2,C:2,'3':2};
+    if (e.key in map && map[e.key] < p.choices.length) choose(map[e.key]);
+  }
+});
+
+// ================================================================
+// RENDER
+// ================================================================
+function triggerAnim() {
+  const app = document.getElementById('app');
+  app.classList.remove('page-enter');
+  void app.offsetWidth;
+  app.classList.add('page-enter');
+}
+
+function render() {
+  stopTimer();
+  hideClickHint();
+  clearInterval(TYPE.timer); TYPE.timer = null;
+  vn.active = false;
+  const app = document.getElementById('app');
+  const id = S.passage;
+
+  if (id === 'title')  { app.innerHTML = renderTitle();  triggerAnim(); return; }
+  if (id === 'ending') { app.innerHTML = renderEnding(); triggerAnim(); window.scrollTo(0,0); return; }
+
+  const p = P[id];
+  if (!p) return;
+
+  if (p.type === 'story') {
+    app.innerHTML = renderStory(p);
+    triggerAnim();
+    window.scrollTo(0,0);
+    startVN(p);
+  }
+  if (p.type === 'decision') {
+    app.innerHTML = S.showResult ? renderResult(p) : renderDecision(p);
+    triggerAnim();
+    window.scrollTo(0,0);
+    if (!S.showResult) {
+      startTimer();
+      setTimeout(() => {
+        document.querySelectorAll('.choice-btn').forEach((btn,i) => {
+          setTimeout(() => btn.classList.add('in'), i*160);
+        });
+      }, 100);
+    }
+  }
+}
+
+function header(tl) {
+  const items = TL.map((t,i) => {
+    const cls = i<tl?'past':i===tl?'active':'';
+    return `<div class="tl-item ${cls}">${t.replace('\n','<br>')}</div>`;
+  }).join('');
+  return `<div class="game-header"><div class="game-label">歴史シミュレーション</div></div><div class="timeline">${items}</div>`;
+}
+
+function renderTitle() {
+  return `<div class="title-screen">
+<div class="title-kamon">⚜ ⚜ ⚜</div>
+<div class="title-main">桂太郎と<br>日露戦争の選択</div>
+<div class="title-sub">1901 ─── 1905</div>
+<div class="title-desc">
+あなたは内閣総理大臣・桂太郎として、明治期最大の国家的危機に臨む。<br>
+ロシアとの戦争をめぐる4つの決断を、実際の歴史的制約の中で体験しよう。<br><br>
+まず自分で選択し、そのあとで桂が実際にどう判断したか──その理由とともに明らかになる。
+</div>
+<div class="title-note">
+【学習のポイント】 正解は「桂が選んだ選択肢」ではない。なぜその選択が当時の状況で合理的に見えたかを考えることが目的。<br>
+<span style="color:#4a3a2a">クリック / スペース で台詞を送る　　A B C で選択　　F で全画面</span>
+</div>
+<button class="start-btn" onclick="gotoPassage('intro')">は じ め る</button>
+</div>`;
+}
+
+function renderStory(p) {
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.title}</div></div>
+<div class="vn-scene">
+  <div class="vn-stage" id="vnStage">
+    <div class="vn-sprite out" id="vnSprite"></div>
+  </div>
+  <div class="vn-box">
+    <div class="vn-name hidden" id="vnName"></div>
+    <div class="vn-text" id="vnText"></div>
+    <div class="vn-arrow" id="vnArrow">▼</div>
+  </div>
+</div>
+<button class="continue-btn hidden-btn" id="vnNextBtn" onclick="gotoPassage('${p.next}')">次の局面へ →</button>`;
+}
+
+function renderDecision(p) {
+  const ch = p.choices.map((c,i)=>
+    `<button class="choice-btn" data-label="${c.label}" onclick="choose(${i})">${c.text}</button>`
+  ).join('');
+  const kbLabels = p.choices.map(c=>c.label).join(' / ');
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.title}</div></div>
+<div class="decision-tag">${p.tag}</div>
+<div class="decision-context">${p.context}</div>
+<div class="timer-area">
+  <div class="timer-circle" id="timerCircle" onclick="toggleTimerPause()" title="クリックで一時停止">
+    <svg class="timer-ring" viewBox="0 0 64 64"><circle class="timer-bg" cx="32" cy="32" r="22"/><circle class="timer-progress" cx="32" cy="32" r="22"/></svg>
+    <div class="timer-overlay"><div class="timer-min">3:00</div><div class="timer-sub">審議</div></div>
+  </div>
+  <div class="timer-desc"><div class="timer-desc-title">グループ審議タイマー（3分）</div><div class="timer-desc-hint">クリックで一時停止</div></div>
+  <button class="timer-reset-btn" onclick="resetTimerBtn(event)">↺ リセット</button>
+</div>
+<div class="choices">${ch}</div>
+<div class="keyboard-hint">キーボード ${kbLabels} で選択可</div>`;
+}
+
+function renderResult(p) {
+  const c = S.pendingChoice, isM = c.isH;
+  const hist = p.choices.find(x=>x.isH);
+  const matchHtml = isM
+    ? `<div class="match-indicator match">✓ 桂太郎と同じ選択をしました</div>`
+    : `<div class="match-indicator mismatch">△ 桂太郎の選択とは異なります</div>`;
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.tag}：あなたの選択</div></div>
+<div class="result-player"><div class="result-label">▷ あなたの選択</div><div class="result-player-text">「${c.text}」</div></div>
+<div class="result-consequence">${c.pc}</div>
+<hr class="divider">${matchHtml}
+<div class="result-history ${isM?'match':''}">
+  <div class="result-history-label">🔍 ${isM?'桂太郎の判断（あなたと同じ選択）':'桂太郎が実際に選んだこと'}</div>
+  <div class="result-history-choice">「${hist.text}」</div>
+  <div class="result-history-text">${c.ht}</div>
+</div>
+<button class="continue-btn" onclick="next()">次の局面へ →</button>`;
+}
+
+function renderEnding() {
+  const m = S.matches;
+  const evals = [
+    'ほとんどの局面で桂太郎と異なる判断をした。現代の価値観が影響したかもしれない。どこで判断が分かれたか確認しよう。',
+    '多くの局面で桂太郎と異なる判断をした。当時の制約（財政・元老・国際関係）がどう判断を縛っていたか振り返ってみよう。',
+    '半数の局面で桂太郎と同じ判断をした。どこで判断が分かれたか、その理由を考えてみよう。',
+    'おおむね桂太郎の判断と一致した。当時の制約の中での合理性をよく理解している。',
+    '桂太郎の論理を完全に追体験した。当時の情報環境・制約の中での判断の在り方を深く理解している。'
+  ];
+  const logHtml = S.log.map(r=>`
+<div class="choice-record">
+  <span class="record-badge ${r.isH?'match':'mismatch'}">${r.isH?'一致':'相違'}</span>
+  <div><div class="record-decision">${r.dec}</div><div class="record-text">${r.text}</div></div>
+</div>`).join('');
+
+  return `${header(5)}
+<div class="scene-header"><div class="scene-year">1905年9月5日</div><div class="scene-title">ポーツマス条約、そして日比谷焼き討ち事件</div></div>
+<div class="narration">
+<p>条約調印のその日、東京・日比谷では凄まじい暴動が起きた。政府系新聞社・交番が次々と焼かれ、死者も出た。<span class="emphasis">日比谷焼き討ち事件</span>である。</p>
+<p>民衆の怒りは一点に集中していた──「<span class="emphasis">勝ったのに、なぜ賠償金がないのか</span>」。桂は戒厳令を布告し、第1次桂内閣はその直後に総辞職した。</p>
+</div>
+<div class="ending-section"><div class="ending-section-title">▍ なぜこうなったのか</div>
+<div class="narration">
+<p>桂太郎が「財政的に限界」という事実を国民に伝えることができなかったからである。それを伝えれば──ロシアの継戦派が勢いづく。外債市場が崩壊する。元老・政界の説得が不可能になる。</p>
+<p>桂は多くの制約の中で当時として合理的な判断を下し続けた。しかし国民はその事情を知らなかった。「勝利」だけを伝えられ続けた国民は、「負けていないのに賠償金なし」という結果に激怒した。情報が遮断された近代国家の、一つの帰結だった。</p>
+</div></div>
+<div class="ending-section"><div class="ending-section-title">▍ あなたの選択の記録</div>
+<div class="score-display">
+  <div><span class="score-num">${m}</span><span class="score-denom"> / 4</span></div>
+  <div class="score-label">桂太郎と同じ選択をした決断数</div>
+  <div class="score-eval">${evals[Math.min(m,4)]}</div>
+</div>${logHtml}</div>
+<div class="ending-section"><div class="ending-section-title">▍ 考察のための問い</div>
+<div class="question-box">
+<div class="q-item" data-n="①">桂太郎の各選択は「合理的」だったか？何を根拠に、誰の視点から評価するか。</div>
+<div class="q-item" data-n="②">政府が国民に真実を言えないとき、何が起きるか。現代の事例と比較して考えよう。</div>
+<div class="q-item" data-n="③">「勝利」とは何か。日露戦争の結果を、日本・ロシア・朝鮮・国際社会それぞれの視点から評価してみよう。</div>
+<div class="q-item" data-n="④">あなたが桂と違う選択をした局面はどこか。その選択はなぜ当時の状況では難しかったのか。</div>
+</div></div>
+<button class="restart-btn" onclick="restart()">もう一度プレイする</button>`;
+}
+
+// ================================================================
+// GAME LOGIC
+// ================================================================
+function gotoPassage(id) { S.passage=id; S.showResult=false; render(); }
+function choose(i) {
+  const p=P[S.passage], c=p.choices[i];
+  S.pendingChoice=c; S.showResult=true;
+  if(c.isH) S.matches++;
+  S.log.push({dec:p.tag+' '+p.title, text:c.text, isH:c.isH});
+  stopTimer(); render();
+}
+function next() { S.passage=S.pendingChoice.next; S.showResult=false; S.pendingChoice=null; render(); }
+function restart() { S={passage:'title',showResult:false,pendingChoice:null,matches:0,log:[]}; render(); }
+
+render();
+</script>
+</body>
+</html>

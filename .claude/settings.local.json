@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"授業分析/input\" \"授業分析/output\")",
+      "Bash(mkdir -p \"テスト問題作成/input\" \"テスト問題作成/output\")",
+      "Bash(mkdir -p \"授業設計/input\" \"授業設計/output\")",
+      "Bash(mkdir -p \"成績・評価/input\" \"成績・評価/output\")",
+      "PowerShell(python --version)",
+      "PowerShell(\\(Get-Item \"c:\\\\Users\\\\kengo\\\\OneDrive\\\\デスクトップ\\\\claude開発\\\\授業自動生成\\\\output\\\\第7回 日露戦争\\\\文字資料.docx\"\\).Length)",
+      "Bash(Get-Content .gitignore)",
+      "Bash(Select-String \"vscode\")",
+      "Bash(git add *)"
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+anthropic>=0.40.0
+python-dotenv
+python-docx
+Pillow

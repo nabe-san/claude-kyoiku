@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビスマルクとドイツ統一の選択</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #ede4cc;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(150,110,40,.035) 38px, rgba(150,110,40,.035) 39px),
+    radial-gradient(ellipse 120% 50% at 50% -5%, rgba(200,168,75,.12) 0%, transparent 100%);
+  color: #1e1208;
+  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#app { max-width: 1080px; width: 100%; min-height: 100vh; padding: 0 24px 80px; }
+
+.page-enter { animation: pageIn .4s ease both; }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+#fsBtn {
+  position: fixed; top: 14px; right: 16px;
+  background: rgba(30,18,8,.82); border: 1px solid #c8a84b66; color: #c8a84b;
+  width: 36px; height: 36px; border-radius: 4px; cursor: pointer; font-size: 17px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; transition: all .2s; backdrop-filter: blur(4px);
+}
+#fsBtn:hover { background: #c8a84b; color: #1e1208; }
+
+#clickHint {
+  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: #c8a84baa; letter-spacing: 3px;
+  pointer-events: none; z-index: 100; opacity: 0; transition: opacity .4s; white-space: nowrap;
+}
+#clickHint.show { opacity: 1; animation: hintP 2.5s ease infinite; }
+@keyframes hintP { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+.game-header { text-align: center; padding: 22px 0 10px; border-bottom: 1px solid #c8a84b44; margin-bottom: 14px; }
+.game-label { font-size: 12px; color: #907850; letter-spacing: 5px; }
+.timeline { display: flex; justify-content: space-between; padding: 10px 0 6px; margin-bottom: 22px; font-size: 12px; gap: 4px; }
+.tl-item { flex: 1; text-align: center; color: #a09060; white-space: nowrap; padding: 6px 2px; border-bottom: 2px solid #c8c080; transition: all .3s; }
+.tl-item.past  { color: #604020; border-color: #907040; }
+.tl-item.active{ color: #8b2020; border-color: #8b2020; font-weight: bold; }
+
+.scene-header {
+  display: grid; grid-template-columns: max-content 1fr;
+  overflow: hidden; margin-bottom: 18px;
+  box-shadow: 0 4px 16px rgba(42,26,10,.22);
+  border-radius: 3px;
+}
+.scene-year {
+  background: #c8a84b; color: #1a0800;
+  padding: 0 22px; font-size: 13px; font-weight: bold; letter-spacing: 1px;
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap; min-width: 120px; text-align: center; line-height: 1.5;
+}
+.scene-title {
+  background: #2a1a0a; color: #f0e6d0;
+  font-size: 22px; font-weight: bold; letter-spacing: 1px;
+  padding: 18px 26px; display: flex; align-items: center;
+}
+
+.vn-scene {
+  border: 1px solid #c8a84b44; border-radius: 4px; overflow: hidden;
+  margin-bottom: 16px; box-shadow: 0 4px 24px rgba(42,26,10,.18);
+}
+
+.vn-stage {
+  height: 420px; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #080504 0%, #140c06 50%, #201008 100%);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.vn-stage::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 70% at 50% 90%, rgba(200,168,75,.08) 0%, transparent 70%);
+}
+.vn-stage::after {
+  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 140px; height: 18px; background: rgba(0,0,0,.65); border-radius: 50%; filter: blur(12px);
+}
+
+.vn-char {
+  position: relative; z-index: 2;
+  height: 398px; display: flex; align-items: flex-end; justify-content: center;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.vn-char.out { opacity: 0; transform: translateY(18px); }
+
+.char-photo {
+  height: 380px; width: auto; max-width: 280px;
+  object-fit: cover; object-position: top center;
+  filter: sepia(18%) contrast(1.07) brightness(0.9);
+  border: 2px solid #c8a84b55; border-bottom: none; border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 60px rgba(0,0,0,.92), 0 4px 20px rgba(0,0,0,.7);
+  display: block;
+}
+.char-silhouette { height: 370px; width: 160px; display: flex; align-items: flex-end; justify-content: center; }
+.char-silhouette svg { height: 350px; width: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
+
+.vn-status-overlay {
+  position: absolute; inset: 0; z-index: 4;
+  background: linear-gradient(135deg, rgba(14,8,2,.92) 0%, rgba(20,10,4,.90) 100%);
+  border-left: 4px solid #c8a84b;
+  display: flex; flex-direction: column; justify-content: center; padding: 24px 32px;
+  animation: fadeIn .3s ease both;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.vso-title {
+  font-size: 12px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 18px;
+  padding-bottom: 12px; border-bottom: 1px solid #c8a84b55;
+}
+.vso-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px;
+  align-content: start;
+}
+.vso-item {
+  font-size: 16px; color: #e0d0b0; padding: 6px 0 6px 22px;
+  position: relative; line-height: 1.65;
+}
+.vso-item::before { content: '◆'; position: absolute; left: 0; color: #c8a84b; font-size: 10px; top: 9px; }
+@media (max-width: 620px) { .vso-grid { grid-template-columns: 1fr; } }
+
+/* ── Dialogue box — parchment ── */
+.vn-box {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(150,110,40,.035) 39px, rgba(150,110,40,.035) 40px),
+    linear-gradient(180deg, #f5ead2 0%, #ecddc0 60%, #e6d6ae 100%);
+  border-top: none;
+  padding: 0 32px 28px; min-height: 160px; position: relative; cursor: pointer;
+  box-shadow: inset 0 16px 24px rgba(0,0,0,.05);
+}
+.vn-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, transparent 0%, #c8a84b 8%, #8b2020 28%, #c8a84b 50%, #8b2020 72%, #c8a84b 92%, transparent 100%);
+}
+.vn-box::after {
+  content: '❧';
+  position: absolute; bottom: 18px; right: 52px;
+  color: rgba(140,100,30,.18); font-size: 26px; pointer-events: none;
+}
+.vn-name {
+  display: inline-block; font-size: 16px; font-weight: bold; letter-spacing: 2px;
+  padding: 12px 40px 12px 24px; margin-bottom: 16px;
+  background: linear-gradient(135deg, #1e1208 0%, #2e1c0c 100%);
+  color: #f0e6d0;
+  border-left: 3px solid #c8a84b;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
+  box-shadow: 4px 4px 14px rgba(0,0,0,.4);
+  text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+.vn-name.hidden { display: none; }
+.vn-text { font-size: 19px; line-height: 2.0; color: #1e1208; min-height: 72px; padding: 0 4px; }
+.vn-text em { color: #8b2020; font-style: normal; font-weight: bold; }
+.vn-arrow { position: absolute; bottom: 16px; right: 26px; font-size: 16px; color: #c8a84b; animation: arrowBob 1.6s ease infinite; }
+.vn-arrow.pause { animation: none; opacity: .3; }
+.vn-arrow.hidden { display: none; }
+@keyframes arrowBob { 0%,100%{transform:translateY(0);opacity:.6} 50%{transform:translateY(5px);opacity:1} }
+
+.continue-btn {
+  display: block; width: 100%; background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b;
+  padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 3px;
+  border-radius: 3px; transition: background .15s, color .15s, opacity .5s; margin-bottom: 40px;
+}
+.continue-btn:hover { background: #c8a84b; color: #1e1208; }
+.continue-btn.hidden-btn { opacity: 0; pointer-events: none; }
+
+.decision-tag { display: inline-block; background: #8b2020; color: #faf6ec; padding: 5px 16px; font-size: 12px; letter-spacing: 2px; border-radius: 2px; margin-bottom: 16px; }
+.decision-context {
+  font-size: 19px; color: #1e1208; margin-bottom: 22px; line-height: 1.85; padding: 20px 28px;
+  background: #faf6ec; border-left: 5px solid #c8a84b; box-shadow: 0 3px 12px rgba(42,26,10,.08);
+  border-radius: 0 3px 3px 0;
+}
+.choices { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.choice-btn {
+  background: #faf6ec; border: 1px solid #c8a84b88; color: #1e1208;
+  padding: 18px 22px 18px 62px; text-align: left; cursor: pointer;
+  font-family: inherit; font-size: 17px; line-height: 1.75; border-radius: 3px; position: relative;
+  opacity: 0; transform: translateX(-14px);
+  transition: opacity .35s ease, transform .35s ease, background .15s, border-color .15s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(42,26,10,.07);
+}
+.choice-btn.in { opacity: 1; transform: translateX(0); }
+.choice-btn.in:hover { background: #fff8e6; border-color: #c8a84b; transform: translateX(5px); box-shadow: 0 5px 18px rgba(42,26,10,.14); }
+.choice-btn::before {
+  content: attr(data-label);
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px;
+  background: #8b2020; color: #faf6ec;
+  border-radius: 50%; font-weight: bold; font-size: 15px;
+  line-height: 32px; text-align: center;
+}
+.choice-btn[data-label="B"]::before { background: #1a3060; }
+.choice-btn[data-label="C"]::before { background: #1a5a28; }
+.keyboard-hint { text-align: center; font-size: 12px; color: #907850; letter-spacing: 2px; margin-bottom: 20px; opacity: 0; animation: fadeHint .5s ease 1.2s forwards; }
+@keyframes fadeHint { to{opacity:1} }
+
+.timer-area {
+  display: flex; align-items: center; gap: 16px; padding: 14px 18px; margin-bottom: 18px;
+  background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 4px; box-shadow: 0 2px 8px rgba(42,26,10,.06);
+}
+.timer-circle { position: relative; width: 64px; height: 64px; cursor: pointer; flex-shrink: 0; }
+.timer-ring { width: 64px; height: 64px; display: block; }
+.timer-bg { fill: none; stroke: #ddd0a0; stroke-width: 5; }
+.timer-progress { fill: none; stroke: #8b2020; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 138.23; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear; transform-origin: 32px 32px; transform: rotate(-90deg); }
+.timer-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.timer-min { font-size: 14px; color: #8b2020; font-weight: bold; line-height: 1; }
+.timer-sub { font-size: 8px; color: #907850; letter-spacing: 1px; margin-top: 3px; }
+.timer-desc { flex: 1; }
+.timer-desc-title { font-size: 12px; color: #2a1a08; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
+.timer-desc-hint { font-size: 11px; color: #907850; }
+.timer-reset-btn { background: transparent; border: 1px solid #c8a84b; color: #907850; padding: 6px 14px; border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 12px; letter-spacing: 1px; transition: all .15s; }
+.timer-reset-btn:hover { border-color: #8b2020; color: #8b2020; }
+.timer-circle.paused .timer-progress { stroke: #b0a070; }
+.timer-circle.paused .timer-min { color: #b0a070; }
+.timer-circle.warning .timer-min { color: #c03020; animation: blink 1s ease infinite; }
+.timer-circle.done .timer-progress { stroke: #d8cc90; }
+.timer-circle.done .timer-min { color: #907850; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.result-your {
+  background: #f0f4f8; border: 1px solid #b0c4de; border-radius: 3px;
+  padding: 14px 22px; margin-bottom: 12px;
+}
+.result-your-label { font-size: 11px; letter-spacing: 2px; margin-bottom: 7px; color: #4a6090; }
+.result-your-text { font-size: 16px; color: #2a3850; line-height: 1.7; margin-bottom: 7px; }
+.result-consequence { font-size: 15px; color: #3a4060; line-height: 1.85; }
+
+.match-banner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 24px; margin-bottom: 20px; border-radius: 3px; font-size: 17px; font-weight: bold; letter-spacing: 1px;
+}
+.match-banner.match    { background: #e4f5ea; color: #1a5a28; border: 1px solid #3a9048; }
+.match-banner.mismatch { background: #fdf5e2; color: #6a4010; border: 1px solid #c09030; }
+.match-icon { font-size: 22px; flex-shrink: 0; }
+
+.result-katsura {
+  border-radius: 4px; overflow: hidden; margin-bottom: 22px;
+  box-shadow: 0 6px 28px rgba(30,100,50,.15);
+  border: 2px solid #1a7030;
+}
+.result-katsura.is-match { border-color: #1a5a28; }
+.result-katsura-header {
+  background: linear-gradient(135deg, #1a5a28 0%, #2a8040 100%);
+  padding: 14px 24px; display: flex; align-items: center; gap: 14px;
+}
+.result-katsura-tag {
+  font-size: 10px; color: #a0f0c0; letter-spacing: 2px; border: 1px solid #a0f0c055;
+  padding: 3px 10px; border-radius: 2px; flex-shrink: 0;
+}
+.result-katsura-title { font-size: 15px; color: #e8fff2; font-weight: bold; letter-spacing: 1px; }
+.result-katsura-choice {
+  font-size: 21px; font-weight: bold; color: #1a3020;
+  padding: 22px 28px 16px; border-bottom: 1px solid #a0d8b0; line-height: 1.6;
+  background: #f4fdf6;
+}
+.result-katsura-choice::before { content: '「'; }
+.result-katsura-choice::after  { content: '」'; }
+.result-katsura-why {
+  font-size: 11px; color: #3a7850; letter-spacing: 2px; padding: 16px 28px 4px;
+  background: #f4fdf6;
+}
+.result-katsura-body {
+  font-size: 16px; line-height: 2; color: #1a2a1a; padding: 6px 28px 24px;
+  background: #f4fdf6;
+}
+.result-katsura-body p { margin-bottom: .8em; }
+.result-katsura-body p:last-child { margin-bottom: 0; }
+.result-katsura-sub { color: #4a7855; font-size: 14px; }
+
+.result-player { display: none; }
+.result-label { display: none; }
+.result-player-text { display: none; }
+.divider { border: none; border-top: 1px solid #c8a84b44; margin: 18px 0; }
+.match-indicator { display: none; }
+.result-history { display: none; }
+.result-history-label, .result-history-choice, .result-history-text, .result-history-sub { display: none; }
+
+.title-screen { text-align: center; padding: 50px 20px 60px; }
+.title-deco { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 20px; }
+.title-deco-line { flex: 1; max-width: 80px; height: 1px; background: linear-gradient(90deg, transparent, #c8a84b); }
+.title-deco-line:last-child { background: linear-gradient(90deg, #c8a84b, transparent); }
+.title-kamon { font-size: 24px; color: #8b2020; opacity: .8; }
+.title-main { font-size: 30px; line-height: 1.5; margin-bottom: 8px; letter-spacing: 2px; color: #1e1208; }
+.title-sub { font-size: 12px; color: #907850; letter-spacing: 6px; margin-bottom: 30px; }
+.title-portrait-wrap {
+  width: 110px; margin: 0 auto 26px; overflow: hidden;
+  border: 2px solid #c8a84b; border-radius: 2px; box-shadow: 0 6px 24px rgba(42,26,10,.25);
+}
+.title-portrait-wrap img { width: 100%; display: block; filter: sepia(18%) contrast(1.04); }
+.title-desc {
+  font-size: 14px; color: #2a1a08; line-height: 2; max-width: 520px; margin: 0 auto 16px;
+  text-align: left; background: #faf6ec; padding: 20px 24px;
+  border: 1px solid #c8a84b44; border-radius: 3px; box-shadow: 0 2px 8px rgba(42,26,10,.07);
+}
+.title-note { font-size: 11px; color: #907850; margin-bottom: 36px; line-height: 2; }
+.start-btn {
+  background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b;
+  padding: 15px 60px; font-family: inherit; font-size: 15px; cursor: pointer;
+  letter-spacing: 5px; border-radius: 2px; transition: all .2s;
+}
+.start-btn:hover { background: #c8a84b; color: #1e1208; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,168,75,.3); }
+
+.ending-section { margin-bottom: 28px; }
+.ending-section-title { font-size: 11px; color: #8b2020; letter-spacing: 3px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #8b202044; }
+.narration { background: #faf6ec; border: 1px solid #c8a84b44; padding: 26px 32px; margin-bottom: 18px; line-height: 2.2; font-size: 18px; color: #1e1208; border-radius: 2px; }
+.narration p { margin-bottom: 1em; }
+.narration p:last-child { margin-bottom: 0; }
+.emphasis { color: #8b2020; font-weight: bold; }
+.score-display {
+  text-align: center; padding: 32px; margin-bottom: 20px;
+  background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 3px;
+  display: grid; grid-template-columns: auto 1fr; gap: 0 28px; align-items: center;
+  text-align: left;
+}
+.score-num-wrap { text-align: center; }
+.score-num   { font-size: 56px; color: #8b2020; font-weight: bold; }
+.score-denom { font-size: 28px; color: #907850; }
+.score-label { font-size: 12px; color: #907850; margin-top: 6px; letter-spacing: 1px; }
+.score-eval  { font-size: 15px; color: #2a1a08; line-height: 1.85; }
+.choice-record { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #e0d0a8; font-size: 13px; }
+.choice-record:last-child { border-bottom: none; }
+.record-badge { flex-shrink: 0; font-size: 11px; padding: 2px 10px; border-radius: 2px; margin-top: 2px; }
+.record-badge.match   { background: #ecf8ef; color: #1a6030; border: 1px solid #40a050; }
+.record-badge.mismatch{ background: #fdf6e4; color: #704810; border: 1px solid #c09040; }
+.record-decision { font-size: 11px; color: #907850; margin-bottom: 3px; }
+.record-text { color: #1e1208; }
+
+.concept-intro {
+  font-size: 16px; color: #3a2a10; line-height: 1.9; padding: 18px 26px;
+  background: #faf6ec; border-left: 5px solid #8b2020; margin-bottom: 20px; border-radius: 0 3px 3px 0;
+}
+.concept-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px;
+}
+.concept-card {
+  background: #faf6ec; border: 1px solid #c8a84b55; border-top: 4px solid #8b2020;
+  border-radius: 3px; padding: 22px 24px;
+  box-shadow: 0 3px 14px rgba(42,26,10,.09);
+}
+.concept-card:nth-child(2) { border-top-color: #1a6030; }
+.concept-card:nth-child(3) { border-top-color: #1a3060; }
+.concept-card:nth-child(4) { border-top-color: #7a5010; }
+.concept-tag { font-size: 11px; letter-spacing: 2px; color: #8b2020; margin-bottom: 10px; }
+.concept-card:nth-child(2) .concept-tag { color: #1a6030; }
+.concept-card:nth-child(3) .concept-tag { color: #1a3060; }
+.concept-card:nth-child(4) .concept-tag { color: #7a5010; }
+.concept-title { font-size: 18px; font-weight: bold; color: #1e1208; margin-bottom: 12px; line-height: 1.4; }
+.concept-body { font-size: 14px; color: #3a2a10; line-height: 1.9; }
+@media (max-width: 560px) { .concept-grid { grid-template-columns: 1fr; } }
+
+.restart-btn { display: block; width: 100%; background: transparent; border: 1px solid #c8a84b; color: #907850; padding: 13px; font-family: inherit; font-size: 13px; cursor: pointer; letter-spacing: 3px; border-radius: 3px; transition: all .15s; margin-top: 20px; margin-bottom: 60px; }
+.restart-btn:hover { background: #2a1a0a; color: #c8a84b; border-color: #c8a84b; }
+
+.photo-credit { font-size: 9px; color: #a09070; text-align: right; padding: 4px 6px; background: #2a1a0a; letter-spacing: 1px; opacity: .7; }
+.page-footer { text-align: center; padding: 14px 0; font-size: 10px; color: #a09070; letter-spacing: 1px; border-top: 1px solid #c8a84b33; margin-top: 20px; }
+</style>
+</head>
+<body>
+<button id="fsBtn" onclick="toggleFullscreen()" title="全画面 (F)">⛶</button>
+<div id="clickHint">▼ クリック または スペース</div>
+<div id="app"></div>
+
+<script>
+// ================================================================
+// CHARACTERS
+// ================================================================
+const CHARS = {
+  bismarck: {
+    name: 'ビスマルク', role: 'プロイセン宰相', color: '#1a3060',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Otto_von_Bismarck_1885_%28cropped%29.jpg/250px-Otto_von_Bismarck_1885_%28cropped%29.jpg'
+  },
+  wilhelm: {
+    name: 'ヴィルヘルム1世', role: 'プロイセン国王', color: '#4a2000',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Kaiser_Wilhelm_I_%283x4_cropped%29.jpg/250px-Kaiser_Wilhelm_I_%283x4_cropped%29.jpg'
+  },
+  moltke: {
+    name: 'モルトケ', role: '参謀総長', color: '#2a4a20',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Portrait_of_Helmuth_von_Moltke_the_Elder_%28by_Carl_G%C3%BCnther%29_-_BNF_Gallica_%28cropped%29.jpg/250px-Portrait_of_Helmuth_von_Moltke_the_Elder_%28by_Carl_G%C3%BCnther%29_-_BNF_Gallica_%28cropped%29.jpg'
+  },
+  roon: {
+    name: 'ロオン', role: '陸軍大臣', color: '#3a1a00',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Count_Albrecht_von_Roon_circa_1870_%28cropped%29.jpg/250px-Count_Albrecht_von_Roon_circa_1870_%28cropped%29.jpg'
+  },
+  advisor: {
+    name: '顧問官', role: '', color: '#504030',
+    photo: null
+  }
+};
+
+const SILHOUETTE_SVG = `<svg viewBox="0 0 80 185" xmlns="http://www.w3.org/2000/svg">
+  <rect x="22" y="2" width="36" height="26" rx="3" fill="#3a3020" opacity=".6"/>
+  <rect x="12" y="26" width="56" height="7" rx="2" fill="#3a3020" opacity=".6"/>
+  <ellipse cx="40" cy="60" rx="19" ry="21" fill="#2a2015" opacity=".6"/>
+  <rect x="34" y="78" width="12" height="14" rx="3" fill="#2a2015" opacity=".6"/>
+  <path d="M6 185 L6 106 Q6 94 24 89 L40 85 L56 89 Q74 94 74 106 L74 185Z" fill="#2a2015" opacity=".6"/>
+  <path d="M28 89 L40 103 L52 89 L50 87 L40 100 L30 87Z" fill="#d8cca0" opacity=".3"/>
+</svg>`;
+
+// ================================================================
+// STATE
+// ================================================================
+let S = { passage:'title', showResult:false, pendingChoice:null, matches:0, log:[] };
+const TL = ['就任\n1862','普奥戦\n1866','勝利\n1866','普仏戦\n1870','帝国\n1871','完成'];
+
+// ================================================================
+// STORY DATA
+// ================================================================
+const P = {
+  intro: {
+    type:'story', tl:0,
+    year:'1862年9月（プロイセン・ベルリン）', title:'ビスマルク、プロイセン宰相に就任',
+    lines:[
+      {speaker:null, text:'あなたは<em>オットー・フォン・ビスマルク</em>。1862年9月、プロイセン王ヴィルヘルム1世の要請を受け、プロイセン宰相（首相）に就任した。'},
+      {speaker:null, text:'あなたが直面するのは深刻な政治的危機だ。国王は陸軍の大幅な拡張を望んでいるが、自由主義派が多数を占めるプロイセン議会は予算案を3年連続で否決している。'},
+      {speaker:'roon', text:'「閣下、陛下は議会が何と言おうと、軍備増強を断行したいとおっしゃっています。しかし憲法上、議会の承認なしに予算を執行できません」'},
+      {speaker:null, text:'ドイツはまだ統一されていない。バラバラな35の邦国に分かれ、オーストリアとプロイセンが主導権を争っている。プロイセン主導の統一を実現するには、強力な軍事力が必要だ。'},
+      {type:'status', title:'就任時の状況', items:[
+        '議会：軍拡予算を3年連続で否決（自由主義派が多数派）',
+        'ドイツ：35の邦国に分裂。オーストリア主導の「ドイツ連邦」が存在',
+        '国王：議会に屈することを「名誉の問題」と考え、退位も示唆している',
+        '財政：議会の承認なしに軍拡を強行すれば、憲法違反の批判が避けられない',
+      ]},
+    ],
+    next:'dec1'
+  },
+
+  dec1: {
+    type:'decision', tl:0,
+    tag:'決断①', year:'1862年9月', title:'議会対立と軍備増強の方針',
+    context:'プロイセン議会は軍拡予算を否決し続けている。宰相に就任したばかりのあなた（ビスマルク）はどう対処するか。',
+    choices:[
+      {label:'A', text:'「大問題は演説や多数決ではなく、鉄と血によって解決される」と宣言し、議会の承認なしに軍拡予算を強行執行する', isH:true,
+       pc:'「鉄血演説」で議会に宣戦布告した。自由主義派の怒りは頂点に達したが、国王の信任を確保し、陸軍改革は予定通り進んだ。',
+       ht:`<p>ビスマルクは「法の空白」論を根拠にした。議会と国王が予算を合意できない場合、政府は前年度予算で運営し続けるという解釈だ。「憲法違反かどうかは後で勝った方が決める」という徹底したリアリストの論理だった。</p><p class="result-katsura-sub">鉄血演説は後世、ビスマルク政治の象徴となった。軍拡は実現し、それがドイツ統一の軍事的基盤を作った。やがてデンマーク・オーストリア・フランスとの三つの戦争を経て、1871年にドイツ帝国が成立する。</p>`,
+       next:'sit1866'},
+      {label:'B', text:'自由主義派の要求を受け入れ、軍拡規模を縮小した妥協案を提示して議会の承認を得る', isH:false,
+       pc:'議会との妥協を試みたが、自由主義派は「立憲政治の原則」を盾に要求を通そうとした。国王の信任を失い、宰相の座を失うリスクが高まった。',
+       ht:`<p>議会多数派との妥協は、国王の信任を失うことを意味した。ヴィルヘルム1世は軍拡を「絶対に妥協できない問題」と考えており、妥協するくらいなら退位すると示唆していた。</p><p class="result-katsura-sub">ビスマルクは鉄血演説を選んだ。「法の空白」論を根拠に予算を強行執行し、国王の信任を保ちながら軍拡を進めた。</p>`,
+       next:'sit1866'},
+      {label:'C', text:'国王に議会解散を求め、新たな選挙で自由主義派の議席を減らすことを狙う', isH:false,
+       pc:'国王は解散を承認したが、新選挙でも自由主義派は多数派を維持した。問題の根本的解決にはならなかった。',
+       ht:`<p>解散選挙は劇薬だが、選挙結果を変えるのは難しかった。プロイセンの自由主義的市民層は根強く、選挙で議会構成を大幅に変えることはできなかった。</p><p class="result-katsura-sub">ビスマルクは鉄血演説を選んだ。「法の空白」論という大胆な憲法解釈で問題を突破した。</p>`,
+       next:'sit1866'},
+    ]
+  },
+
+  sit1866: {
+    type:'story', tl:1,
+    year:'1865〜1866年（プロイセン・ベルリン）', title:'オーストリアとの対決前夜',
+    lines:[
+      {speaker:null, text:'鉄血演説から3年。ロオン陸軍大臣とモルトケ参謀総長のもとでプロイセン陸軍の近代化は着々と進んだ。鉄道と電信を駆使した機動戦争が可能な軍隊が整いつつある。'},
+      {speaker:'moltke', text:'「閣下、1864年のデンマーク戦争でプロイセンとオーストリアは共同作戦を行いましたが、今やシュレースヴィヒ=ホルシュタイン問題でオーストリアとの対立が深刻化しています。決断の時が近づいています」'},
+      {speaker:null, text:'ビスマルクはすでに外交的布石を打っていた。イタリア王国との秘密同盟（1866年4月）だ。オーストリアに対して南北から圧力をかける構図が整った。あとはフランスの中立を確保できるかどうかだ。'},
+      {type:'status', title:'1866年の情勢', items:[
+        'プロイセン軍：モルトケ参謀本部が近代的な電撃戦術を準備済み',
+        'イタリア同盟：1866年4月にイタリアと軍事同盟を締結（対オーストリア）',
+        'フランス：ナポレオン3世は静観だが、プロイセンの急拡大は望まない',
+        'オーストリア：ドイツ連邦の盟主の座を維持しようとしているが、軍の近代化が遅れている',
+      ]},
+    ],
+    next:'dec2'
+  },
+
+  dec2: {
+    type:'decision', tl:1,
+    tag:'決断②', year:'1866年5月', title:'オーストリアとの戦争に踏み切るか',
+    context:'プロイセン主導のドイツ統一には、オーストリアを「ドイツ」から排除する必要がある。しかしオーストリアはハプスブルク家の大国だ。あなた（ビスマルク）はどう決断するか。',
+    choices:[
+      {label:'A', text:'イタリアとの同盟を活かし、オーストリアとの全面戦争を決断する', isH:true,
+       pc:'開戦を決断した。1866年6月、普奥戦争が始まった。プロイセン軍はケーニヒグレーツの戦いでオーストリア軍を壊滅させた。七週間での決着だった。',
+       ht:`<p>ビスマルクはイタリアとの同盟で南北の挟み撃ちを準備し、フランスには「補償を考慮する」と示唆して中立を取り付けた上で開戦した。モルトケの参謀本部が立案した電撃作戦は完璧で、わずか7週間で決着がついた。</p><p class="result-katsura-sub">普奥戦争（七週間戦争）はプロイセンの圧勝に終わり、ドイツ連邦は解体。ビスマルクは北ドイツ連邦を樹立した。南ドイツ諸邦はまだ独立していたが、統一の第一段階が完成した。</p>`,
+       next:'sitVictory'},
+      {label:'B', text:'戦争を避け、オーストリアと協議してドイツ連邦の改革案を提示する', isH:false,
+       pc:'改革案を提示したが、オーストリアは現状維持を望んでいた。交渉は膠着し、プロイセン主導の統一は遠のいた。',
+       ht:`<p>オーストリアはドイツ連邦の盟主として現状維持を望んでいた。外交的解決はオーストリアにとって「現状の承認」を意味し、プロイセンの主導権を自ら譲る理由がなかった。</p><p class="result-katsura-sub">ビスマルクは普奥戦争を選んだ。「鉄と血でしか解決できない」という就任時の言葉を実行したのだ。</p>`,
+       next:'sitVictory'},
+      {label:'C', text:'フランスとの同盟を模索し、オーストリアを二方向から挟み撃ちにする', isH:false,
+       pc:'フランスとの接触を試みたが、ナポレオン3世は均衡維持を望んでいた。プロイセンへの不信感を高めただけで、同盟は成立しなかった。',
+       ht:`<p>フランスとの同盟はプロイセンの自立性を損なうリスクがあった。ビスマルクはフランスを中立にとどめるだけでよく、あえて同盟を結ぶ必要はなかった。</p><p class="result-katsura-sub">ビスマルクはイタリアと同盟を結び、フランスには中立を確約させた上でオーストリアと開戦した。</p>`,
+       next:'sitVictory'},
+    ]
+  },
+
+  sitVictory: {
+    type:'story', tl:2,
+    year:'1866年7月（ボヘミア・ケーニヒグレーツ）', title:'大勝利——しかし、どこまで攻めるか',
+    lines:[
+      {speaker:null, text:'1866年7月3日、ケーニヒグレーツの戦い。プロイセン軍はオーストリア軍を壊滅的に打ち破った。わずか7週間での決着だ。'},
+      {speaker:'moltke', text:'「閣下、オーストリア軍の損害は甚大です。ウィーンへの道は開かれています。この機に追撃を続けましょう」'},
+      {speaker:'wilhelm', text:'「ビスマルク！今こそウィーンに入城し、ハプスブルクに屈辱を味わわせよ！これが勝者の権利だ！賠償金も、領土割譲も、すべて要求せよ！」'},
+      {speaker:null, text:'国王と軍部の将軍たちは興奮していた。しかしビスマルクは考えていた。<em>本当の目的は何か</em>——ドイツ統一か、それともオーストリアへの復讐か。将来の統一を考えれば、オーストリアを完全に叩き潰す必要はない。'},
+    ],
+    next:'dec3'
+  },
+
+  dec3: {
+    type:'decision', tl:2,
+    tag:'決断③', year:'1866年7月', title:'大勝利後の講和条件',
+    context:'プロイセンはオーストリアに圧勝した。国王と軍部はウィーン進軍と大規模な賠償・領土割譲を要求している。あなた（ビスマルク）はどう判断するか。',
+    choices:[
+      {label:'A', text:'国王を説得し、ウィーン進軍を中止。オーストリアへの要求を最小限に抑えた寛大な講和（プラハ条約）を結ぶ', isH:true,
+       pc:'国王と将軍たちの猛反発の中、ビスマルクは徹夜の説得を行った。1866年8月、プラハ条約が締結された。オーストリアはドイツ連邦から脱退するだけで、領土はほぼ無傷だった。',
+       ht:`<p>「オーストリアを将来の友にするために、今は敵として倒さない」——ビスマルクの論理だった。オーストリアを徹底的に弱体化させれば、フランスが介入するリスクが高まる。また、過度に屈辱を与えれば永続的な復讐心を生む。次の標的はフランスだった。</p><p class="result-katsura-sub">この寛大な講和は後に正しい判断だったことが証明された。普仏戦争（1870-71）では、オーストリアはフランスを支援せず中立を守った。ビスマルクがオーストリアとの「和解の種」を植えていたからだ。</p>`,
+       next:'sit1870'},
+      {label:'B', text:'国王・軍部の要求通り、ウィーンに進軍してオーストリアに大きな賠償と領土割譲を求める', isH:false,
+       pc:'ウィーン進軍を命じた。しかしフランスのナポレオン3世が介入を示唆し、長期化の可能性が高まった。プロイセンはそこまでの準備ができていなかった。',
+       ht:`<p>オーストリアを徹底的に叩けば、フランスが介入するリスクが高まる。またオーストリアに屈辱的な条件を課せば、将来のプロイセンの「潜在的同盟者」を永遠の敵にしてしまう。</p><p class="result-katsura-sub">ビスマルクは寛大な講和を選んだ。これが4年後の普仏戦争でオーストリアを中立に保つ外交基盤を作った。</p>`,
+       next:'sit1870'},
+      {label:'C', text:'オーストリアをドイツ連邦から追い出すだけにとどめ、南ドイツ諸邦の取り込みは棚上げにする', isH:false,
+       pc:'北ドイツ連邦を成立させたが、南ドイツ諸邦はプロイセンへの警戒から独立を保った。ドイツ統一の完成が遠のいた。',
+       ht:`<p>南ドイツ諸邦の統合には「フランスという共通の敵」が必要だった。ビスマルクは南ドイツ諸邦との秘密防衛条約を結び、フランスとの戦争でナショナリズムを煽って統一に引き込む計画を持っていた。</p><p class="result-katsura-sub">ビスマルクは寛大な講和を選んだ。次の段階は南ドイツを統一に引き込むための普仏戦争だった。</p>`,
+       next:'sit1870'},
+    ]
+  },
+
+  sit1870: {
+    type:'story', tl:3,
+    year:'1870年7月（プロイセン・ベルリン）', title:'エムス電報——フランスを動かせるか',
+    lines:[
+      {speaker:null, text:'普奥戦争から4年。北ドイツ連邦が成立し、ビスマルクはその宰相として権勢を振るっていた。しかしドイツ完全統一のためには、南ドイツ諸邦をまだ取り込めていない。'},
+      {speaker:null, text:'きっかけはスペイン王位継承問題だ。スペイン王位の候補者として、プロイセン王家（ホーエンツォレルン家）の親族が名前を挙げられた。フランスは激怒した。「フランスをプロイセンで包囲する気か！」'},
+      {speaker:'advisor', text:'「閣下、国王陛下がエムスでフランス大使と会談されました。電報が届いております」'},
+      {speaker:null, text:'電報には、国王がフランス大使の追加要求を穏当に断り、「もうこの件は話し合わない」と告げたという内容が書かれていた。外交上は特に問題ない穏当な報告だ。'},
+      {type:'status', title:'エムス電報受信時の状況', items:[
+        '電報の内容：国王がフランス大使を穏当に断った——それ自体は外交上問題ない',
+        'フランスの世論：「プロイセンの傲慢さ」に対する怒りがすでに高まっている',
+        'プロイセンの準備：モルトケ参謀本部はフランスとの戦争計画を完成させていた',
+        'ビスマルクの計算：南ドイツ諸邦はフランスとの戦争になれば必ずプロイセン側につく',
+      ]},
+    ],
+    next:'dec4'
+  },
+
+  dec4: {
+    type:'decision', tl:3,
+    tag:'決断④', year:'1870年7月13日', title:'エムス電報の扱い',
+    context:'エムス電報を手に、ビスマルクはフランスとの戦争を引き起こすかどうかの岐路に立っている。あなた（ビスマルク）はどう判断するか。',
+    choices:[
+      {label:'A', text:'電報の文章を短く圧縮・改変し、あたかも国王がフランス大使を侮辱したかのように見える内容にして新聞に公表する', isH:true,
+       pc:'改変した電報が新聞に掲載された翌日、フランスで沸騰した世論が政府を開戦に追い込んだ。1870年7月19日、フランスがプロイセンに宣戦布告した。',
+       ht:`<p>ビスマルクは後に回想録でこう語った——「この文章は原文と同じ意味だが、太鼓の音が違う。もはや後退の合図ではなく、突撃の号令のように聞こえる」。事実を変えずに印象を操作する——これが彼の手法だった。フランスに「侵略者」の役を演じさせることで、南ドイツ諸邦はプロイセン側についた。</p><p class="result-katsura-sub">普仏戦争（1870-71）はプロイセンの圧勝に終わった。1871年1月18日、フランスのヴェルサイユ宮殿の鏡の間でヴィルヘルム1世がドイツ皇帝として即位し、ドイツ帝国が成立した。</p>`,
+       next:'ending'},
+      {label:'B', text:'電報をそのまま公表し、外交的にフランスとの問題解決を図る', isH:false,
+       pc:'穏当な電報内容が公表されたが、フランスの強硬派はさらに「ホーエンツォレルン家が永遠に立候補しないと約束せよ」と要求を追加した。外交的解決は泥沼化した。',
+       ht:`<p>フランスの強硬派はスペイン王位問題の解決だけでは満足せず、要求をエスカレートさせた。外交的解決の道は予想以上に険しく、プロイセンは主導権を失うリスクがあった。</p><p class="result-katsura-sub">ビスマルクは電報の改変を選んだ。フランスが「侵略者」として開戦を選ぶ状況を演出したのだ。</p>`,
+       next:'ending'},
+      {label:'C', text:'電報を公表せず、スペイン王位候補をホーエンツォレルン家から外すことで問題を回避する', isH:false,
+       pc:'ホーエンツォレルン家の候補は辞退を表明した。しかしフランスはさらなる保証を求め、外交的摩擦は続いた。ドイツ統一の完成が先送りになった。',
+       ht:`<p>候補の辞退だけではフランスを満足させることができなかった。フランスの強硬派はさらなる言質を求め、問題は解決されなかった。ビスマルクにとって問題の先送りは解決ではなかった。</p><p class="result-katsura-sub">ビスマルクは電報の改変を選んだ。普仏戦争がドイツ統一の最終段階となり、1871年にドイツ帝国が成立した。</p>`,
+       next:'ending'},
+    ]
+  }
+};
+
+// ================================================================
+// VN SYSTEM
+// ================================================================
+let vn = { lines:[], idx:0, active:false, passageNext:'' };
+
+function onPhotoError(img) {
+  img.style.display = 'none';
+  const sil = document.createElement('div');
+  sil.className = 'char-silhouette';
+  sil.innerHTML = SILHOUETTE_SVG;
+  img.parentNode.appendChild(sil);
+}
+
+function buildCharHTML(char) {
+  if (!char) return '';
+  if (char.photo) {
+    return `<img class="char-photo" src="${char.photo}" alt="${char.name}" onerror="onPhotoError(this)">`;
+  }
+  return `<div class="char-silhouette">${SILHOUETTE_SVG}</div>`;
+}
+
+function startVN(p) {
+  vn.lines = p.lines;
+  vn.idx = 0;
+  vn.active = true;
+  vn.passageNext = p.next;
+  showVNLine();
+  showClickHint();
+}
+
+function showVNLine() {
+  if (vn.idx >= vn.lines.length) { endVN(); return; }
+  const line = vn.lines[vn.idx];
+  const charEl  = document.getElementById('vnChar');
+  const nameEl  = document.getElementById('vnName');
+  const textEl  = document.getElementById('vnText');
+  const arrowEl = document.getElementById('vnArrow');
+  const stageEl = document.getElementById('vnStage');
+
+  const oldOv = stageEl ? stageEl.querySelector('.vn-status-overlay') : null;
+  if (oldOv) oldOv.remove();
+
+  if (line.type === 'status') {
+    if (charEl) charEl.classList.add('out');
+    if (nameEl) nameEl.className = 'vn-name hidden';
+    if (textEl) textEl.textContent = '';
+    if (stageEl) {
+      const ov = document.createElement('div');
+      ov.className = 'vn-status-overlay';
+      ov.innerHTML = `<div class="vso-title">${line.title}</div>` +
+        `<div class="vso-grid">` +
+        line.items.map(i => `<div class="vso-item">${i}</div>`).join('') +
+        `</div>`;
+      stageEl.appendChild(ov);
+    }
+    if (arrowEl) arrowEl.className = 'vn-arrow';
+    return;
+  }
+
+  const char = line.speaker ? CHARS[line.speaker] : null;
+
+  if (charEl) {
+    if (char) {
+      if (charEl.dataset.speaker !== line.speaker) {
+        charEl.dataset.speaker = line.speaker;
+        charEl.classList.add('out');
+        setTimeout(() => {
+          charEl.innerHTML = buildCharHTML(char);
+          charEl.classList.remove('out');
+        }, 220);
+      } else {
+        charEl.classList.remove('out');
+      }
+    } else {
+      charEl.classList.add('out');
+      charEl.dataset.speaker = '';
+    }
+  }
+
+  if (nameEl) {
+    if (char) {
+      nameEl.className = 'vn-name';
+      nameEl.textContent = char.name;
+      nameEl.style.background = char.color || '#2a1a0a';
+      nameEl.style.color = '#f0e6d0';
+    } else {
+      nameEl.className = 'vn-name hidden';
+    }
+  }
+
+  if (textEl) startTyping(textEl, line.text);
+  if (arrowEl) arrowEl.className = 'vn-arrow pause';
+}
+
+function advanceVN() {
+  if (!vn.active) return;
+  if (isTyping()) { skipTyping(); return; }
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow';
+  vn.idx++;
+  showVNLine();
+}
+
+function endVN() {
+  vn.active = false;
+  hideClickHint();
+  const btn = document.getElementById('vnNextBtn');
+  if (btn) btn.classList.remove('hidden-btn');
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow hidden';
+}
+
+// ================================================================
+// TYPEWRITER
+// ================================================================
+const TYPE = { timer:null, el:null, fullHtml:'', plain:'', idx:0 };
+const TYPE_SPEED = 36;
+
+function startTyping(el, html) {
+  clearInterval(TYPE.timer);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  TYPE.plain = tmp.textContent;
+  TYPE.fullHtml = html;
+  TYPE.el = el;
+  TYPE.idx = 0;
+  el.textContent = '';
+  TYPE.timer = setInterval(() => {
+    TYPE.idx++;
+    if (TYPE.idx >= TYPE.plain.length) {
+      clearInterval(TYPE.timer);
+      TYPE.timer = null;
+      el.innerHTML = TYPE.fullHtml;
+      const arrowEl = document.getElementById('vnArrow');
+      if (arrowEl) arrowEl.className = 'vn-arrow';
+    } else {
+      el.textContent = TYPE.plain.substring(0, TYPE.idx);
+    }
+  }, TYPE_SPEED);
+}
+
+function skipTyping() {
+  if (!TYPE.timer) return;
+  clearInterval(TYPE.timer);
+  TYPE.timer = null;
+  if (TYPE.el) TYPE.el.innerHTML = TYPE.fullHtml;
+  const arrowEl = document.getElementById('vnArrow');
+  if (arrowEl) arrowEl.className = 'vn-arrow';
+}
+function isTyping() { return !!TYPE.timer; }
+
+// ================================================================
+// TIMER
+// ================================================================
+const TIMER_TOTAL = 60;
+const CIRC = 2 * Math.PI * 22;
+let timerState = { remaining:TIMER_TOTAL, paused:false, id:null };
+
+function startTimer() {
+  clearInterval(timerState.id);
+  timerState.remaining = TIMER_TOTAL;
+  timerState.paused = false;
+  timerState.id = setInterval(() => {
+    if (timerState.paused) return;
+    timerState.remaining = Math.max(0, timerState.remaining - 1);
+    renderTimer();
+    if (timerState.remaining === 0) {
+      clearInterval(timerState.id);
+      const el = document.getElementById('timerCircle');
+      if (el) el.classList.add('done');
+    }
+  }, 1000);
+  renderTimer();
+}
+function stopTimer() { clearInterval(timerState.id); timerState.id = null; }
+function toggleTimerPause() {
+  timerState.paused = !timerState.paused;
+  const el = document.getElementById('timerCircle');
+  if (el) el.classList.toggle('paused', timerState.paused);
+}
+function resetTimerBtn(e) { if (e) e.stopPropagation(); stopTimer(); startTimer(); }
+function renderTimer() {
+  const el = document.getElementById('timerCircle'); if (!el) return;
+  const m = Math.floor(timerState.remaining / 60), s = timerState.remaining % 60;
+  const t = el.querySelector('.timer-min'); if (t) t.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  const ring = el.querySelector('.timer-progress'); if (ring) ring.style.strokeDashoffset = CIRC * (1 - timerState.remaining / TIMER_TOTAL);
+  el.classList.toggle('warning', timerState.remaining > 0 && timerState.remaining <= 30);
+}
+
+// ================================================================
+// FULLSCREEN / HINTS
+// ================================================================
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  else document.exitFullscreen().catch(() => {});
+}
+function showClickHint() { document.getElementById('clickHint').classList.add('show'); }
+function hideClickHint() { document.getElementById('clickHint').classList.remove('show'); }
+
+// ================================================================
+// KEYBOARD + CLICK
+// ================================================================
+document.addEventListener('click', e => {
+  if (e.target.closest('button, a')) return;
+  if (vn.active) advanceVN();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); return; }
+  if ((e.key === ' ' || e.key === 'Enter') && vn.active) { e.preventDefault(); advanceVN(); return; }
+  const p = P[S.passage];
+  if (p && p.type === 'decision' && !S.showResult) {
+    const map = {a:0,A:0,'1':0,b:1,B:1,'2':1,c:2,C:2,'3':2};
+    if (e.key in map && map[e.key] < p.choices.length) choose(map[e.key]);
+  }
+});
+
+// ================================================================
+// RENDER
+// ================================================================
+function triggerAnim() {
+  const app = document.getElementById('app');
+  app.classList.remove('page-enter');
+  void app.offsetWidth;
+  app.classList.add('page-enter');
+}
+
+function render() {
+  stopTimer();
+  hideClickHint();
+  clearInterval(TYPE.timer); TYPE.timer = null;
+  vn.active = false;
+  const app = document.getElementById('app');
+  const id = S.passage;
+
+  if (id === 'title')  { app.innerHTML = renderTitle();  triggerAnim(); return; }
+  if (id === 'ending') { app.innerHTML = renderEnding(); triggerAnim(); window.scrollTo(0,0); return; }
+
+  const p = P[id];
+  if (!p) return;
+
+  if (p.type === 'story') {
+    app.innerHTML = renderStory(p);
+    triggerAnim();
+    window.scrollTo(0,0);
+    startVN(p);
+  }
+  if (p.type === 'decision') {
+    app.innerHTML = S.showResult ? renderResult(p) : renderDecision(p);
+    triggerAnim();
+    window.scrollTo(0,0);
+    if (!S.showResult) {
+      startTimer();
+      setTimeout(() => {
+        document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+          setTimeout(() => btn.classList.add('in'), i * 160);
+        });
+      }, 100);
+    }
+  }
+}
+
+function header(tl) {
+  const items = TL.map((t, i) => {
+    const cls = i < tl ? 'past' : i === tl ? 'active' : '';
+    return `<div class="tl-item ${cls}">${t.replace('\n','<br>')}</div>`;
+  }).join('');
+  return `<div class="game-header"><div class="game-label">歴史シミュレーション</div></div><div class="timeline">${items}</div>`;
+}
+
+function renderTitle() {
+  const bsm = CHARS.bismarck;
+  return `<div class="title-screen">
+<div class="title-deco">
+  <div class="title-deco-line"></div>
+  <div class="title-kamon">⚜</div>
+  <div class="title-deco-line"></div>
+</div>
+<div class="title-main">ビスマルクと<br>ドイツ統一の選択</div>
+<div class="title-sub">1862 ─── 1871</div>
+<div class="title-portrait-wrap">
+  <img src="${bsm.photo}" alt="ビスマルク" onerror="this.style.display='none'">
+</div>
+<div class="title-desc">
+あなたはプロイセン宰相・<strong>オットー・フォン・ビスマルク</strong>として、19世紀ヨーロッパ最大の政治課題に挑む。<br>
+「鉄と血」によるドイツ統一をめぐる<strong>4つの決断</strong>を、実際の歴史的制約の中で体験しよう。<br><br>
+まず自分で選択し、そのあとでビスマルクが実際にどう判断したか──その理由とともに明らかになる。
+</div>
+<div class="title-note">
+【学習のポイント】正解は「ビスマルクが選んだ選択肢」ではない。なぜその選択が当時の状況で合理的に見えたかを考えることが目的。<br>
+クリック / スペース で台詞を送る　　A B C で選択　　F で全画面
+</div>
+<button class="start-btn" onclick="gotoPassage('intro')">は じ め る</button>
+<div class="page-footer">人物写真：Wikimedia Commons / パブリックドメイン</div>
+</div>`;
+}
+
+function renderStory(p) {
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.title}</div></div>
+<div class="vn-scene">
+  <div class="vn-stage" id="vnStage">
+    <div class="vn-char out" id="vnChar" data-speaker=""></div>
+  </div>
+  <div class="photo-credit">写真：Wikimedia Commons / Public Domain</div>
+  <div class="vn-box">
+    <div class="vn-name hidden" id="vnName"></div>
+    <div class="vn-text" id="vnText"></div>
+    <div class="vn-arrow" id="vnArrow">▼</div>
+  </div>
+</div>
+<button class="continue-btn hidden-btn" id="vnNextBtn" onclick="gotoPassage('${p.next}')">次の局面へ →</button>`;
+}
+
+function renderDecision(p) {
+  const ch = p.choices.map((c, i) =>
+    `<button class="choice-btn" data-label="${c.label}" onclick="choose(${i})">${c.text}</button>`
+  ).join('');
+  const kbLabels = p.choices.map(c => c.label).join(' / ');
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.title}</div></div>
+<div class="decision-tag">${p.tag}</div>
+<div class="decision-context">${p.context}</div>
+<div class="timer-area">
+  <div class="timer-circle" id="timerCircle" onclick="toggleTimerPause()" title="クリックで一時停止">
+    <svg class="timer-ring" viewBox="0 0 64 64"><circle class="timer-bg" cx="32" cy="32" r="22"/><circle class="timer-progress" cx="32" cy="32" r="22"/></svg>
+    <div class="timer-overlay"><div class="timer-min">${Math.floor(TIMER_TOTAL/60)}:${String(TIMER_TOTAL%60).padStart(2,'0')}</div><div class="timer-sub">審議</div></div>
+  </div>
+  <div class="timer-desc"><div class="timer-desc-title">グループ審議タイマー（${TIMER_TOTAL>=60?Math.floor(TIMER_TOTAL/60)+'分':TIMER_TOTAL+'秒'}）</div><div class="timer-desc-hint">クリックで一時停止</div></div>
+  <button class="timer-reset-btn" onclick="resetTimerBtn(event)">↺ リセット</button>
+</div>
+<div class="choices">${ch}</div>
+<div class="keyboard-hint">キーボード ${kbLabels} で選択可</div>`;
+}
+
+function renderResult(p) {
+  const c = S.pendingChoice, isM = c.isH;
+  const hist = p.choices.find(x => x.isH);
+
+  const matchBanner = isM
+    ? `<div class="match-banner match"><span class="match-icon">✓</span> ビスマルクと同じ選択をしました</div>`
+    : `<div class="match-banner mismatch"><span class="match-icon">△</span> ビスマルクの選択とは異なります</div>`;
+
+  const bodyHtml = c.ht.replace(/<p class="result-history-sub">/g, '<p class="result-katsura-sub">');
+
+  return `${header(p.tl)}
+<div class="scene-header"><div class="scene-year">${p.year}</div><div class="scene-title">${p.tag} の結果</div></div>
+
+<div class="result-your">
+  <div class="result-your-label">あなたの選択</div>
+  <div class="result-your-text">「${c.text}」</div>
+  <div class="result-consequence">${c.pc}</div>
+</div>
+
+${matchBanner}
+
+<div class="result-katsura ${isM ? 'is-match' : ''}">
+  <div class="result-katsura-header">
+    <span class="result-katsura-tag">${isM ? '史実と一致' : '史実の判断'}</span>
+    <div class="result-katsura-title">ビスマルクが実際に選んだこと</div>
+  </div>
+  <div class="result-katsura-choice">${hist.text}</div>
+  <div class="result-katsura-why">なぜその選択か？</div>
+  <div class="result-katsura-body">${bodyHtml}</div>
+</div>
+
+<button class="continue-btn" onclick="next()">次の局面へ →</button>`;
+}
+
+function renderEnding() {
+  const m = S.matches;
+  const evals = [
+    'ほとんどの局面でビスマルクと異なる判断をした。現代の価値観から見ると、当時の「鉄と血」の論理はどう見えるだろうか。',
+    '多くの局面でビスマルクと異なる判断をした。当時の制約がどう選択肢を絞っていたか振り返ろう。',
+    '半数の局面でビスマルクと同じ判断をした。判断が分かれた局面のリアリズムの論理を考えてみよう。',
+    'おおむねビスマルクの論理を追体験した。19世紀の国家建設期の冷徹な合理性をよく理解している。',
+    'ビスマルクの戦略論理を完全に追体験した。「目的のためなら手段を選ばない」リアリズムの本質を体感した。'
+  ];
+  const logHtml = S.log.map(r => `
+<div class="choice-record">
+  <span class="record-badge ${r.isH ? 'match' : 'mismatch'}">${r.isH ? '一致' : '相違'}</span>
+  <div><div class="record-decision">${r.dec}</div><div class="record-text">${r.text}</div></div>
+</div>`).join('');
+
+  return `${header(5)}
+<div class="scene-header"><div class="scene-year">1871年1月18日 — ヴェルサイユ宮殿・鏡の間</div><div class="scene-title">ドイツ帝国の誕生、そしてその影</div></div>
+<div class="narration">
+<p>1871年1月18日、フランスのヴェルサイユ宮殿の鏡の間。プロイセン国王ヴィルヘルム1世がドイツ皇帝として即位した。<span class="emphasis">ドイツ帝国</span>の誕生だ。かつてバラバラな35の邦国に分かれていたドイツが、ひとつの統一国家になった瞬間だった。</p>
+<p>宰相ビスマルクは、わずか9年で不可能と思われたことを成し遂げた。デンマーク戦争（1864年）、普奥戦争（1866年）、普仏戦争（1870年）——三つの戦争を通じて「鉄と血」で統一を実現したのだ。</p>
+</div>
+
+<div class="ending-section"><div class="ending-section-title">▍ 統一の光と影</div>
+<div class="narration">
+<p>しかし、この「鉄と血」による統一には深い影が宿っていた。ビスマルクはフランスに対して、オーストリアとは全く異なる態度をとった。アルザス=ロレーヌを割譲させ、50億フランという巨額の賠償金を課したのだ。</p>
+<p>フランスの復讐心——「<span class="emphasis">リヴァンシュ（雪辱）</span>」——はドイツ統一の瞬間から育ち始めた。ビスマルク自身はその後も巧みな外交でヨーロッパの均衡を維持したが、1890年に退任すると後継者たちにその技量はなかった。この傷がやがて<span class="emphasis">第一次世界大戦</span>の引き金のひとつとなる。</p>
+</div></div>
+
+<div class="ending-section"><div class="ending-section-title">▍ あなたの選択の記録</div>
+<div class="score-display">
+  <div class="score-num-wrap">
+    <div><span class="score-num">${m}</span><span class="score-denom"> / 4</span></div>
+    <div class="score-label" style="text-align:center;margin-top:6px;">ビスマルクと同じ選択</div>
+  </div>
+  <div class="score-eval">${evals[Math.min(m,4)]}</div>
+</div>
+${logHtml}</div>
+
+<div class="ending-section">
+<div class="ending-section-title">▍ この体験を通じて得られる歴史的見方・考え方</div>
+<div class="concept-intro">
+この4つの概念は、ドイツ統一だけでなく、あらゆる国民国家形成の歴史と現代の国際政治を分析するための視点として使える。
+</div>
+<div class="concept-grid">
+  <div class="concept-card">
+    <div class="concept-tag">権力と政治哲学</div>
+    <div class="concept-title">鉄血政策——リアリズムの論理</div>
+    <div class="concept-body">「大問題は演説や多数決ではなく、鉄と血によって解決される」。19世紀の国家建設は理想論ではなく軍事力と外交の組み合わせで進んだ。この論理は現代の国際政治にも生きている。</div>
+  </div>
+  <div class="concept-card">
+    <div class="concept-tag">国民統合のメカニズム</div>
+    <div class="concept-title">外敵とナショナリズム</div>
+    <div class="concept-body">ビスマルクは反フランス感情を意図的に利用し、南ドイツ諸邦をドイツ統一に引き込んだ。「共通の敵」が国民をひとつにまとめる——この構造は国民国家が生まれた時代から今日まで繰り返されている。</div>
+  </div>
+  <div class="concept-card">
+    <div class="concept-tag">勝利の使い方</div>
+    <div class="concept-title">勝者の節制と過剰な勝利</div>
+    <div class="concept-body">ケーニヒグレーツ後の寛大な講和と、普仏戦争後の過酷な条件——ビスマルクは対象によって使い分けた。「将来の友」と扱うか「永遠の敵」を作るか。その選択が長期的な歴史を決定づけた。</div>
+  </div>
+  <div class="concept-card">
+    <div class="concept-tag">情報と政治</div>
+    <div class="concept-title">情報操作と世論——エムス電報の教訓</div>
+    <div class="concept-body">「事実に基づきながら意図的に編集された情報」が世論を動かし、戦争を引き起こせる。ビスマルクのエムス電報改ざんは、現代のメディア操作・フェイクニュースの原型でもある。</div>
+  </div>
+</div>
+</div>
+
+<button class="restart-btn" onclick="restart()">もう一度プレイする</button>
+<div class="page-footer">人物写真：Wikimedia Commons / パブリックドメイン ─ 教育目的利用</div>`;
+}
+
+// ================================================================
+// GAME LOGIC
+// ================================================================
+function gotoPassage(id) { S.passage = id; S.showResult = false; render(); }
+function choose(i) {
+  const p = P[S.passage], c = p.choices[i];
+  S.pendingChoice = c; S.showResult = true;
+  if (c.isH) S.matches++;
+  S.log.push({ dec: p.tag + ' ' + p.title, text: c.text, isH: c.isH });
+  stopTimer(); render();
+}
+function next() { S.passage = S.pendingChoice.next; S.showResult = false; S.pendingChoice = null; render(); }
+function restart() { S = { passage:'title', showResult:false, pendingChoice:null, matches:0, log:[] }; render(); }
+
+render();
+</script>
+</body>
+</html>
