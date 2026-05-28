@@ -324,17 +324,19 @@ def now() -> str:
     return datetime.now().strftime("%H:%M:%S")
 
 
-def watch_loop():
+def watch_loop(subject: str | None = None):
+    label = f"教科書/{subject}/" if subject else "教科書/"
     print("=" * 60)
     print("  教科書画像 → 一問一答カード 自動生成ツール")
+    if subject:
+        print(f"  科目: {subject}  （{label}）")
     print()
-    print("  【入力】教科書/<授業回フォルダ>/ に画像を入れる  ← プロジェクトルート直下")
+    print(f"  【入力】{label}<授業回フォルダ>/ に画像を入れる")
     print("  【出力】output/<授業回フォルダ>/ に Word が出力される")
     print()
-    print("  5分ごとに input/ を監視します。Ctrl+C で停止。")
+    print("  5分ごとに監視します。Ctrl+C で停止。")
     print("=" * 60)
 
-    # 起動時に input/ のフォルダ一覧を表示
     session_dirs = sorted(d for d in INPUT_DIR.iterdir() if d.is_dir())
     if session_dirs:
         print(f"\n  検出した授業回フォルダ: {len(session_dirs)}件")
@@ -342,8 +344,8 @@ def watch_loop():
             imgs = [f for f in d.iterdir() if f.is_file() and _is_image(f)]
             print(f"    {d.name}/  ({len(imgs)}枚の画像)")
     else:
-        print(f"\n  [注意] 教科書/ に授業回フォルダがありません。")
-        print(f"  例: 教科書/01_日露戦争/ フォルダを作成して画像を入れてください。")
+        print(f"\n  [注意] {label} に授業回フォルダがありません。")
+        print(f"  例: {label}01_日露戦争/ フォルダを作成して画像を入れてください。")
 
     print()
 
@@ -362,9 +364,21 @@ def watch_loop():
 # ─── メイン ─────────────────────────────────────────
 
 def main():
-    INPUT_DIR.mkdir(exist_ok=True)
+    import sys
+    global INPUT_DIR
+
+    # --subject <科目名> で対象フォルダを絞り込む
+    # 例: python generate_anki.py --subject 歴史総合
+    subject = None
+    if "--subject" in sys.argv:
+        idx = sys.argv.index("--subject")
+        if idx + 1 < len(sys.argv):
+            subject = sys.argv[idx + 1]
+            INPUT_DIR = BASE_DIR.parent / "教科書" / subject
+
+    INPUT_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(exist_ok=True)
-    watch_loop()
+    watch_loop(subject)
 
 
 if __name__ == "__main__":

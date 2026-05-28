@@ -660,15 +660,28 @@ def main():
         sprint("  .env ファイルに ANTHROPIC_API_KEY=sk-ant-... を記入してください。")
         sys.exit(1)
 
-    INPUT_DIR.mkdir(exist_ok=True)
+    # --subject <科目名> で対象フォルダを絞り込む
+    # 例: python generate.py --subject 歴史総合
+    subject = None
+    if "--subject" in sys.argv:
+        idx = sys.argv.index("--subject")
+        if idx + 1 < len(sys.argv):
+            subject = sys.argv[idx + 1]
+
+    input_dir = INPUT_DIR / subject if subject else INPUT_DIR
+    if subject:
+        sprint(f"\n  科目: {subject}  （教科書/{subject}/）")
+
+    input_dir.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    session_dirs = [d for d in sorted(INPUT_DIR.iterdir()) if d.is_dir()]
+    session_dirs = [d for d in sorted(input_dir.iterdir()) if d.is_dir()]
     if not session_dirs:
-        sprint("\n[注意] 教科書/ に授業回フォルダがありません。")
-        sprint("  例: 教科書/01_産業革命/ フォルダを作成し、教科書画像（4枚程度）を入れてください。")
+        base = f"教科書/{subject}/" if subject else "教科書/"
+        sprint(f"\n[注意] {base} に授業回フォルダがありません。")
+        sprint(f"  例: {base}01_産業革命/ フォルダを作成し、教科書画像（4枚程度）を入れてください。")
         sprint("\nフォルダ構造:")
-        sprint("  教科書/  ← プロジェクトルート直下")
+        sprint(f"  {base}  ← プロジェクトルート直下")
         sprint("    01_産業革命/")
         sprint("      p001.jpg")
         sprint("      p002.jpg")
