@@ -41,14 +41,14 @@ body {
 }
 .scene-year {
   background: #c8a84b; color: #1a0800;
-  padding: 0 22px; font-size: 13px; font-weight: bold; letter-spacing: 1px;
+  padding: 0 24px; font-size: 16px; font-weight: bold; letter-spacing: 1px;
   display: flex; align-items: center; justify-content: center;
-  white-space: nowrap; min-width: 120px; text-align: center; line-height: 1.5;
+  white-space: nowrap; min-width: 130px; text-align: center; line-height: 1.5;
 }
 .scene-title {
   background: #2a1a0a; color: #f0e6d0;
-  font-size: 20px; font-weight: bold; letter-spacing: 1px;
-  padding: 18px 26px; display: flex; align-items: center;
+  font-size: 24px; font-weight: bold; letter-spacing: 1px;
+  padding: 20px 28px; display: flex; align-items: center;
 }
 
 /* ── VN scene wrapper ── */
@@ -102,10 +102,10 @@ body {
   animation: fadeIn .3s ease both;
 }
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-.vso-title { font-size: 12px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #c8a84b55; }
-.vso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px; align-content: start; }
-.vso-item { font-size: 15px; color: #e0d0b0; padding: 6px 0 6px 22px; position: relative; line-height: 1.7; }
-.vso-item::before { content: '◆'; position: absolute; left: 0; color: #c8a84b; font-size: 10px; top: 9px; }
+.vso-title { font-size: 15px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid #c8a84b55; }
+.vso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 48px; align-content: start; }
+.vso-item { font-size: 19px; color: #e0d0b0; padding: 6px 0 6px 28px; position: relative; line-height: 1.8; }
+.vso-item::before { content: '◆'; position: absolute; left: 0; color: #c8a84b; font-size: 11px; top: 11px; }
 @media (max-width: 620px) { .vso-grid { grid-template-columns: 1fr; } }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -733,7 +733,7 @@ function renderStory(passage) {
   if (isStatus) {
     const itemsHtml = (line.items || []).map(t => `<div class="vso-item">${t}</div>`).join('');
     stageInner += `<div class="vn-status-overlay"><div class="vso-title">── ${line.title} ──</div><div class="vso-grid">${itemsHtml}</div></div>`;
-    boxContent = `<div class="vn-name hidden"></div><div class="vn-text" style="font-size:14px;color:#907850;letter-spacing:2px;">（状況確認）</div><div class="vn-arrow">▼</div>`;
+    // boxContentなし：ダイアログボックスを表示しない
   } else {
     const c = speakerKey && CHARS[speakerKey];
     const nameHtml = c
@@ -752,8 +752,8 @@ function renderStory(passage) {
       <div class="scene-title">${passage.title || ''}</div>
     </div>
     <div class="vn-scene page-enter" onclick="advanceLine()">
-      <div class="vn-stage" style="background:${stageBg}">${stageInner}</div>
-      <div class="vn-box">${boxContent}</div>
+      <div class="vn-stage" style="background:${stageBg};${isStatus ? 'height:540px' : ''}">${stageInner}</div>
+      ${isStatus ? '' : `<div class="vn-box">${boxContent}</div>`}
     </div>
     <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ ▶</button>`;
 }
