@@ -234,16 +234,31 @@ body {
 .title-deco-line:first-child { background: linear-gradient(90deg, transparent, #c8a84b); }
 .title-deco-line:last-child  { background: linear-gradient(90deg, #c8a84b, transparent); }
 .title-kamon { font-size: 24px; color: #8b2020; opacity: .8; }
-.title-main { font-size: 30px; line-height: 1.5; margin-bottom: 8px; letter-spacing: 2px; color: #1e1208; }
-.title-sub { font-size: 12px; color: #907850; letter-spacing: 6px; margin-bottom: 30px; }
-.title-portrait-wrap {
-  width: 120px; margin: 0 auto 26px; overflow: hidden;
-  border: 2px solid #c8a84b; border-radius: 3px; box-shadow: 0 6px 24px rgba(42,26,10,.25);
+.title-main { font-size: 34px; line-height: 1.4; margin-bottom: 10px; letter-spacing: 2px; color: #1e1208; }
+.title-sub { font-size: 13px; color: #907850; letter-spacing: 6px; margin-bottom: 24px; }
+
+/* ── Title Hero（キャラ大型表示） ── */
+.title-hero {
+  width: 100%; height: 380px;
+  display: flex; align-items: flex-end; justify-content: center;
+  border-radius: 4px; overflow: hidden; position: relative;
+  box-shadow: 0 4px 24px rgba(42,26,10,.22); border: 1px solid #c8a84b44;
 }
-.title-portrait-wrap img { width: 100%; display: block; }
-.title-portrait-sil { height: 120px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
-.title-portrait-sil svg { height: 100px; width: auto; opacity: .55; }
-.title-desc { font-size: 14px; color: #2a1a08; line-height: 2; max-width: 520px; margin: 0 auto 16px; text-align: left; background: #faf6ec; padding: 20px 24px; border: 1px solid #c8a84b44; border-radius: 3px; }
+.title-hero::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,240,200,.12) 0%, transparent 65%),
+    linear-gradient(0deg, rgba(0,0,0,.28) 0%, transparent 40%);
+}
+.title-char-photo {
+  height: 370px; width: auto; max-width: 300px;
+  object-fit: cover; object-position: top center;
+  border-radius: 4px 4px 0 0;
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,.55));
+  display: block; position: relative; z-index: 1;
+}
+.title-content { text-align: center; padding: 32px 20px 20px; }
+.title-desc { font-size: 15px; color: #2a1a08; line-height: 1.9; max-width: 520px; margin: 0 auto 18px; text-align: left; background: #faf6ec; padding: 20px 24px; border: 1px solid #c8a84b44; border-radius: 3px; }
 .title-note { font-size: 11px; color: #907850; margin-bottom: 36px; line-height: 2; }
 .start-btn { background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b; padding: 15px 60px; font-family: inherit; font-size: 15px; cursor: pointer; letter-spacing: 5px; border-radius: 2px; transition: all .2s; }
 .start-btn:hover { background: #c8a84b; color: #1e1208; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,168,75,.3); }
@@ -615,23 +630,28 @@ function render() {
 // ---- Title ----
 function renderTitle() {
   const c = CHARS.protagonist;
-  const portrait = c && c.photo
-    ? `<div class="title-portrait-wrap"><img src="${c.photo}" alt="${c.name}" onerror="this.parentNode.innerHTML='<div class=title-portrait-sil>${SILHOUETTE_SVG.replace(/'/g,'"')}</div>'"></div>`
-    : `<div class="title-portrait-wrap" style="background:${c ? c.bg : '#5a4a30'}"><div class="title-portrait-sil">${SILHOUETTE_SVG}</div></div>`;
+  const heroContent = c && c.photo
+    ? `<img class="title-char-photo" src="${c.photo}" alt="${c.name}">`
+    : `<div class="char-silhouette" style="height:360px;width:160px;display:flex;align-items:flex-end;justify-content:center">${SILHOUETTE_SVG}</div>`;
   document.getElementById('app').innerHTML = `
     <div class="game-header page-enter">
       <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
       ${tlHtml()}
     </div>
-    <div class="title-screen page-enter">
+    <div class="title-hero page-enter" style="background:${c ? c.bg : '#5a4a30'}">
+      ${heroContent}
+    </div>
+    <div class="title-content page-enter">
       <div class="title-deco">
         <div class="title-deco-line"></div>
         <div class="title-kamon">✦</div>
         <div class="title-deco-line"></div>
       </div>
-      ${portrait}
       <h1 class="title-main">${SCENARIO_TITLE}</h1>
       <div class="title-sub">歴史の分岐点を追体験する</div>
+      <div class="title-desc">
+        【ここにシナリオの説明文を入れる。主人公・時代・テーマを1〜2文で紹介する。】
+      </div>
       <div class="title-note">選択肢はすべて当時の視点で合理的に見えます。<br>史実と同じ判断を探しながら、当時の制約を体感してください。</div>
       <button class="start-btn" onclick="goNext('scene01')">シミュレーション開始</button>
     </div>`;
