@@ -18,6 +18,13 @@ claude開発/
 │   └── commands/           ← スキル定義（スライド作成・一問一答・授業自動生成・確認テスト）
 ├── CLAUDE.md               ← この指示書
 │
+├── 教科書/                 ← 教科書画像の一元管理フォルダ（全ツール共通の入力元）
+│   ├── 歴史総合/           ← 歴史総合の教科書画像（試験範囲フォルダごとに整理）
+│   │   └── 第N回_タイトル/ ← 教科書画像 (.jpg/.png)
+│   ├── 公共/               ← 公共の教科書画像（試験範囲フォルダごとに整理）
+│   │   └── 第N回_タイトル/
+│   └── 分析キャッシュ/     ← Claude Vision による画像分析結果 (.json)
+│
 ├── スライド作成/            ← 対話型AI → 授業スライド .pptx 自動生成（歴史総合・公共）
 │   ├── input/
 │   │   ├── texts/          ← 教科書テキスト（.txt または .docx）
@@ -30,35 +37,29 @@ claude開発/
 │
 ├── テスト問題作成/          ← 教科書画像 → 4択テスト問題 Word出力
 │   ├── input/
-│   │   ├── textbook_images/  ← 教科書画像 (.jpg/.png)
-│   │   ├── past_exams/       ← 過去問ファイル
-│   │   └── worksheets/       ← ワークシート
+│   │   ├── past_exams/     ← 過去問ファイル
+│   │   └── worksheets/     ← ワークシート
 │   ├── output/             ← 生成されたWord（サブフォルダで試験名管理）
-│   ├── exam_config.yaml    ← テスト設定
+│   ├── exam_config.yaml    ← テスト設定（使用する教科書フォルダのパスをここで指定）
 │   ├── generate.py
 │   └── requirements.txt
 │
 ├── 一問一答/               ← 教科書画像 → 一問一答カード Word + Google Forms 出力
-│   ├── input/
-│   │   ├── unit01.txt        ← テキスト形式の入力
-│   │   └── 01_（授業回名）/  ← 教科書画像 (.jpg/.png) を授業回ごとに入れる
 │   ├── output/
-│   │   └── 01_（授業回名）/  ← input と同名フォルダに Word が自動出力される
-│   ├── generate_anki.py    ← 一問一答カード生成
+│   │   └── 第N回_タイトル/ ← 教科書/以下と同名フォルダに Word が自動出力される
+│   ├── generate_anki.py    ← 一問一答カード生成（教科書/ 以下のフォルダを参照）
 │   ├── generate_quiz.py    ← Google Forms クイズ生成
 │   ├── gas_anki.js         ← Google Apps Script（Anki連携）
 │   ├── gas_quiz.js         ← Google Apps Script（クイズ連携）
 │   └── requirements.txt
 │
 ├── 授業自動生成/           ← 教科書画像 → 一問一答カード・テスト問題を一括生成
-│   ├── input/
-│   │   └── 第N回_タイトル/  ← 授業回フォルダに教科書画像（4枚程度）を入れる
 │   ├── output/
-│   │   └── 第N回_タイトル/  ← inputと同名フォルダに自動出力
+│   │   └── 第N回_タイトル/ ← 教科書/以下と同名フォルダに自動出力
 │   │       ├── analysis.txt
 │   │       ├── 一問一答カード.docx
 │   │       └── テスト問題.docx
-│   ├── generate.py
+│   ├── generate.py         （教科書/ 以下のフォルダを参照）
 │   └── requirements.txt
 │
 ├── books/                  ← 参照用読書データ（.txt）歴史シミュレーション・授業自動生成で共有
@@ -67,17 +68,10 @@ claude開発/
 │   ├── index.html          ← シナリオ選択トップ画面
 │   ├── CLAUDE.md           ← シナリオ設計の詳細指示書
 │   └── scenarios/
-│       ├── 01_日露戦争_桂太郎/  ← index.html（ゲーム本体）+ images/
+│       ├── 01_日露戦争_桂太郎/   ← index.html（ゲーム本体）+ images/
 │       ├── 02_国民国家_ビスマルク/
+│       ├── 03_日露戦争後_孫文/
 │       └── _template/      ← 新シナリオ作成用のひな型
-│
-├── 教科書/                 ← 教科書の画像データと分析キャッシュ
-│   ├── 分析キャッシュ/     ← 画像分析結果 (.json)
-│   └── 教科書JPEG_XXX/     ← 試験範囲ごとに整理した教科書画像
-│
-├── 歴史総合プリント/       ← 授業回ごとの配布プリント (.docx)
-│
-├── 過去問/                 ← 過去試験問題（.docx / .pdf）
 │
 ├── 参考資料/               ← 授業設計の参考資料（中核概念モデル等）
 │
@@ -103,7 +97,8 @@ python generate.py
 ```bash
 cd テスト問題作成
 pip install -r requirements.txt   # 初回のみ
-# input/textbook_images/ に教科書画像を置く
+# exam_config.yaml の textbooks: に使用する教科書フォルダのパスを指定する
+# 例: - "C:\Users\kengo\...\教科書\歴史総合\第7回 日露戦争"
 python generate.py
 ```
 
@@ -111,7 +106,7 @@ python generate.py
 ```bash
 cd 一問一答
 pip install -r requirements.txt   # 初回のみ
-# input/<授業回フォルダ>/ に画像を置く
+# 教科書/<科目>/<授業回フォルダ>/ に画像を置く（各ツール共通の置き場所）
 python generate_anki.py
 ```
 スキルからも実行できる：Claude Code で `/一問一答` と入力。
@@ -120,7 +115,7 @@ python generate_anki.py
 ```bash
 cd 授業自動生成
 pip install -r requirements.txt   # 初回のみ
-# input/<授業回フォルダ>/ に教科書画像を置く
+# 教科書/<科目>/<授業回フォルダ>/ に教科書画像を置く（各ツール共通の置き場所）
 python generate.py           # 未処理フォルダのみ生成
 python generate.py --force   # 出力済みフォルダも強制再生成
 ```
