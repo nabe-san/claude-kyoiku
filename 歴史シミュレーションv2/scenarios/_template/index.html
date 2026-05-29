@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>【シナリオタイトル】</title>
+<style>
+/* ── Reset ── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #ede4cc;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(150,110,40,.035) 38px, rgba(150,110,40,.035) 39px);
+  color: #1e1208;
+  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#app { max-width: 900px; width: 100%; min-height: 100vh; padding: 0 20px 80px; }
+
+.page-enter { animation: pageIn .4s ease both; }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Header / Timeline ── */
+.game-header { text-align: center; padding: 22px 0 10px; border-bottom: 1px solid #c8a84b44; margin-bottom: 14px; }
+.game-label { font-size: 12px; color: #907850; letter-spacing: 5px; }
+.timeline { display: flex; justify-content: space-between; padding: 10px 0 6px; margin-bottom: 22px; font-size: 12px; gap: 4px; }
+.tl-item { flex: 1; text-align: center; color: #a09060; white-space: nowrap; padding: 6px 2px; border-bottom: 2px solid #c8c080; transition: all .3s; }
+.tl-item.past  { color: #604020; border-color: #907040; }
+.tl-item.active{ color: #8b2020; border-color: #8b2020; font-weight: bold; }
+
+/* ── Scene header ── */
+.scene-header {
+  display: grid; grid-template-columns: max-content 1fr;
+  overflow: hidden; margin-bottom: 18px;
+  box-shadow: 0 4px 16px rgba(42,26,10,.22); border-radius: 3px;
+}
+.scene-year {
+  background: #c8a84b; color: #1a0800;
+  padding: 0 22px; font-size: 13px; font-weight: bold; letter-spacing: 1px;
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap; min-width: 120px; text-align: center; line-height: 1.5;
+}
+.scene-title {
+  background: #2a1a0a; color: #f0e6d0;
+  font-size: 20px; font-weight: bold; letter-spacing: 1px;
+  padding: 18px 26px; display: flex; align-items: center;
+}
+
+/* ── VN scene wrapper ── */
+.vn-scene {
+  border: 1px solid #c8a84b44; border-radius: 4px; overflow: hidden;
+  margin-bottom: 16px; box-shadow: 0 4px 24px rgba(42,26,10,.18);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   VN Stage (v2: 暖色背景で写真を見えやすく)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.vn-stage {
+  height: 460px; position: relative; overflow: hidden;
+  /* デフォルト背景（CHARS[key].bg で上書き） */
+  background: linear-gradient(180deg, #8a7a5a 0%, #5a4a30 100%);
+  display: flex; align-items: flex-end; justify-content: center;
+  transition: background .5s ease;
+}
+.vn-stage::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,240,200,.1) 0%, transparent 65%),
+    linear-gradient(0deg, rgba(0,0,0,.22) 0%, transparent 40%);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Character (中央配置・Base64写真表示)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.vn-char {
+  position: relative; z-index: 2;
+  height: 440px; display: flex; align-items: flex-end; justify-content: center;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.vn-char.out { opacity: 0; transform: translateY(16px); }
+
+.char-photo {
+  /* v2: sepia/contrastフィルターを外し、drop-shadowのみで自然な表示 */
+  height: 420px; width: auto; max-width: 320px;
+  object-fit: cover; object-position: top center;
+  border-radius: 4px 4px 0 0;
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,.55));
+  display: block;
+}
+.char-silhouette { height: 380px; width: 160px; display: flex; align-items: flex-end; justify-content: center; }
+.char-silhouette svg { height: 360px; width: auto; filter: drop-shadow(0 4px 16px rgba(0,0,0,.4)); opacity: .65; }
+
+/* ── Status overlay (ステージ内状況表示) ── */
+.vn-status-overlay {
+  position: absolute; inset: 0; z-index: 4;
+  background: linear-gradient(135deg, rgba(14,8,2,.93) 0%, rgba(20,10,4,.91) 100%);
+  border-left: 4px solid #c8a84b;
+  display: flex; flex-direction: column; justify-content: center; padding: 24px 32px;
+  animation: fadeIn .3s ease both;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.vso-title { font-size: 12px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #c8a84b55; }
+.vso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px; align-content: start; }
+.vso-item { font-size: 15px; color: #e0d0b0; padding: 6px 0 6px 22px; position: relative; line-height: 1.7; }
+.vso-item::before { content: '◆'; position: absolute; left: 0; color: #c8a84b; font-size: 10px; top: 9px; }
+@media (max-width: 620px) { .vso-grid { grid-template-columns: 1fr; } }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Dialogue Box (名前ラベル付きセリフボックス)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.vn-box {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(150,110,40,.035) 39px, rgba(150,110,40,.035) 40px),
+    linear-gradient(180deg, #f5ead2 0%, #ecddc0 60%, #e6d6ae 100%);
+  border-top: none;
+  padding: 0 32px 28px; min-height: 150px; position: relative; cursor: pointer;
+  box-shadow: inset 0 16px 24px rgba(0,0,0,.04);
+}
+.vn-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, transparent 0%, #c8a84b 8%, #8b2020 28%, #c8a84b 50%, #8b2020 72%, #c8a84b 92%, transparent 100%);
+}
+
+/* 名前ラベル */
+.vn-name {
+  display: inline-block; font-size: 15px; font-weight: bold; letter-spacing: 2px;
+  padding: 10px 36px 10px 20px; margin-bottom: 14px;
+  background: linear-gradient(135deg, #1e1208 0%, #2e1c0c 100%);
+  color: #f0e6d0;
+  border-left: 3px solid #c8a84b;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 100%, 0 100%);
+  box-shadow: 4px 4px 12px rgba(0,0,0,.35);
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.vn-name.hidden { display: none; }
+.vn-name-role { font-size: 11px; opacity: .65; letter-spacing: 1px; margin-left: 6px; font-weight: normal; }
+
+.vn-text { font-size: 19px; line-height: 2.0; color: #1e1208; min-height: 72px; padding: 0 4px; }
+.vn-text em { color: #8b2020; font-style: normal; font-weight: bold; }
+
+.vn-arrow { position: absolute; bottom: 16px; right: 26px; font-size: 16px; color: #c8a84b; animation: arrowBob 1.6s ease infinite; }
+.vn-arrow.pause { animation: none; opacity: .3; }
+.vn-arrow.hidden { display: none; }
+@keyframes arrowBob { 0%,100%{transform:translateY(0);opacity:.6} 50%{transform:translateY(5px);opacity:1} }
+
+/* ── Continue button ── */
+.continue-btn {
+  display: block; width: 100%; background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b;
+  padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 3px;
+  border-radius: 3px; transition: background .15s, color .15s, opacity .5s; margin-bottom: 40px;
+}
+.continue-btn:hover { background: #c8a84b; color: #1e1208; }
+.continue-btn.hidden-btn { opacity: 0; pointer-events: none; }
+
+/* ── Decision ── */
+.decision-tag { display: inline-block; background: #8b2020; color: #faf6ec; padding: 5px 16px; font-size: 12px; letter-spacing: 2px; border-radius: 2px; margin-bottom: 16px; }
+.decision-context {
+  font-size: 17px; color: #1e1208; margin-bottom: 22px; line-height: 1.85; padding: 20px 28px;
+  background: #faf6ec; border-left: 5px solid #c8a84b; border-radius: 0 3px 3px 0;
+  box-shadow: 0 3px 12px rgba(42,26,10,.08);
+}
+.choices { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.choice-btn {
+  background: #faf6ec; border: 1px solid #c8a84b88; color: #1e1208;
+  padding: 18px 22px 18px 62px; text-align: left; cursor: pointer;
+  font-family: inherit; font-size: 17px; line-height: 1.75; border-radius: 3px; position: relative;
+  opacity: 0; transform: translateX(-14px);
+  transition: opacity .35s ease, transform .35s ease, background .15s, border-color .15s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(42,26,10,.07);
+}
+.choice-btn.in { opacity: 1; transform: translateX(0); }
+.choice-btn.in:hover { background: #fff8e6; border-color: #c8a84b; transform: translateX(5px); box-shadow: 0 5px 18px rgba(42,26,10,.14); }
+.choice-btn::before {
+  content: attr(data-label); position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 50%; font-weight: bold; font-size: 15px;
+  line-height: 32px; text-align: center; color: #faf6ec; background: #8b2020;
+}
+.choice-btn[data-label="B"]::before { background: #1a3060; }
+.choice-btn[data-label="C"]::before { background: #1a5a28; }
+.keyboard-hint { text-align: center; font-size: 12px; color: #907850; letter-spacing: 2px; margin-bottom: 20px; }
+
+/* ── Timer ── */
+.timer-area {
+  display: flex; align-items: center; gap: 16px; padding: 14px 18px; margin-bottom: 18px;
+  background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 4px;
+}
+.timer-circle { position: relative; width: 64px; height: 64px; cursor: pointer; flex-shrink: 0; }
+.timer-ring { width: 64px; height: 64px; display: block; }
+.timer-bg { fill: none; stroke: #ddd0a0; stroke-width: 5; }
+.timer-progress { fill: none; stroke: #8b2020; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 169.6; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear; transform-origin: 32px 32px; transform: rotate(-90deg); }
+.timer-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.timer-min { font-size: 14px; color: #8b2020; font-weight: bold; line-height: 1; }
+.timer-sub { font-size: 8px; color: #907850; letter-spacing: 1px; margin-top: 3px; }
+.timer-desc { flex: 1; }
+.timer-desc-title { font-size: 12px; color: #2a1a08; letter-spacing: 1px; margin-bottom: 4px; font-weight: bold; }
+.timer-desc-hint { font-size: 11px; color: #907850; }
+.timer-reset-btn { background: transparent; border: 1px solid #c8a84b; color: #907850; padding: 6px 14px; border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 12px; letter-spacing: 1px; transition: all .15s; }
+.timer-reset-btn:hover { border-color: #8b2020; color: #8b2020; }
+.timer-circle.warning .timer-min { color: #c03020; animation: blink 1s ease infinite; }
+.timer-circle.done .timer-min { color: #907850; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Result ── */
+.result-your { background: #f0f4f8; border: 1px solid #b0c4de; border-radius: 3px; padding: 12px 18px; margin-bottom: 10px; }
+.result-your-label { font-size: 11px; letter-spacing: 2px; margin-bottom: 7px; color: #4a6090; }
+.result-your-text { font-size: 16px; color: #2a3850; line-height: 1.7; margin-bottom: 7px; }
+.result-consequence { font-size: 15px; color: #3a4060; line-height: 1.85; }
+.match-banner { display: flex; align-items: center; gap: 14px; padding: 14px 24px; margin-bottom: 20px; border-radius: 3px; font-size: 17px; font-weight: bold; letter-spacing: 1px; }
+.match-banner.match    { background: #e4f5ea; color: #1a5a28; border: 1px solid #3a9048; }
+.match-banner.mismatch { background: #fdf5e2; color: #6a4010; border: 1px solid #c09030; }
+.match-icon { font-size: 22px; flex-shrink: 0; }
+.result-historical { border-radius: 4px; overflow: hidden; margin-bottom: 22px; box-shadow: 0 6px 28px rgba(30,100,50,.15); border: 2px solid #1a7030; }
+.result-historical-header { background: linear-gradient(135deg, #1a5a28 0%, #2a8040 100%); padding: 14px 24px; display: flex; align-items: center; gap: 14px; }
+.result-historical-tag { font-size: 10px; color: #a0f0c0; letter-spacing: 2px; border: 1px solid #a0f0c055; padding: 3px 10px; border-radius: 2px; flex-shrink: 0; }
+.result-historical-title { font-size: 15px; color: #e8fff2; font-weight: bold; letter-spacing: 1px; }
+.result-historical-choice { font-size: 21px; font-weight: bold; color: #1a3020; padding: 22px 28px 16px; border-bottom: 1px solid #a0d8b0; line-height: 1.6; background: #f4fdf6; }
+.result-historical-choice::before { content: '「'; }
+.result-historical-choice::after  { content: '」'; }
+.result-historical-why { font-size: 11px; color: #3a7850; letter-spacing: 2px; padding: 16px 28px 4px; background: #f4fdf6; }
+.result-historical-body { font-size: 15px; line-height: 2; color: #1a2a1a; padding: 6px 28px 24px; background: #f4fdf6; }
+.result-historical-body p { margin-bottom: .8em; }
+.result-historical-body p:last-child { margin-bottom: 0; }
+
+/* ── Title screen ── */
+.title-screen { text-align: center; padding: 50px 20px 60px; }
+.title-deco { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 20px; }
+.title-deco-line { flex: 1; max-width: 80px; height: 1px; }
+.title-deco-line:first-child { background: linear-gradient(90deg, transparent, #c8a84b); }
+.title-deco-line:last-child  { background: linear-gradient(90deg, #c8a84b, transparent); }
+.title-kamon { font-size: 24px; color: #8b2020; opacity: .8; }
+.title-main { font-size: 30px; line-height: 1.5; margin-bottom: 8px; letter-spacing: 2px; color: #1e1208; }
+.title-sub { font-size: 12px; color: #907850; letter-spacing: 6px; margin-bottom: 30px; }
+.title-portrait-wrap {
+  width: 120px; margin: 0 auto 26px; overflow: hidden;
+  border: 2px solid #c8a84b; border-radius: 3px; box-shadow: 0 6px 24px rgba(42,26,10,.25);
+}
+.title-portrait-wrap img { width: 100%; display: block; }
+.title-portrait-sil { height: 120px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+.title-portrait-sil svg { height: 100px; width: auto; opacity: .55; }
+.title-desc { font-size: 14px; color: #2a1a08; line-height: 2; max-width: 520px; margin: 0 auto 16px; text-align: left; background: #faf6ec; padding: 20px 24px; border: 1px solid #c8a84b44; border-radius: 3px; }
+.title-note { font-size: 11px; color: #907850; margin-bottom: 36px; line-height: 2; }
+.start-btn { background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b; padding: 15px 60px; font-family: inherit; font-size: 15px; cursor: pointer; letter-spacing: 5px; border-radius: 2px; transition: all .2s; }
+.start-btn:hover { background: #c8a84b; color: #1e1208; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,168,75,.3); }
+
+/* ── Ending ── */
+.ending-section { margin-bottom: 28px; }
+.ending-section-title { font-size: 11px; color: #8b2020; letter-spacing: 3px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #8b202044; }
+.narration { background: #faf6ec; border: 1px solid #c8a84b44; padding: 26px 32px; margin-bottom: 18px; line-height: 2.2; font-size: 18px; color: #1e1208; border-radius: 2px; }
+.narration p { margin-bottom: 1em; }
+.narration p:last-child { margin-bottom: 0; }
+.emphasis { color: #8b2020; font-weight: bold; }
+.score-display { padding: 28px 32px; margin-bottom: 20px; background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 3px; display: grid; grid-template-columns: auto 1fr; gap: 0 28px; align-items: center; }
+.score-num-wrap { text-align: center; }
+.score-num   { font-size: 56px; color: #8b2020; font-weight: bold; }
+.score-denom { font-size: 28px; color: #907850; }
+.score-label { font-size: 12px; color: #907850; margin-top: 6px; letter-spacing: 1px; }
+.score-eval  { font-size: 15px; color: #2a1a08; line-height: 1.85; }
+.choice-record { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #e0d0a8; font-size: 13px; }
+.choice-record:last-child { border-bottom: none; }
+.record-badge { flex-shrink: 0; font-size: 11px; padding: 2px 10px; border-radius: 2px; margin-top: 2px; }
+.record-badge.match   { background: #ecf8ef; color: #1a6030; border: 1px solid #40a050; }
+.record-badge.mismatch{ background: #fdf6e4; color: #704810; border: 1px solid #c09040; }
+.record-decision { font-size: 11px; color: #907850; margin-bottom: 3px; }
+.record-text { color: #1e1208; }
+.concept-intro { font-size: 16px; color: #3a2a10; line-height: 1.9; padding: 18px 26px; background: #faf6ec; border-left: 5px solid #8b2020; margin-bottom: 20px; border-radius: 0 3px 3px 0; }
+.concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+.concept-card { background: #faf6ec; border: 1px solid #c8a84b55; border-top: 4px solid #8b2020; border-radius: 3px; padding: 22px 24px; box-shadow: 0 3px 14px rgba(42,26,10,.09); }
+.concept-card:nth-child(2) { border-top-color: #1a6030; }
+.concept-card:nth-child(3) { border-top-color: #1a3060; }
+.concept-card:nth-child(4) { border-top-color: #7a5010; }
+.concept-tag { font-size: 10px; letter-spacing: 2px; color: #8b2020; margin-bottom: 8px; }
+.concept-card:nth-child(2) .concept-tag { color: #1a6030; }
+.concept-card:nth-child(3) .concept-tag { color: #1a3060; }
+.concept-card:nth-child(4) .concept-tag { color: #7a5010; }
+.concept-title { font-size: 18px; font-weight: bold; color: #1e1208; margin-bottom: 12px; line-height: 1.4; }
+.concept-body { font-size: 14px; color: #3a2a10; line-height: 1.9; }
+@media (max-width: 560px) { .concept-grid { grid-template-columns: 1fr; } }
+
+.restart-btn { display: block; width: 100%; background: transparent; border: 1px solid #c8a84b; color: #907850; padding: 13px; font-family: inherit; font-size: 13px; cursor: pointer; letter-spacing: 3px; border-radius: 3px; transition: all .15s; margin-top: 20px; margin-bottom: 60px; }
+.restart-btn:hover { background: #2a1a0a; color: #c8a84b; border-color: #c8a84b; }
+.page-footer { text-align: center; padding: 14px 0; font-size: 10px; color: #a09070; letter-spacing: 1px; border-top: 1px solid #c8a84b33; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ================================================================
+// ★ SECTION 1：キャラクター設定
+// ================================================================
+// photo の設定方法：
+//   1. 画像をダウンロードしてBase64エンコード
+//      PowerShell: $b=[IO.File]::ReadAllBytes('image.jpg');[Convert]::ToBase64String($b)
+//   2. 取得した文字列を 'data:image/jpeg;base64,' の後に貼り付ける
+//   3. 写真がない場合は photo: null でシルエットSVGが自動表示される
+//
+// bg の設定（ステージ背景色）：
+//   室内・執務室: 'linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)'
+//   夜・屋外:    'linear-gradient(180deg,#2a3050 0%,#12183a 100%)'
+//   明るい屋外:  'linear-gradient(180deg,#7a9a6a 0%,#4a6a3a 100%)'
+//   戦場:        'linear-gradient(180deg,#5a5040 0%,#2a2010 100%)'
+//   宮廷・赤:    'linear-gradient(180deg,#7a4040 0%,#401818 100%)'
+// ================================================================
+const CHARS = {
+  protagonist: {
+    name: '【主人公名】',
+    role: '【役割・肩書】',
+    photo: null,  // 'data:image/jpeg;base64,...' を貼る
+    bg: 'linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)'
+  },
+  advisor: {
+    name: '【顧問役・相談相手の名前】',
+    role: '【役割】',
+    photo: null,
+    bg: 'linear-gradient(180deg,#6a7a8a 0%,#3a4a5a 100%)'
+  },
+  // ── 追加キャラクターはここに続ける ──
+  // character3: { name: '...', role: '...', photo: null, bg: '...' },
+};
+
+// シルエットSVG（photoがnullのときに自動表示）
+const SILHOUETTE_SVG = `<svg viewBox="0 0 80 185" xmlns="http://www.w3.org/2000/svg">
+  <rect x="22" y="2" width="36" height="26" rx="3" fill="#3a3020" opacity=".55"/>
+  <rect x="12" y="26" width="56" height="7" rx="2" fill="#3a3020" opacity=".55"/>
+  <ellipse cx="40" cy="60" rx="19" ry="21" fill="#2a2015" opacity=".55"/>
+  <rect x="34" y="78" width="12" height="14" rx="3" fill="#2a2015" opacity=".55"/>
+  <path d="M6 185 L6 106 Q6 94 24 89 L40 85 L56 89 Q74 94 74 106 L74 185Z" fill="#2a2015" opacity=".55"/>
+  <path d="M28 89 L40 103 L52 89 L50 87 L40 100 L30 87Z" fill="#d8cca0" opacity=".25"/>
+</svg>`;
+
+// ================================================================
+// ★ SECTION 2：シナリオ基本設定
+// ================================================================
+const SCENARIO_TITLE = '【シナリオタイトル】';
+const SUBJECT = '歴史総合';        // 科目名（画面上部に表示）
+const TIMER_TOTAL = 60;            // グループ審議タイマー（秒）
+
+// タイムライン表示（画面上部の進行インジケーター）
+const TL = [
+  '【時期①\n年代】',
+  '【時期②\n年代】',
+  '【時期③\n年代】',
+  '終幕',
+];
+
+// ================================================================
+// ★ SECTION 3：ストーリーデータ
+// ================================================================
+// --- type の種類 ---
+// 'title'    : タイトル画面（通常 'title' キーで定義）
+// 'story'    : VNシーン（キャラクター表示 + セリフ/ナレーション）
+// 'decision' : 決断場面（選択肢あり）
+// 'ending'   : エンディング画面
+//
+// --- story の lines プロパティ ---
+// { speaker: 'protagonist', text: 'セリフ' }  → キャラクター表示・名前ラベルあり
+// { speaker: null, text: 'ナレーション' }      → キャラなし・名前ラベルなし
+// { type: 'status', title: '現在の状況', items: ['制約①', ...] }  → ステージ内に状況一覧
+//
+// --- decision の choices ---
+// isH: true  = 史実の選択肢（1つだけtrueにする）
+// pc         = プレイヤーがこれを選んだ場合の結果説明文
+// ht         = 史実解説のHTML（<p>タグ推奨）
+// next       = 次に遷移するシーンキー
+// ================================================================
+const P = {
+
+  // ── タイトル ──
+  title: { type: 'title', tl: 0 },
+
+  // ── 導入シーン ──
+  scene01: {
+    type: 'story', tl: 0,
+    year: '【年代・時期】',
+    title: '【シーン01のタイトル】',
+    lines: [
+      // ナレーション（speaker: null）
+      { speaker: null, text: 'あなたは<em>【主人公名】</em>。【時代背景・役割の説明。2〜3行程度で状況と制約を具体的に示す】。' },
+      { speaker: null, text: '【続きの背景説明。因果関係・緊張感をわかりやすく伝える】。' },
+      // キャラクターのセリフ
+      { speaker: 'advisor', text: '「【顧問役の最初の発言。状況をより具体化するセリフ】」' },
+      // 状況一覧パネル（任意：削除しても可）
+      { type: 'status', title: '現在の状況', items: [
+        '【制約①：財政・軍事・外交などの具体的な制約】',
+        '【制約②：国内政治・元老・各派閥の立場】',
+        '【外部要因：国際情勢・条約など】',
+        '【重要な数値・事実】',
+      ]},
+    ],
+    next: 'dec1'
+  },
+
+  // ── 決断① ──
+  dec1: {
+    type: 'decision', tl: 1,
+    tag: '決断①',
+    year: '【年代・時期】',
+    title: '【決断①のタイトル】',
+    context: '【状況説明。プレイヤーが判断する文脈を1〜2文で示す。「あなたはどうする？」というトーンで】',
+    choices: [
+      {
+        label: 'A',
+        text: '【選択肢Aのテキスト（史実の選択）。当時の視点から合理的に見える表現で】',
+        isH: true,
+        pc: '【選択肢Aを選んだ場合の結果説明。何が起きたかを1〜2文で説明する】',
+        ht: '<p>【史実の判断の解説。なぜその選択をしたのか・どんな制約があったのかを詳しく説明。2〜3段落可。<p class="result-historical-sub">補足説明（任意）</p>を使える】</p>',
+        next: 'scene02'
+      },
+      {
+        label: 'B',
+        text: '【選択肢Bのテキスト。当時の視点からも一定の合理性を持たせる】',
+        isH: false,
+        pc: '【選択肢Bを選んだ場合の結果説明】',
+        ht: '<p>【なぜBは史実と異なるのかの解説。Bが持つリスクや反対意見を説明する】</p>',
+        next: 'scene02'
+      },
+      // 選択肢Cは任意（削除可）
+      {
+        label: 'C',
+        text: '【選択肢Cのテキスト（任意）】',
+        isH: false,
+        pc: '【選択肢Cを選んだ場合の結果説明】',
+        ht: '<p>【選択肢Cの解説】</p>',
+        next: 'scene02'
+      },
+    ]
+  },
+
+  // ── シーン02 ──
+  scene02: {
+    type: 'story', tl: 2,
+    year: '【年代・時期】',
+    title: '【シーン02のタイトル】',
+    lines: [
+      { speaker: null, text: '【前の決断の後の展開。新たな状況・緊張感を示す】。' },
+      { speaker: 'protagonist', text: '「【主人公のセリフ。内面の葛藤や決意を示す】」' },
+      { speaker: 'advisor', text: '「【顧問役の発言。次の決断につながる情報を提示する】」' },
+    ],
+    next: 'dec2'
+  },
+
+  // ── 決断② ──
+  dec2: {
+    type: 'decision', tl: 2,
+    tag: '決断②',
+    year: '【年代・時期】',
+    title: '【決断②のタイトル】',
+    context: '【決断②の状況説明】',
+    choices: [
+      {
+        label: 'A',
+        text: '【選択肢Aのテキスト（史実の選択）】',
+        isH: true,
+        pc: '【選択肢Aの結果説明】',
+        ht: '<p>【史実解説①】</p><p>【史実解説②（任意）】</p>',
+        next: 'ending'
+      },
+      {
+        label: 'B',
+        text: '【選択肢Bのテキスト】',
+        isH: false,
+        pc: '【選択肢Bの結果説明】',
+        ht: '<p>【選択肢B解説】</p>',
+        next: 'ending'
+      },
+    ]
+  },
+
+  // ── エンディング ──
+  ending: { type: 'ending', tl: 3 },
+};
+
+// ================================================================
+// ★ SECTION 4：エンディング設定
+// ================================================================
+// ナレーション：史実の結末 + 歴史的な意義を 2〜3 段落で記述
+const ENDING_NARRATION = `
+<p>【エンディングのナレーション①：史実の結末を客観的に描写する。主人公がどうなったか、歴史はどう動いたか】</p>
+<p>【ナレーション②：今回の選択が持つ歴史的な意味・意義。「なぜ重要な分岐点だったか」を示す】</p>
+<p>【ナレーション③（任意）：現代への接続。この出来事が今の世界にどうつながるか】</p>`;
+
+// スコア評価メッセージ（史実との一致数で分岐）
+const SCORE_EVALS = {
+  perfect: '【全問正解の場合のメッセージ。当時の制約・合理性を完全に追体験できた旨を伝える】',
+  good: '【半数以上の場合のメッセージ。異なる視点からも考えられた点を評価する】',
+  low: '【半数以下の場合のメッセージ。史実と異なる選択にも当時の視点から合理性があった点を伝える】',
+};
+
+// 概念カード（4枚）
+// tag: 表示するラベル（例: '歴史的概念 ①'）
+// title: 概念名
+// body: 説明文（2〜3文）
+const CONCEPT_CARDS = [
+  {
+    tag: '歴史的概念 ①',
+    title: '【概念タイトル①（第2次概念または実質概念から選ぶ）】',
+    body: '【概念の説明。シナリオで体験した内容から引き出された歴史の見方・考え方を2〜3文で記述する】',
+  },
+  {
+    tag: '歴史的概念 ②',
+    title: '【概念タイトル②】',
+    body: '【概念の説明②】',
+  },
+  {
+    tag: '歴史的概念 ③',
+    title: '【概念タイトル③】',
+    body: '【概念の説明③】',
+  },
+  {
+    tag: '歴史的概念 ④',
+    title: '【概念タイトル④】',
+    body: '【概念の説明④】',
+  },
+];
+
+// ================================================================
+// ENGINE（基本的に編集不要）
+// ================================================================
+let S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+let timerInterval = null, timerRemaining = TIMER_TOTAL, timerRunning = false;
+
+function onPhotoError(img) {
+  img.style.display = 'none';
+  const sil = document.createElement('div');
+  sil.className = 'char-silhouette';
+  sil.innerHTML = SILHOUETTE_SVG;
+  img.parentNode.appendChild(sil);
+}
+
+function buildChar(charKey) {
+  const c = charKey && CHARS[charKey];
+  if (!c) return `<div class="vn-char"><div class="char-silhouette">${SILHOUETTE_SVG}</div></div>`;
+  if (c.photo) {
+    return `<div class="vn-char"><img class="char-photo" src="${c.photo}" alt="${c.name}" onerror="onPhotoError(this)"></div>`;
+  }
+  return `<div class="vn-char"><div class="char-silhouette">${SILHOUETTE_SVG}</div></div>`;
+}
+
+function getStageBg(charKey) {
+  const c = charKey && CHARS[charKey];
+  return (c && c.bg) ? c.bg : 'linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)';
+}
+
+function tlHtml() {
+  const cur = (P[S.passage] || {}).tl || 0;
+  return `<div class="timeline">${TL.map((t, i) => `<div class="tl-item${i < cur ? ' past' : i === cur ? ' active' : ''}">${t}</div>`).join('')}</div>`;
+}
+
+// ---- Timer ----
+function timerDashArr() {
+  const r = 27;
+  return +(2 * Math.PI * r).toFixed(1);
+}
+const DASH_ARR = timerDashArr(); // ≈ 169.6
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerRemaining = TIMER_TOTAL;
+  timerRunning = true;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    if (!timerRunning) return;
+    if (timerRemaining > 0) { timerRemaining--; updateTimerDisplay(); }
+    if (timerRemaining <= 0) { clearInterval(timerInterval); timerRunning = false; }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const circle = document.getElementById('timerCircle');
+  if (!circle) return;
+  const min = Math.floor(timerRemaining / 60);
+  const sec = timerRemaining % 60;
+  document.getElementById('timerMin').textContent = min > 0 ? `${min}:${String(sec).padStart(2,'0')}` : sec;
+  document.getElementById('timerSub').textContent = TIMER_TOTAL >= 60 ? `${Math.ceil(TIMER_TOTAL/60)}分` : `${TIMER_TOTAL}秒`;
+  const progress = document.getElementById('timerProgress');
+  if (progress) progress.style.strokeDashoffset = DASH_ARR * (1 - timerRemaining / TIMER_TOTAL);
+  circle.className = 'timer-circle' + (timerRemaining > 0 && timerRemaining <= 10 ? ' warning' : timerRemaining <= 0 ? ' done' : '');
+}
+
+function toggleTimer() {
+  if (timerRemaining <= 0) { timerRemaining = TIMER_TOTAL; }
+  timerRunning = !timerRunning;
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (!timerRunning) return;
+      if (timerRemaining > 0) { timerRemaining--; updateTimerDisplay(); }
+      if (timerRemaining <= 0) { clearInterval(timerInterval); timerRunning = false; }
+    }, 1000);
+  }
+  updateTimerDisplay();
+}
+
+function resetTimer() { clearInterval(timerInterval); timerRunning = false; timerRemaining = TIMER_TOTAL; updateTimerDisplay(); }
+
+// ---- Render dispatcher ----
+function render() {
+  const passage = P[S.passage];
+  if (!passage) return;
+  if (passage.type === 'title')    { renderTitle(); return; }
+  if (passage.type === 'ending')   { renderEnding(); return; }
+  if (passage.type === 'story')    { renderStory(passage); return; }
+  if (passage.type === 'decision') {
+    if (S.showResult) { renderResult(passage); return; }
+    renderDecision(passage); return;
+  }
+}
+
+// ---- Title ----
+function renderTitle() {
+  const c = CHARS.protagonist;
+  const portrait = c && c.photo
+    ? `<div class="title-portrait-wrap"><img src="${c.photo}" alt="${c.name}" onerror="this.parentNode.innerHTML='<div class=title-portrait-sil>${SILHOUETTE_SVG.replace(/'/g,'"')}</div>'"></div>`
+    : `<div class="title-portrait-wrap" style="background:${c ? c.bg : '#5a4a30'}"><div class="title-portrait-sil">${SILHOUETTE_SVG}</div></div>`;
+  document.getElementById('app').innerHTML = `
+    <div class="game-header page-enter">
+      <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
+      ${tlHtml()}
+    </div>
+    <div class="title-screen page-enter">
+      <div class="title-deco">
+        <div class="title-deco-line"></div>
+        <div class="title-kamon">✦</div>
+        <div class="title-deco-line"></div>
+      </div>
+      ${portrait}
+      <h1 class="title-main">${SCENARIO_TITLE}</h1>
+      <div class="title-sub">歴史の分岐点を追体験する</div>
+      <div class="title-note">選択肢はすべて当時の視点で合理的に見えます。<br>史実と同じ判断を探しながら、当時の制約を体感してください。</div>
+      <button class="start-btn" onclick="goNext('scene01')">シミュレーション開始</button>
+    </div>`;
+}
+
+// ---- Story ----
+function renderStory(passage) {
+  const lines = passage.lines || [];
+  const idx = Math.min(S.lineIdx, lines.length - 1);
+  const line = lines[idx];
+  const isLast = idx >= lines.length - 1;
+  const isStatus = line && line.type === 'status';
+  const speakerKey = isStatus ? null : (line ? line.speaker : null);
+  const stageBg = isStatus
+    ? 'linear-gradient(135deg,rgba(14,8,2,.93) 0%,rgba(20,10,4,.91) 100%)'
+    : getStageBg(speakerKey);
+
+  let stageInner = buildChar(speakerKey);
+  let boxContent = '';
+
+  if (isStatus) {
+    const itemsHtml = (line.items || []).map(t => `<div class="vso-item">${t}</div>`).join('');
+    stageInner += `<div class="vn-status-overlay"><div class="vso-title">── ${line.title} ──</div><div class="vso-grid">${itemsHtml}</div></div>`;
+    boxContent = `<div class="vn-name hidden"></div><div class="vn-text" style="font-size:14px;color:#907850;letter-spacing:2px;">（状況確認）</div><div class="vn-arrow">▼</div>`;
+  } else {
+    const c = speakerKey && CHARS[speakerKey];
+    const nameHtml = c
+      ? `<div class="vn-name">${c.name}<span class="vn-name-role">${c.role}</span></div>`
+      : `<div class="vn-name hidden"></div>`;
+    boxContent = `${nameHtml}<div class="vn-text">${line ? line.text : ''}</div><div class="vn-arrow${isLast ? ' pause' : ''}">▼</div>`;
+  }
+
+  document.getElementById('app').innerHTML = `
+    <div class="game-header page-enter">
+      <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
+      ${tlHtml()}
+    </div>
+    <div class="scene-header page-enter">
+      <div class="scene-year">${passage.year || ''}</div>
+      <div class="scene-title">${passage.title || ''}</div>
+    </div>
+    <div class="vn-scene page-enter" onclick="advanceLine()">
+      <div class="vn-stage" style="background:${stageBg}">${stageInner}</div>
+      <div class="vn-box">${boxContent}</div>
+    </div>
+    <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ ▶</button>`;
+}
+
+function advanceLine() {
+  const passage = P[S.passage];
+  if (!passage || passage.type !== 'story') return;
+  if (S.lineIdx < (passage.lines || []).length - 1) { S.lineIdx++; render(); }
+}
+
+// ---- Decision ----
+function renderDecision(passage) {
+  const stageBg = getStageBg('protagonist');
+  const charHtml = buildChar('protagonist');
+  const labelMap = ['A','B','C','D'];
+  const choicesHtml = passage.choices.map((ch, i) =>
+    `<button class="choice-btn" data-label="${labelMap[i]}" onclick="choose(${i})">${ch.text}</button>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="game-header page-enter">
+      <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
+      ${tlHtml()}
+    </div>
+    <div class="scene-header page-enter">
+      <div class="scene-year">${passage.year || ''}</div>
+      <div class="scene-title">${passage.title || ''}</div>
+    </div>
+    <div class="vn-scene page-enter">
+      <div class="vn-stage" style="background:${stageBg}">${charHtml}</div>
+    </div>
+    <div class="page-enter" style="margin-bottom:24px;">
+      <div class="timer-area">
+        <div class="timer-circle" id="timerCircle" onclick="toggleTimer()">
+          <svg class="timer-ring"><circle class="timer-bg" cx="32" cy="32" r="27"/><circle class="timer-progress" id="timerProgress" cx="32" cy="32" r="27" stroke-dasharray="${DASH_ARR}"/></svg>
+          <div class="timer-overlay"><div class="timer-min" id="timerMin">--</div><div class="timer-sub" id="timerSub"></div></div>
+        </div>
+        <div class="timer-desc">
+          <div class="timer-desc-title">グループで審議してください</div>
+          <div class="timer-desc-hint">タイマーをクリックで一時停止 / 再開</div>
+        </div>
+        <button class="timer-reset-btn" onclick="resetTimer()">リセット</button>
+      </div>
+      <div class="decision-tag">${passage.tag || '決断'}</div>
+      <div class="decision-context">${passage.context || ''}</div>
+      <div class="choices">${choicesHtml}</div>
+      <div class="keyboard-hint">A / B / C キーでも選択できます</div>
+    </div>`;
+
+  setTimeout(() => {
+    document.querySelectorAll('.choice-btn').forEach((btn, i) => setTimeout(() => btn.classList.add('in'), i * 120));
+    startTimer();
+  }, 80);
+}
+
+function choose(idx) {
+  const passage = P[S.passage];
+  if (!passage) return;
+  const ch = passage.choices[idx];
+  if (!ch) return;
+  if (ch.isH) S.matches++;
+  S.log.push({ tag: passage.tag || '決断', text: ch.text, isMatch: ch.isH });
+  S.pendingChoice = ch;
+  S.showResult = true;
+  render();
+}
+
+// ---- Result ----
+function renderResult(passage) {
+  const ch = S.pendingChoice;
+  const isMatch = ch.isH;
+  const historicalChoice = passage.choices.find(c => c.isH);
+  document.getElementById('app').innerHTML = `
+    <div class="game-header page-enter">
+      <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
+      ${tlHtml()}
+    </div>
+    <div class="scene-header page-enter">
+      <div class="scene-year">${passage.year || ''}</div>
+      <div class="scene-title">${passage.title || ''}</div>
+    </div>
+    <div class="page-enter" style="margin-bottom:32px;">
+      <div class="result-your">
+        <div class="result-your-label">── あなたの選択 ──</div>
+        <div class="result-your-text">${ch.text}</div>
+        <div class="result-consequence">${ch.pc || ''}</div>
+      </div>
+      <div class="match-banner ${isMatch ? 'match' : 'mismatch'}">
+        <span class="match-icon">${isMatch ? '◎' : '△'}</span>
+        <span>${isMatch ? '史実と一致！' : '史実とは異なります'}</span>
+      </div>
+      <div class="result-historical">
+        <div class="result-historical-header">
+          <span class="result-historical-tag">史実の判断</span>
+          <span class="result-historical-title">${CHARS.protagonist.name}が実際に選んだこと</span>
+        </div>
+        <div class="result-historical-choice">${historicalChoice ? historicalChoice.text : ''}</div>
+        <div class="result-historical-why">── なぜその判断をしたのか ──</div>
+        <div class="result-historical-body">${ch.ht || ''}</div>
+      </div>
+      <button class="continue-btn" onclick="goNextFromResult()">次のシーンへ ▶</button>
+    </div>`;
+}
+
+function goNextFromResult() {
+  const ch = S.pendingChoice;
+  S.showResult = false;
+  S.pendingChoice = null;
+  goNext(ch.next);
+}
+
+// ---- Ending ----
+function renderEnding() {
+  const totalDec = Object.values(P).filter(p => p.type === 'decision').length;
+  const score = S.matches;
+  const evalText = score === totalDec ? SCORE_EVALS.perfect
+    : score >= Math.ceil(totalDec / 2) ? SCORE_EVALS.good
+    : SCORE_EVALS.low;
+
+  const logHtml = S.log.map(r =>
+    `<div class="choice-record"><span class="record-badge ${r.isMatch ? 'match' : 'mismatch'}">${r.isMatch ? '一致' : '相違'}</span>
+    <div><div class="record-decision">${r.tag}</div><div class="record-text">${r.text}</div></div></div>`
+  ).join('');
+
+  const cardsHtml = CONCEPT_CARDS.map(card =>
+    `<div class="concept-card"><div class="concept-tag">${card.tag}</div><div class="concept-title">${card.title}</div><div class="concept-body">${card.body}</div></div>`
+  ).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="game-header page-enter">
+      <div class="game-label">${SUBJECT} — 歴史シミュレーション</div>
+      ${tlHtml()}
+    </div>
+    <div class="ending-section page-enter">
+      <div class="ending-section-title">── エピローグ ──</div>
+      <div class="narration">${ENDING_NARRATION}</div>
+    </div>
+    <div class="ending-section page-enter">
+      <div class="ending-section-title">── 選択記録 ──</div>
+      <div class="score-display">
+        <div class="score-num-wrap">
+          <div><span class="score-num">${score}</span><span class="score-denom"> / ${totalDec}</span></div>
+          <div class="score-label">史実と一致した判断</div>
+        </div>
+        <div class="score-eval">${evalText}</div>
+      </div>
+      <div style="background:#faf6ec;border:1px solid #c8a84b44;border-radius:3px;padding:16px 20px;">${logHtml}</div>
+    </div>
+    <div class="ending-section page-enter">
+      <div class="ending-section-title">── 歴史的概念カード ──</div>
+      <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
+      <div class="concept-grid">${cardsHtml}</div>
+    </div>
+    <button class="restart-btn" onclick="restart()">もう一度プレイ ↺</button>
+    <div class="page-footer">${SUBJECT} 歴史シミュレーション</div>`;
+}
+
+// ---- Navigation ----
+function goNext(key) {
+  if (!key || !P[key]) return;
+  S.passage = key;
+  S.lineIdx = 0;
+  render();
+}
+
+function restart() {
+  clearInterval(timerInterval);
+  S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+  render();
+}
+
+// ---- Keyboard ----
+document.addEventListener('keydown', e => {
+  const passage = P[S.passage];
+  if (!passage) return;
+  if (passage.type === 'story' && ['Space','Enter','ArrowRight'].includes(e.code)) {
+    e.preventDefault();
+    advanceLine();
+  }
+  if (passage.type === 'decision' && !S.showResult) {
+    const idx = {'a':0,'b':1,'c':2,'d':3,'1':0,'2':1,'3':2}[e.key.toLowerCase()];
+    if (idx !== undefined && idx < passage.choices.length) choose(idx);
+  }
+  if (passage.type === 'decision' && S.showResult && (e.code === 'Space' || e.code === 'Enter')) {
+    e.preventDefault();
+    goNextFromResult();
+  }
+});
+
+// ---- Boot ----
+render();
+</script>
+</body>
+</html>
