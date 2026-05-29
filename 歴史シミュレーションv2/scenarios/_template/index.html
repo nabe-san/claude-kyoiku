@@ -665,11 +665,13 @@ function renderStory(passage) {
   const isLast = idx >= lines.length - 1;
   const isStatus = line && line.type === 'status';
   const speakerKey = isStatus ? null : (line ? line.speaker : null);
+  // ナレーション（speaker: null）は主人公を表示、名前ラベルは出さない
+  const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
   const stageBg = isStatus
     ? 'linear-gradient(135deg,rgba(14,8,2,.93) 0%,rgba(20,10,4,.91) 100%)'
-    : getStageBg(speakerKey);
+    : getStageBg(displayKey);
 
-  let stageInner = buildChar(speakerKey);
+  let stageInner = buildChar(displayKey);
   let boxContent = '';
 
   if (isStatus) {
