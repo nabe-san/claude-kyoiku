@@ -104,6 +104,19 @@ v1と同じ。
 | `.vn-stage` height | 420px | **460px** |
 | `.char-photo` filter | sepia + contrast | **drop-shadow のみ**（自然な色で表示） |
 
+### ナレーション行のステージ表示ルール（重要）
+`speaker: null`（ナレーション）の行では、セリフボックスに名前ラベルは表示しないが、ステージには **`protagonist` の写真を表示する**。
+
+```javascript
+// テンプレートエンジンに実装済み（変更不要）
+const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
+```
+
+- `speakerKey`（null）→ 名前ラベルなし
+- `displayKey`（'protagonist'）→ ステージに主人公の写真を表示
+
+このルールにより、ナレーションでシルエットが表示される問題が起きない。新シナリオで `speaker: null` を多用しても写真が消えない設計になっている。
+
 ### ステージ背景プリセット（`CHARS.bg` に設定可能）
 ```
 室内・執務室: 'linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)'
