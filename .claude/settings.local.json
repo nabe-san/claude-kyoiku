@@ -17,7 +17,12 @@
       "Bash(git config *)",
       "PowerShell(git config --global credential.helper)",
       "PowerShell(Get-Command git-credential-manager -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-Command git-credential-manager-core -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Command git-credential-manager-core -ErrorAction SilentlyContinue)",
+      "Bash(mv \"c:\\\\Users\\\\kengo\\\\OneDrive\\\\デスクトップ\\\\claude開発\\\\歴史シミュレーション\\\\books\" \"c:\\\\Users\\\\kengo\\\\OneDrive\\\\デスクトップ\\\\claude開発\\\\books\")",
+      "Bash(dir \"c:\\\\Users\\\\kengo\\\\OneDrive\\\\デスクトップ\\\\claude開発\\\\教科書\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\kengo\\OneDrive\\デスクトップ\\claude開発\\歴史シミュレーション\\books"
     ]
   }
 }
