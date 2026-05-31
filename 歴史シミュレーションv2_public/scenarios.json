@@ -13,14 +13,14 @@
       "data": "scenarios/01_日露戦争_桂太郎/scenario.json"
     },
     {
-      "id": "03_doumer_indochina",
+      "id": "02_doumer_indochina",
       "title": "文明化の使命 ── ドゥメールの決断",
       "tag": "帝国主義",
       "era": "1897〜1901年 仏領インドシナ",
       "concept": "帝国主義と植民地主義 / 文明化の使命 / 解釈と論争性",
       "bigQuestion": "近代化に見える政策は、誰に利益を与え、誰に負担を押しつけたのか？",
       "description": "仏領インドシナ総督ドゥメールの視点で植民地統治を追体験。アヘン専売・強制労働・文化破壊を考える。",
-      "data": "scenarios/03_帝国主義_ドゥメール/scenario.json",
+      "data": "scenarios/02_帝国主義_ドゥメール/scenario.json",
       "bg": "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)",
       "status": "ready"
     },

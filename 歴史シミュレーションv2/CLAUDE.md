@@ -35,7 +35,7 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
     │   ├── scenario.json         ← 生徒用JSONシナリオ
     │   ├── index.html            ← JSON版への案内・リダイレクト
     │   └── index_legacy.html     ← 先生用旧HTML確認（?teacher=1 のみ）
-    └── 03_帝国主義_ドゥメール/
+    └── 02_帝国主義_ドゥメール/
         ├── scenario.json
         ├── index.html
         └── index_legacy.html     ← 先生用旧HTML確認（?teacher=1 のみ）
@@ -380,5 +380,5 @@ const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
 | `_json_template/` | JSONテンプレート | ─ | ─ | 完成 |
 | `_template/` | 旧HTMLテンプレート | ─ | ─ | 参考用 |
 | `01_日露戦争_桂太郎/` | 桂太郎 | 第7回 日露戦争 | ② 因果と帰結・④ 歴史的パースペクティブ | 完成 |
-| `03_帝国主義_ドゥメール/` | ポール・ドゥメール | 第5回 帝国主義 | ⑨ 帝国主義と植民地主義・⑤ 解釈と論争性 | 完成 |
+| `02_帝国主義_ドゥメール/` | ポール・ドゥメール | 第5回 帝国主義 | ⑨ 帝国主義と植民地主義・⑤ 解釈と論争性 | 完成 |
 

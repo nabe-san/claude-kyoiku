@@ -1,15 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>歴史シミュレーション — プレイヤー</title>
+<title>豁ｴ蜿ｲ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ 窶・繝励Ξ繧､繝､繝ｼ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: #ede4cc;
   color: #1e1208;
-  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  font-family: '貂ｸ譏取悃','YuMincho','Hiragino Mincho ProN','Georgia',serif;
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -171,18 +171,18 @@ async function loadScenario() {
     TL = SCENARIO.timeline || [];
     ENDING = SCENARIO.ending || {};
     timerRemaining = META.timerSeconds || 60;
-    document.title = META.title || '歴史シミュレーション';
+    document.title = META.title || '豁ｴ蜿ｲ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ';
     render();
   } catch (error) {
     const isFile = location.protocol === 'file:';
     const message = isFile
-      ? `この画面は壊れていません。JSONを読み込む方式のため、ダブルクリックではなくローカルサーバー経由で開いてください。<br><br>PowerShellで <code>歴史シミュレーションv2</code> フォルダに移動して、<code>python -m http.server 8001</code> を実行します。<br>そのあと <code>http://localhost:8001/player.html?data=scenarios/03_帝国主義_ドゥメール/scenario.json</code> を開いてください。`
-      : `JSON版プレイヤーは、ローカルサーバー経由で開いてください。<br>例：<code>python -m http.server 8001</code>`;
+      ? `縺薙・逕ｻ髱｢縺ｯ螢翫ｌ縺ｦ縺・∪縺帙ｓ縲・SON繧定ｪｭ縺ｿ霎ｼ繧譁ｹ蠑上・縺溘ａ縲√ム繝悶Ν繧ｯ繝ｪ繝・け縺ｧ縺ｯ縺ｪ縺上Ο繝ｼ繧ｫ繝ｫ繧ｵ繝ｼ繝舌・邨檎罰縺ｧ髢九＞縺ｦ縺上□縺輔＞縲・br><br>PowerShell縺ｧ <code>豁ｴ蜿ｲ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳv2</code> 繝輔か繝ｫ繝縺ｫ遘ｻ蜍輔＠縺ｦ縲・code>python -m http.server 8001</code> 繧貞ｮ溯｡後＠縺ｾ縺吶・br>縺昴・縺ゅ→ <code>http://localhost:8001/player.html?data=scenarios/03_蟶晏嵜荳ｻ鄒ｩ_繝峨ぇ繝｡繝ｼ繝ｫ/scenario.json</code> 繧帝幕縺・※縺上□縺輔＞縲Ａ
+      : `JSON迚医・繝ｬ繧､繝､繝ｼ縺ｯ縲√Ο繝ｼ繧ｫ繝ｫ繧ｵ繝ｼ繝舌・邨檎罰縺ｧ髢九＞縺ｦ縺上□縺輔＞縲・br>萓具ｼ・code>python -m http.server 8001</code>`;
     document.getElementById('app').innerHTML = `
       <div class="error">
-        <strong>scenario.json を読み込めませんでした。</strong><br>
+        <strong>scenario.json 繧定ｪｭ縺ｿ霎ｼ繧√∪縺帙ｓ縺ｧ縺励◆縲・/strong><br>
         ${message}<br><br>
-        詳細: ${escapeHtml(error.message)}
+        隧ｳ邏ｰ: ${escapeHtml(error.message)}
       </div>`;
   }
 }
@@ -222,25 +222,25 @@ function render() {
 }
 
 function renderHeader() {
-  return `<div class="game-header page-enter"><a class="back-link" href="index.html">← シナリオ一覧へ戻る</a><div class="game-label">${escapeHtml(META.subject || '歴史総合')} — 歴史シミュレーション</div>${tlHtml()}</div>`;
+  return `<div class="game-header page-enter"><a class="back-link" href="index.html">竊・繧ｷ繝翫Μ繧ｪ荳隕ｧ縺ｸ謌ｻ繧・/a><div class="game-label">${escapeHtml(META.subject || '豁ｴ蜿ｲ邱丞粋')} 窶・豁ｴ蜿ｲ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ</div>${tlHtml()}</div>`;
 }
 
 function renderTitle() {
   const c = CHARS.protagonist || {};
   const hero = c.photo ? `<img class="char-photo" src="${c.photo}" alt="${escapeHtml(c.name)}">` : `<div class="char-silhouette">${SILHOUETTE_SVG}</div>`;
   const scenarioPoints = META.scenarioPoints || [];
-  const scenarioPointsHtml = scenarioPoints.length ? `<div class="scenario-points"><div class="scenario-points-title">シナリオの要点</div><ul>${scenarioPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul></div>` : '';
+  const scenarioPointsHtml = scenarioPoints.length ? `<div class="scenario-points"><div class="scenario-points-title">繧ｷ繝翫Μ繧ｪ縺ｮ隕∫せ</div><ul>${scenarioPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul></div>` : '';
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
     <div class="vn-scene page-enter"><div class="vn-stage" style="background:${c.bg || getStageBg('protagonist')}">${hero}</div></div>
     <div class="title-content page-enter">
       <h1 class="title-main">${META.titleHtml || escapeHtml(META.title || '')}</h1>
-      <div class="title-sub">${escapeHtml(META.subtitle || '歴史の分岐点を追体験する')}</div>
-      ${META.bigQuestion ? `<div class="big-question"><div class="big-question-label">大きな問い</div><div class="big-question-text">${escapeHtml(META.bigQuestion)}</div></div>` : ''}
+      <div class="title-sub">${escapeHtml(META.subtitle || '豁ｴ蜿ｲ縺ｮ蛻・ｲ千せ繧定ｿｽ菴馴ｨ薙☆繧・)}</div>
+      ${META.bigQuestion ? `<div class="big-question"><div class="big-question-label">螟ｧ縺阪↑蝠上＞</div><div class="big-question-text">${escapeHtml(META.bigQuestion)}</div></div>` : ''}
       <div class="title-desc">${META.description || ''}</div>
       ${scenarioPointsHtml}
       <div class="title-note">${META.note || ''}</div>
-      <button class="start-btn" onclick="goNext('${META.start || 'scene01'}')">シミュレーション開始</button>
+      <button class="start-btn" onclick="goNext('${META.start || 'scene01'}')">繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ髢句ｧ・/button>
     </div>`;
 }
 
@@ -256,11 +256,11 @@ function renderStory(passage) {
   let boxContent = '';
   if (isStatus) {
     const items = (line.items || []).map(item => `<div class="vso-item">${escapeHtml(item)}</div>`).join('');
-    stageInner += `<div class="vn-status-overlay"><div class="vso-title">── ${escapeHtml(line.title || '状況')} ──</div><div class="vso-grid">${items}</div></div>`;
+    stageInner += `<div class="vn-status-overlay"><div class="vso-title">笏笏 ${escapeHtml(line.title || '迥ｶ豕・)} 笏笏</div><div class="vso-grid">${items}</div></div>`;
   } else {
     const c = speakerKey && CHARS[speakerKey];
     const name = c ? `<div class="vn-name">${escapeHtml(c.name)}<span class="vn-name-role">${escapeHtml(c.role || '')}</span></div>` : '<div class="vn-name hidden"></div>';
-    boxContent = `${name}<div class="vn-text">${line.text || ''}</div><div class="vn-arrow">${isLast ? '■' : '▼'}</div>`;
+    boxContent = `${name}<div class="vn-text">${line.text || ''}</div><div class="vn-arrow">${isLast ? '笆' : '笆ｼ'}</div>`;
   }
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
@@ -269,7 +269,7 @@ function renderStory(passage) {
       <div class="vn-stage" style="background:${isStatus ? 'linear-gradient(135deg,rgba(14,8,2,.93),rgba(20,10,4,.91))' : getStageBg(displayKey)}">${stageInner}</div>
       ${isStatus ? '' : `<div class="vn-box">${boxContent}</div>`}
     </div>
-    <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ</button>`;
+    <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">谺｡縺ｮ繧ｷ繝ｼ繝ｳ縺ｸ</button>`;
 }
 
 function advanceLine() {
@@ -289,11 +289,11 @@ function renderDecision(passage) {
     <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
     <div class="vn-scene page-enter"><div class="vn-stage" style="background:${getStageBg('protagonist')}">${buildChar('protagonist')}</div></div>
     <div class="page-enter">
-      <div class="timer-area"><div class="timer-count" id="timerCount">--</div><div>グループで審議してください</div><button class="restart-btn" style="width:auto;margin:0;padding:8px 12px;" onclick="resetTimer()">リセット</button></div>
-      <div class="decision-tag">${escapeHtml(passage.tag || '決断')}</div>
+      <div class="timer-area"><div class="timer-count" id="timerCount">--</div><div>繧ｰ繝ｫ繝ｼ繝励〒蟇ｩ隴ｰ縺励※縺上□縺輔＞</div><button class="restart-btn" style="width:auto;margin:0;padding:8px 12px;" onclick="resetTimer()">繝ｪ繧ｻ繝・ヨ</button></div>
+      <div class="decision-tag">${escapeHtml(passage.tag || '豎ｺ譁ｭ')}</div>
       <div class="decision-context">${passage.context || ''}</div>
       <div class="choices">${choices}</div>
-      <div class="keyboard-hint">A / B / C キーでも選択できます</div>
+      <div class="keyboard-hint">A / B / C 繧ｭ繝ｼ縺ｧ繧る∈謚槭〒縺阪∪縺・/div>
     </div>`;
   startTimer();
 }
@@ -303,7 +303,7 @@ function choose(idx) {
   const ch = passage && passage.choices && passage.choices[idx];
   if (!ch) return;
   if (getChoiceHistorical(ch)) S.matches++;
-  S.log.push({ tag: passage.tag || '決断', text: ch.text, isMatch: getChoiceHistorical(ch) });
+  S.log.push({ tag: passage.tag || '豎ｺ譁ｭ', text: ch.text, isMatch: getChoiceHistorical(ch) });
   S.pendingChoice = ch;
   S.showResult = true;
   clearInterval(timerInterval);
@@ -316,15 +316,15 @@ function renderResult(passage) {
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
     <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
-    <div class="result-your"><strong>あなたの選択</strong><br>${ch.text}<br><br>${ch.playerConsequence || ch.pc || ''}</div>
-    <div class="match-banner ${getChoiceHistorical(ch) ? 'match' : 'mismatch'}">${getChoiceHistorical(ch) ? '史実と一致' : '史実とは異なります'}</div>
+    <div class="result-your"><strong>縺ゅ↑縺溘・驕ｸ謚・/strong><br>${ch.text}<br><br>${ch.playerConsequence || ch.pc || ''}</div>
+    <div class="match-banner ${getChoiceHistorical(ch) ? 'match' : 'mismatch'}">${getChoiceHistorical(ch) ? '蜿ｲ螳溘→荳閾ｴ' : '蜿ｲ螳溘→縺ｯ逡ｰ縺ｪ繧翫∪縺・}</div>
     <div class="result-historical">
-      <div class="result-historical-title">${escapeHtml((CHARS.protagonist || {}).name || '主人公')}が実際に選んだこと</div>
+      <div class="result-historical-title">${escapeHtml((CHARS.protagonist || {}).name || '荳ｻ莠ｺ蜈ｬ')}縺悟ｮ滄圀縺ｫ驕ｸ繧薙□縺薙→</div>
       <div>${historicalChoice ? historicalChoice.text : ''}</div>
       <br>
       <div>${ch.historicalText || ch.ht || ''}</div>
     </div>
-    <button class="continue-btn" onclick="goNextFromResult()">次のシーンへ</button>`;
+    <button class="continue-btn" onclick="goNextFromResult()">谺｡縺ｮ繧ｷ繝ｼ繝ｳ縺ｸ</button>`;
 }
 
 function goNextFromResult() {
@@ -339,30 +339,30 @@ function renderEnding() {
   const score = S.matches;
   const evals = ENDING.scoreEvaluations || {};
   const evalText = score === total ? evals.perfect : score >= Math.ceil(total / 2) ? evals.good : evals.low;
-  const log = S.log.map(r => `<div class="choice-record"><strong>${r.isMatch ? '一致' : '相違'}</strong> ${escapeHtml(r.tag)}<br>${r.text}</div>`).join('');
+  const log = S.log.map(r => `<div class="choice-record"><strong>${r.isMatch ? '荳閾ｴ' : '逶ｸ驕・}</strong> ${escapeHtml(r.tag)}<br>${r.text}</div>`).join('');
   const learningPoints = ENDING.learningPoints || [];
   const learningHtml = learningPoints.length
     ? `<div class="ending-section page-enter">
-        <div class="ending-section-title">このシミュレーションで学ぶこと</div>
+        <div class="ending-section-title">縺薙・繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ縺ｧ蟄ｦ縺ｶ縺薙→</div>
         <div class="learning-points"><ol>${learningPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ol></div>
       </div>`
     : '';
   const cards = (ENDING.conceptCards || []).map(card => `<div class="concept-card"><div class="concept-tag">${escapeHtml(card.tag)}</div><div class="concept-title">${escapeHtml(card.title)}</div><div class="concept-body">${card.body}</div></div>`).join('');
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
-    <div class="ending-section page-enter"><div class="ending-section-title">エピローグ</div><div class="narration">${ENDING.narration || ''}</div></div>
+    <div class="ending-section page-enter"><div class="ending-section-title">繧ｨ繝斐Ο繝ｼ繧ｰ</div><div class="narration">${ENDING.narration || ''}</div></div>
     <div class="ending-section page-enter">
-      <div class="ending-section-title">選択記録</div>
+      <div class="ending-section-title">驕ｸ謚櫁ｨ倬鹸</div>
       <div class="score-display"><span class="score-num">${score}</span><span class="score-denom"> / ${total}</span><br>${evalText || ''}</div>
       <div class="choice-log">${log}</div>
     </div>
     ${learningHtml}
     <div class="ending-section page-enter">
-      <div class="ending-section-title">歴史的概念カード</div>
-      <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
+      <div class="ending-section-title">豁ｴ蜿ｲ逧・ｦょｿｵ繧ｫ繝ｼ繝・/div>
+      <div class="concept-intro">縺薙・繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ縺梧ｷｱ繧√◆豁ｴ蜿ｲ縺ｮ隕区婿繝ｻ閠・∴譁ｹ繧呈紛逅・＠縺ｾ縺吶・/div>
       <div class="concept-grid">${cards}</div>
     </div>
-    <button class="restart-btn" onclick="restart()">もう一度プレイ</button>`;
+    <button class="restart-btn" onclick="restart()">繧ゅ≧荳蠎ｦ繝励Ξ繧､</button>`;
 }
 
 function startTimer() {
@@ -428,4 +428,5 @@ loadScenario();
 </script>
 </body>
 </html>
+
 
