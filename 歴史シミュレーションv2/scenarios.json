@@ -11,7 +11,7 @@
                           "bg":  "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
                           "status":  "ready",
                           "data":  "scenarios/01_日露戦争_桂太郎/scenario.json",
-                          "image":  "assets/scenes/katsura-russo-war-hero.png"
+                          "image":  "assets/scenes/katsura-russo-war-hero.webp"
                       },
                       {
                           "id":  "02_doumer_indochina",
@@ -24,7 +24,7 @@
                           "data":  "scenarios/02_帝国主義_ドゥメール/scenario.json",
                           "bg":  "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)",
                           "status":  "ready",
-                          "image":  "assets/scenes/doumer-indochina-hero.png"
+                          "image":  "assets/scenes/doumer-indochina-hero.webp"
                       },
                       {
                           "id":  "04_bismarck_nation_state",

@@ -10,13 +10,13 @@
                  "start":  "scene01",
                  "timerSeconds":  60,
                  "imageNote":  "扉絵・人物画像は授業用イメージです。",
-                 "heroImage":  "assets/scenes/doumer-indochina-hero.png"
+                 "heroImage":  "assets/scenes/doumer-indochina-hero.webp"
              },
     "characters":  {
                        "protagonist":  {
                                            "name":  "ポール・ドゥメール",
                                            "role":  "仏領インドシナ総督",
-                                           "photo":  "assets/portraits/paul-doumer.png",
+                                           "photo":  "assets/portraits/paul-doumer.webp",
                                            "bg":  "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)"
                                        },
                        "official":  {

@@ -17,13 +17,13 @@
                                         "歴史上の判断は、結果だけでなく、当時の制約や情報環境から考える必要がある。"
                                     ],
                  "imageNote":  "扉絵・人物画像は授業用イメージです。",
-                 "heroImage":  "assets/scenes/katsura-russo-war-hero.png"
+                 "heroImage":  "assets/scenes/katsura-russo-war-hero.webp"
              },
     "characters":  {
                        "protagonist":  {
                                            "name":  "桂太郎",
                                            "role":  "内閣総理大臣",
-                                           "photo":  "assets/portraits/katsura-taro.png",
+                                           "photo":  "assets/portraits/katsura-taro.webp",
                                            "bg":  "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)"
                                        },
                        "komura":  {
