@@ -59,3 +59,8 @@ desktop.ini
 *.swp
 *.swo
 .vscode/
+# 歴史シミュレーションの公開用人物イラスト
+!歴史シミュレーションv2/assets/
+!歴史シミュレーションv2/assets/**
+!歴史シミュレーションv2_public/assets/
+!歴史シミュレーションv2_public/assets/**

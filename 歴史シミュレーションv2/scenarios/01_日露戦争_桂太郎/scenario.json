@@ -15,13 +15,14 @@
                                         "日本は戦争に勝利していたが、財政と兵力の限界から講和を急ぐ必要があった。",
                                         "ポーツマス条約への不満は、政府が戦争継続の限界を国民に説明できなかったことから強まった。",
                                         "歴史上の判断は、結果だけでなく、当時の制約や情報環境から考える必要がある。"
-                                    ]
+                                    ],
+                 "imageNote":  "人物画像は授業用イメージです。"
              },
     "characters":  {
                        "protagonist":  {
                                            "name":  "桂太郎",
                                            "role":  "内閣総理大臣",
-                                           "photo":  null,
+                                           "photo":  "assets/portraits/katsura-taro.png",
                                            "bg":  "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)"
                                        },
                        "komura":  {

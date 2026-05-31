@@ -24,7 +24,8 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 ├── CLAUDE.md                     ← この指示書
 ├── index.html                    ← シナリオ選択トップ画面（scenarios.jsonを読む）
 ├── player.html                   ← JSON共通プレイヤー
-├── scenarios.json                ← トップ画面のシナリオ一覧
+├── scenarios.json
+├── assets/portraits/              ← 生徒画面で使う人物イラスト                ← トップ画面のシナリオ一覧
 ├── JSON化メモ.md                 ← JSON運用メモ
 └── scenarios/
     ├── _json_template/
@@ -44,6 +45,7 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 ├── index.html
 ├── player.html
 ├── scenarios.json
+├── assets/portraits/              ← 生徒画面で使う人物イラスト
 └── scenarios/*/scenario.json      ← 生徒公開用。先生用ファイルは入れない
 ```
 
@@ -69,6 +71,12 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 
 `learningPoints` は生徒に考えさせる振り返りではなく、先生側から短文で示し、生徒が紙のプリントに転記しやすい形にする。
 
+### 人物画像は生成イラストを使う
+
+- 生徒用に表示する人物画像は、写真ではなく授業用の生成イラストを基本にする。
+- 画像は `assets/portraits/` に置き、`scenarios.json` の `image` と各 `scenario.json` の `characters.protagonist.photo` から参照する。
+- `meta.imageNote` に「人物画像は授業用イメージです。」を入れ、史料写真そのものではないことを示す。
+
 ### 旧HTML版は先生用だけ
 
 - `index_legacy.html` は教材作成・比較確認用のバックアップ。
@@ -79,7 +87,7 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 ### 生徒公開用フォルダ
 
 - 生徒公開用は `../歴史シミュレーションv2_public/`。
-- このフォルダには `index.html`, `player.html`, `scenarios.json`, `scenarios/*/scenario.json`, `.nojekyll` だけを入れる。
+- このフォルダには `index.html`, `player.html`, `scenarios.json`, `scenarios/*/scenario.json`, `assets/portraits/*`, `.nojekyll` だけを入れる。
 - `CLAUDE.md`, `JSON化メモ.md`, `_template`, `_json_template`, `index_legacy.html` は公開用に入れない。
 - シナリオを更新したら、開発用 `歴史シミュレーションv2/` だけでなく公開用 `歴史シミュレーションv2_public/` にも反映する。
 
