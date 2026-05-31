@@ -29,25 +29,25 @@
                        "komura":  {
                                       "name":  "小村寿太郎",
                                       "role":  "外務大臣",
-                                      "photo":  null,
+                                      "photo":  "assets/portraits/komura-jutaro.webp",
                                       "bg":  "linear-gradient(180deg,#5f6f7f 0%,#2f3f4f 100%)"
                                   },
                        "kodama":  {
                                       "name":  "児玉源太郎",
                                       "role":  "陸軍参謀次長",
-                                      "photo":  null,
+                                      "photo":  "assets/portraits/kodama-gentaro.webp",
                                       "bg":  "linear-gradient(180deg,#6f6a58 0%,#3f3a28 100%)"
                                   },
                        "takahashi":  {
                                          "name":  "高橋是清",
                                          "role":  "日銀副総裁",
-                                         "photo":  null,
+                                         "photo":  "assets/portraits/takahashi-korekiyo.webp",
                                          "bg":  "linear-gradient(180deg,#6f5f4f 0%,#3f2f1f 100%)"
                                      },
                        "official":  {
                                         "name":  "大蔵省担当者",
                                         "role":  "財政担当官",
-                                        "photo":  null,
+                                        "photo":  "assets/portraits/finance-official.webp",
                                         "bg":  "linear-gradient(180deg,#6a6a6a 0%,#3a3a3a 100%)"
                                     }
                    },

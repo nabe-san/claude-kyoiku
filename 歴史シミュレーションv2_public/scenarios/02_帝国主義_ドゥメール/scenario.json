@@ -22,13 +22,13 @@
                        "official":  {
                                         "name":  "植民地官僚",
                                         "role":  "総督府職員",
-                                        "photo":  null,
+                                        "photo":  "assets/portraits/colonial-bureaucrat.webp",
                                         "bg":  "linear-gradient(180deg,#4a3a2a 0%,#1e1208 100%)"
                                     },
                        "local":  {
                                      "name":  "ベトナムの文紳",
                                      "role":  "知識人層",
-                                     "photo":  null,
+                                     "photo":  "assets/portraits/vietnamese-scholar.webp",
                                      "bg":  "linear-gradient(180deg,#6a5a3a 0%,#3a2a18 100%)"
                                  }
                    },
