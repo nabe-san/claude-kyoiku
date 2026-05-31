@@ -9,7 +9,8 @@
                  "note":  "選択肢はすべて当時の視点では合理的に見えます。史実と同じ判断を探しながら、当時の制約を体感してください。",
                  "start":  "scene01",
                  "timerSeconds":  60,
-                 "imageNote":  "人物画像は授業用イメージです。"
+                 "imageNote":  "扉絵・人物画像は授業用イメージです。",
+                 "heroImage":  "assets/scenes/doumer-indochina-hero.png"
              },
     "characters":  {
                        "protagonist":  {
