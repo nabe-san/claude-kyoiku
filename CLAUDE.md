@@ -136,8 +136,12 @@ python generate.py --force   # 出力済みフォルダも強制再生成
 スキルからも実行できる：Claude Code で `/授業自動生成` と入力。
 
 ### 歴史シミュレーション
-- 単体HTMLファイルで動作。ブラウザで `歴史シミュレーションv2/scenarios/<シナリオ名>/index.html` を直接開く
-- 新シナリオ作成は `歴史シミュレーションv2/CLAUDE.md` の手順に従う
+- 生徒用公開URL: `https://nabe-san.github.io/claude-kyoiku/歴史シミュレーションv2_public/`
+- 先生は `歴史シミュレーションv2/` を編集する。生徒公開用は `歴史シミュレーションv2_public/` に反映する
+- JSON版はローカルサーバー経由で確認する。例: `cd 歴史シミュレーションv2_public` → `python -m http.server 8000`
+- シナリオ本文は各 `scenario.json`、一覧カードは `scenarios.json`、共通表示は `player.html` を更新する
+- 画像は `assets/portraits/` と `assets/scenes/` に置き、公開時はWebPなど軽量な形式を使う
+- 更新後は公開用フォルダも確認し、必要な変更だけをコミットして GitHub に push する
 
 ### 授業記録（Google Apps Script）
 - `授業記録/gas_lesson.js` を Google Apps Script エディタに貼り付けてデプロイする
