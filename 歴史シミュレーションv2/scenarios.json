@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "01_katsura_russo_japanese_war",
+      "title": "桂太郎と日露戦争の選択",
+      "tag": "第1回",
+      "era": "1901〜1905年",
+      "concept": "因果と帰結 / 歴史的パースペクティブ",
+      "bigQuestion": "国家はなぜ戦争を選択し、その結果を国民にどう説明するのか？",
+      "description": "日本初の本格的な対外戦争。首相として財政・外交・軍事の制約の中で「開戦か講和か」を追体験する。",
+      "url": "scenarios/01_日露戦争_桂太郎/index.html",
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
+      "status": "ready"
+    },
+    {
+      "id": "02_rhodes_imperialism",
+      "title": "帝国主義の野望 ── ローズの選択",
+      "tag": "帝国主義",
+      "era": "1884〜1895年",
+      "concept": "帝国主義 / 文明化の使命 / 植民地支配の遺産",
+      "bigQuestion": "帝国主義は、なぜ当時の人々に正当化されたのか？",
+      "description": "セシル・ローズの視点でアフリカ分割を追体験。なぜ帝国主義は生まれ、植民地化された人々に何をもたらしたのか？",
+      "url": "scenarios/02_帝国主義_ローズ/index.html",
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
+      "status": "ready"
+    },
+    {
+      "id": "03_doumer_indochina",
+      "title": "文明化の使命 ── ドゥメールの決断",
+      "tag": "JSON版",
+      "era": "1897〜1901年 仏領インドシナ",
+      "concept": "帝国主義と植民地主義 / 文明化の使命 / 解釈と論争性",
+      "bigQuestion": "近代化に見える政策は、誰に利益を与え、誰に負担を押しつけたのか？",
+      "description": "仏領インドシナ総督ドゥメールの視点で植民地統治を追体験。アヘン専売・強制労働・文化破壊を考える。",
+      "data": "scenarios/03_帝国主義_ドゥメール/scenario.json",
+      "bg": "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)",
+      "status": "ready"
+    },
+    {
+      "id": "04_bismarck_nation_state",
+      "title": "ビスマルクと国民国家の建設",
+      "tag": "準備中",
+      "era": "1862〜1871年",
+      "concept": "国民国家とナショナリズム / 因果と帰結",
+      "bigQuestion": "国民国家は、合意によって作られるのか、権力によって作られるのか？",
+      "description": "「鉄血宰相」ビスマルクの視点でドイツ統一を追体験。武力と外交のバランスをどう取るか？",
+      "bg": "linear-gradient(180deg,#4a4a5a 0%,#1a1a2a 100%)",
+      "status": "coming-soon"
+    },
+    {
+      "id": "05_sun_yat_sen_revolution",
+      "title": "孫文と中国革命の岐路",
+      "tag": "準備中",
+      "era": "1905〜1912年",
+      "concept": "国民国家とナショナリズム / 因果と帰結",
+      "bigQuestion": "革命は、どのような条件がそろったときに社会を動かす力になるのか？",
+      "description": "日露戦後、孫文が中国革命を目指した時代。革命派の戦略をどう選択するか？",
+      "bg": "linear-gradient(180deg,#5a4a3a 0%,#2a1a0a 100%)",
+      "status": "coming-soon"
+    }
+  ]
+}

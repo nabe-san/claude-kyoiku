@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>歴史シミュレーション — プレイヤー</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #ede4cc;
+  color: #1e1208;
+  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+#app { width: min(900px, 100%); min-height: 100vh; padding: 0 20px 80px; }
+.page-enter { animation: pageIn .25s ease both; }
+@keyframes pageIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.game-header { text-align: center; padding: 22px 0 10px; border-bottom: 1px solid #c8a84b44; margin-bottom: 14px; }
+.game-label { font-size: 12px; color: #907850; letter-spacing: 4px; }
+.back-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #8b2020;
+  text-decoration: none;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.back-link:hover { text-decoration: underline; }
+.timeline { display: flex; justify-content: space-between; padding: 10px 0 6px; margin-bottom: 22px; font-size: 12px; gap: 4px; }
+.tl-item { flex: 1; text-align: center; color: #a09060; white-space: nowrap; padding: 6px 2px; border-bottom: 2px solid #c8c080; }
+.tl-item.past { color: #604020; border-color: #907040; }
+.tl-item.active { color: #8b2020; border-color: #8b2020; font-weight: bold; }
+.scene-header { display: grid; grid-template-columns: max-content 1fr; overflow: hidden; margin-bottom: 18px; box-shadow: 0 4px 16px rgba(42,26,10,.18); border-radius: 3px; }
+.scene-year { background: #c8a84b; color: #1a0800; padding: 0 20px; font-size: 16px; font-weight: bold; display: flex; align-items: center; min-width: 120px; justify-content: center; }
+.scene-title { background: #2a1a0a; color: #f0e6d0; font-size: 22px; font-weight: bold; padding: 18px 24px; }
+.vn-scene { border: 1px solid #c8a84b44; border-radius: 4px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 24px rgba(42,26,10,.16); }
+.vn-stage { height: 420px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.vn-stage::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 90% 60% at 50% 30%, rgba(255,240,200,.1), transparent 65%), linear-gradient(0deg, rgba(0,0,0,.22), transparent 40%); }
+.vn-char { position: relative; z-index: 2; height: 400px; display: flex; align-items: flex-end; justify-content: center; }
+.char-photo { height: 390px; max-width: 300px; object-fit: cover; object-position: top center; filter: drop-shadow(0 8px 28px rgba(0,0,0,.5)); }
+.char-silhouette { height: 340px; width: 150px; display: flex; align-items: flex-end; justify-content: center; opacity: .65; }
+.char-silhouette svg { width: 140px; height: 330px; filter: drop-shadow(0 6px 18px rgba(0,0,0,.4)); }
+.vn-box { background: linear-gradient(180deg, #f5ead2 0%, #ecddc0 60%, #e6d6ae 100%); padding: 0 30px 26px; min-height: 146px; position: relative; cursor: pointer; }
+.vn-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, transparent, #c8a84b, #8b2020, #c8a84b, transparent); }
+.vn-name { display: inline-block; font-size: 15px; font-weight: bold; padding: 10px 34px 10px 18px; margin-bottom: 14px; background: #1e1208; color: #f0e6d0; border-left: 3px solid #c8a84b; clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 100%, 0 100%); }
+.vn-name.hidden { display: none; }
+.vn-name-role { font-size: 11px; opacity: .7; margin-left: 6px; font-weight: normal; }
+.vn-text { font-size: 19px; line-height: 2; min-height: 72px; }
+.vn-arrow { position: absolute; bottom: 16px; right: 26px; color: #c8a84b; }
+.vn-status-overlay { position: absolute; inset: 0; z-index: 4; background: linear-gradient(135deg, rgba(14,8,2,.93), rgba(20,10,4,.91)); border-left: 4px solid #c8a84b; display: flex; flex-direction: column; justify-content: center; padding: 24px 32px; }
+.vso-title { font-size: 15px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #c8a84b55; }
+.vso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 36px; }
+.vso-item { font-size: 18px; color: #e0d0b0; line-height: 1.8; }
+.continue-btn, .start-btn, .restart-btn {
+  display: block; width: 100%; background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b;
+  padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 3px; border-radius: 3px; margin-bottom: 28px;
+}
+.continue-btn.hidden-btn { opacity: 0; pointer-events: none; }
+.title-content { text-align: center; padding: 40px 20px 20px; }
+.title-main { font-size: 34px; line-height: 1.4; margin-bottom: 10px; color: #1e1208; }
+.title-sub { font-size: 13px; color: #907850; letter-spacing: 5px; margin-bottom: 22px; }
+.title-desc, .decision-context, .narration, .concept-intro { background: #faf6ec; border: 1px solid #c8a84b44; padding: 20px 24px; line-height: 1.9; border-radius: 3px; text-align: left; }
+.title-desc { max-width: 560px; margin: 0 auto 16px; }
+.big-question {
+  max-width: 560px;
+  margin: 0 auto 16px;
+  background: #fff8e6;
+  border: 1px solid #c8a84b66;
+  border-left: 5px solid #8b2020;
+  padding: 16px 20px;
+  text-align: left;
+  line-height: 1.8;
+}
+.big-question-label {
+  font-size: 11px;
+  color: #8b2020;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.big-question-text { font-size: 16px; color: #1e1208; }
+.title-note { font-size: 11px; color: #907850; margin-bottom: 32px; line-height: 2; }
+.decision-tag, .ending-section-title { display: inline-block; background: #8b2020; color: #faf6ec; padding: 5px 14px; font-size: 12px; letter-spacing: 2px; border-radius: 2px; margin-bottom: 14px; }
+.decision-context { margin-bottom: 18px; border-left: 5px solid #c8a84b; }
+.choices { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.choice-btn { background: #faf6ec; border: 1px solid #c8a84b88; color: #1e1208; padding: 16px 20px 16px 58px; text-align: left; cursor: pointer; font-family: inherit; font-size: 17px; line-height: 1.75; border-radius: 3px; position: relative; }
+.choice-btn::before { content: attr(data-label); position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; color: #faf6ec; background: #8b2020; line-height: 30px; text-align: center; font-weight: bold; }
+.keyboard-hint { text-align: center; font-size: 12px; color: #907850; letter-spacing: 2px; margin-bottom: 20px; }
+.timer-area { display: flex; align-items: center; gap: 14px; padding: 12px 16px; margin-bottom: 16px; background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 4px; }
+.timer-count { font-size: 22px; color: #8b2020; min-width: 70px; text-align: center; font-weight: bold; }
+.result-your, .result-historical, .score-display, .choice-log { background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 3px; padding: 18px 22px; margin-bottom: 16px; line-height: 1.8; }
+.match-banner { padding: 12px 18px; margin-bottom: 16px; border-radius: 3px; font-weight: bold; }
+.match-banner.match { background: #e4f5ea; color: #1a5a28; border: 1px solid #3a9048; }
+.match-banner.mismatch { background: #fdf5e2; color: #6a4010; border: 1px solid #c09030; }
+.result-historical-title { color: #1a5a28; font-weight: bold; margin-bottom: 8px; }
+.ending-section { margin-bottom: 26px; }
+.narration p { margin-bottom: 1em; }
+.narration p:last-child { margin-bottom: 0; }
+.emphasis { color: #8b2020; font-weight: bold; }
+.score-num { font-size: 48px; color: #8b2020; font-weight: bold; }
+.score-denom { font-size: 24px; color: #907850; }
+.choice-record { border-bottom: 1px solid #e0d0a8; padding: 9px 0; }
+.choice-record:last-child { border-bottom: none; }
+.concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.concept-card { background: #faf6ec; border: 1px solid #c8a84b55; border-top: 4px solid #8b2020; border-radius: 3px; padding: 20px 22px; }
+.concept-tag { font-size: 10px; color: #8b2020; letter-spacing: 2px; margin-bottom: 8px; }
+.concept-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+.concept-body { font-size: 14px; line-height: 1.9; }
+.error { margin-top: 40px; background: #fff8e6; border: 1px solid #c09030; padding: 24px; line-height: 1.9; border-radius: 4px; }
+.error code {
+  background: #f5e8c8;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+@media (max-width: 620px) {
+  .scene-header { grid-template-columns: 1fr; }
+  .vso-grid, .concept-grid { grid-template-columns: 1fr; }
+  .vn-stage { height: 360px; }
+  .char-photo { height: 335px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SILHOUETTE_SVG = '<svg viewBox="0 0 80 185" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="58" rx="18" ry="22" fill="#c8a84b"/><path d="M8 185 L8 108 Q8 94 25 89 L40 84 L55 89 Q72 94 72 108 L72 185Z" fill="#c8a84b"/></svg>';
+
+let SCENARIO, CHARS, P, TL, META, ENDING;
+let S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+let timerInterval = null;
+let timerRemaining = 60;
+let timerRunning = false;
+
+async function loadScenario() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const scenarioPath = params.get('data') || 'scenarios/_json_template/scenario.json';
+    const response = await fetch(scenarioPath, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    SCENARIO = await response.json();
+    META = SCENARIO.meta || {};
+    CHARS = SCENARIO.characters || {};
+    P = SCENARIO.passages || {};
+    TL = SCENARIO.timeline || [];
+    ENDING = SCENARIO.ending || {};
+    timerRemaining = META.timerSeconds || 60;
+    document.title = META.title || '歴史シミュレーション';
+    render();
+  } catch (error) {
+    const isFile = location.protocol === 'file:';
+    const message = isFile
+      ? `この画面は壊れていません。JSONを読み込む方式のため、ダブルクリックではなくローカルサーバー経由で開いてください。<br><br>PowerShellで <code>歴史シミュレーションv2</code> フォルダに移動して、<code>python -m http.server 8001</code> を実行します。<br>そのあと <code>http://localhost:8001/player.html?data=scenarios/03_帝国主義_ドゥメール/scenario.json</code> を開いてください。`
+      : `JSON版プレイヤーは、ローカルサーバー経由で開いてください。<br>例：<code>python -m http.server 8001</code>`;
+    document.getElementById('app').innerHTML = `
+      <div class="error">
+        <strong>scenario.json を読み込めませんでした。</strong><br>
+        ${message}<br><br>
+        詳細: ${escapeHtml(error.message)}
+      </div>`;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+}
+
+function getChoiceHistorical(choice) {
+  return choice.isHistorical === true || choice.isH === true;
+}
+
+function buildChar(charKey) {
+  const c = charKey && CHARS[charKey];
+  if (!c) return `<div class="vn-char"><div class="char-silhouette">${SILHOUETTE_SVG}</div></div>`;
+  if (c.photo) return `<div class="vn-char"><img class="char-photo" src="${c.photo}" alt="${escapeHtml(c.name)}"></div>`;
+  return `<div class="vn-char"><div class="char-silhouette">${SILHOUETTE_SVG}</div></div>`;
+}
+
+function getStageBg(charKey) {
+  const c = charKey && CHARS[charKey];
+  return c && c.bg ? c.bg : 'linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)';
+}
+
+function tlHtml() {
+  const cur = (P[S.passage] || {}).tl || 0;
+  return `<div class="timeline">${TL.map((t, i) => `<div class="tl-item${i < cur ? ' past' : i === cur ? ' active' : ''}">${escapeHtml(t).replace('\\n','<br>')}</div>`).join('')}</div>`;
+}
+
+function render() {
+  const passage = P[S.passage];
+  if (!passage) return;
+  if (passage.type === 'title') renderTitle();
+  if (passage.type === 'story') renderStory(passage);
+  if (passage.type === 'decision') S.showResult ? renderResult(passage) : renderDecision(passage);
+  if (passage.type === 'ending') renderEnding();
+}
+
+function renderHeader() {
+  return `<div class="game-header page-enter"><a class="back-link" href="index.html">← シナリオ一覧へ戻る</a><div class="game-label">${escapeHtml(META.subject || '歴史総合')} — 歴史シミュレーション</div>${tlHtml()}</div>`;
+}
+
+function renderTitle() {
+  const c = CHARS.protagonist || {};
+  const hero = c.photo ? `<img class="char-photo" src="${c.photo}" alt="${escapeHtml(c.name)}">` : `<div class="char-silhouette">${SILHOUETTE_SVG}</div>`;
+  document.getElementById('app').innerHTML = `
+    ${renderHeader()}
+    <div class="vn-scene page-enter"><div class="vn-stage" style="background:${c.bg || getStageBg('protagonist')}">${hero}</div></div>
+    <div class="title-content page-enter">
+      <h1 class="title-main">${META.titleHtml || escapeHtml(META.title || '')}</h1>
+      <div class="title-sub">${escapeHtml(META.subtitle || '歴史の分岐点を追体験する')}</div>
+      ${META.bigQuestion ? `<div class="big-question"><div class="big-question-label">大きな問い</div><div class="big-question-text">${escapeHtml(META.bigQuestion)}</div></div>` : ''}
+      <div class="title-desc">${META.description || ''}</div>
+      <div class="title-note">${META.note || ''}</div>
+      <button class="start-btn" onclick="goNext('${META.start || 'scene01'}')">シミュレーション開始</button>
+    </div>`;
+}
+
+function renderStory(passage) {
+  const lines = passage.lines || [];
+  const idx = Math.min(S.lineIdx, lines.length - 1);
+  const line = lines[idx] || {};
+  const isLast = idx >= lines.length - 1;
+  const isStatus = line.type === 'status';
+  const speakerKey = isStatus ? null : line.speaker;
+  const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
+  let stageInner = buildChar(displayKey);
+  let boxContent = '';
+  if (isStatus) {
+    const items = (line.items || []).map(item => `<div class="vso-item">${escapeHtml(item)}</div>`).join('');
+    stageInner += `<div class="vn-status-overlay"><div class="vso-title">── ${escapeHtml(line.title || '状況')} ──</div><div class="vso-grid">${items}</div></div>`;
+  } else {
+    const c = speakerKey && CHARS[speakerKey];
+    const name = c ? `<div class="vn-name">${escapeHtml(c.name)}<span class="vn-name-role">${escapeHtml(c.role || '')}</span></div>` : '<div class="vn-name hidden"></div>';
+    boxContent = `${name}<div class="vn-text">${line.text || ''}</div><div class="vn-arrow">${isLast ? '■' : '▼'}</div>`;
+  }
+  document.getElementById('app').innerHTML = `
+    ${renderHeader()}
+    <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
+    <div class="vn-scene page-enter" onclick="advanceLine()">
+      <div class="vn-stage" style="background:${isStatus ? 'linear-gradient(135deg,rgba(14,8,2,.93),rgba(20,10,4,.91))' : getStageBg(displayKey)}">${stageInner}</div>
+      ${isStatus ? '' : `<div class="vn-box">${boxContent}</div>`}
+    </div>
+    <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ</button>`;
+}
+
+function advanceLine() {
+  const passage = P[S.passage];
+  if (!passage || passage.type !== 'story') return;
+  if (S.lineIdx < (passage.lines || []).length - 1) {
+    S.lineIdx++;
+    render();
+  }
+}
+
+function renderDecision(passage) {
+  const labelMap = ['A','B','C','D'];
+  const choices = (passage.choices || []).map((ch, i) => `<button class="choice-btn" data-label="${labelMap[i]}" onclick="choose(${i})">${ch.text}</button>`).join('');
+  document.getElementById('app').innerHTML = `
+    ${renderHeader()}
+    <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
+    <div class="vn-scene page-enter"><div class="vn-stage" style="background:${getStageBg('protagonist')}">${buildChar('protagonist')}</div></div>
+    <div class="page-enter">
+      <div class="timer-area"><div class="timer-count" id="timerCount">--</div><div>グループで審議してください</div><button class="restart-btn" style="width:auto;margin:0;padding:8px 12px;" onclick="resetTimer()">リセット</button></div>
+      <div class="decision-tag">${escapeHtml(passage.tag || '決断')}</div>
+      <div class="decision-context">${passage.context || ''}</div>
+      <div class="choices">${choices}</div>
+      <div class="keyboard-hint">A / B / C キーでも選択できます</div>
+    </div>`;
+  startTimer();
+}
+
+function choose(idx) {
+  const passage = P[S.passage];
+  const ch = passage && passage.choices && passage.choices[idx];
+  if (!ch) return;
+  if (getChoiceHistorical(ch)) S.matches++;
+  S.log.push({ tag: passage.tag || '決断', text: ch.text, isMatch: getChoiceHistorical(ch) });
+  S.pendingChoice = ch;
+  S.showResult = true;
+  clearInterval(timerInterval);
+  render();
+}
+
+function renderResult(passage) {
+  const ch = S.pendingChoice;
+  const historicalChoice = (passage.choices || []).find(getChoiceHistorical);
+  document.getElementById('app').innerHTML = `
+    ${renderHeader()}
+    <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
+    <div class="result-your"><strong>あなたの選択</strong><br>${ch.text}<br><br>${ch.playerConsequence || ch.pc || ''}</div>
+    <div class="match-banner ${getChoiceHistorical(ch) ? 'match' : 'mismatch'}">${getChoiceHistorical(ch) ? '史実と一致' : '史実とは異なります'}</div>
+    <div class="result-historical">
+      <div class="result-historical-title">${escapeHtml((CHARS.protagonist || {}).name || '主人公')}が実際に選んだこと</div>
+      <div>${historicalChoice ? historicalChoice.text : ''}</div>
+      <br>
+      <div>${ch.historicalText || ch.ht || ''}</div>
+    </div>
+    <button class="continue-btn" onclick="goNextFromResult()">次のシーンへ</button>`;
+}
+
+function goNextFromResult() {
+  const next = S.pendingChoice && S.pendingChoice.next;
+  S.pendingChoice = null;
+  S.showResult = false;
+  goNext(next);
+}
+
+function renderEnding() {
+  const total = Object.values(P).filter(p => p.type === 'decision').length;
+  const score = S.matches;
+  const evals = ENDING.scoreEvaluations || {};
+  const evalText = score === total ? evals.perfect : score >= Math.ceil(total / 2) ? evals.good : evals.low;
+  const log = S.log.map(r => `<div class="choice-record"><strong>${r.isMatch ? '一致' : '相違'}</strong> ${escapeHtml(r.tag)}<br>${r.text}</div>`).join('');
+  const cards = (ENDING.conceptCards || []).map(card => `<div class="concept-card"><div class="concept-tag">${escapeHtml(card.tag)}</div><div class="concept-title">${escapeHtml(card.title)}</div><div class="concept-body">${card.body}</div></div>`).join('');
+  document.getElementById('app').innerHTML = `
+    ${renderHeader()}
+    <div class="ending-section page-enter"><div class="ending-section-title">エピローグ</div><div class="narration">${ENDING.narration || ''}</div></div>
+    <div class="ending-section page-enter">
+      <div class="ending-section-title">選択記録</div>
+      <div class="score-display"><span class="score-num">${score}</span><span class="score-denom"> / ${total}</span><br>${evalText || ''}</div>
+      <div class="choice-log">${log}</div>
+    </div>
+    <div class="ending-section page-enter">
+      <div class="ending-section-title">歴史的概念カード</div>
+      <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
+      <div class="concept-grid">${cards}</div>
+    </div>
+    <button class="restart-btn" onclick="restart()">もう一度プレイ</button>`;
+}
+
+function startTimer() {
+  timerRemaining = META.timerSeconds || 60;
+  timerRunning = true;
+  updateTimer();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!timerRunning) return;
+    timerRemaining--;
+    updateTimer();
+    if (timerRemaining <= 0) {
+      timerRunning = false;
+      clearInterval(timerInterval);
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const el = document.getElementById('timerCount');
+  if (!el) return;
+  const min = Math.floor(timerRemaining / 60);
+  const sec = timerRemaining % 60;
+  el.textContent = min > 0 ? `${min}:${String(sec).padStart(2,'0')}` : String(Math.max(sec, 0));
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  startTimer();
+}
+
+function goNext(key) {
+  if (!key || !P[key]) return;
+  S.passage = key;
+  S.lineIdx = 0;
+  render();
+}
+
+function restart() {
+  clearInterval(timerInterval);
+  S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+  render();
+}
+
+document.addEventListener('keydown', e => {
+  const passage = P && P[S.passage];
+  if (!passage) return;
+  if (passage.type === 'story' && ['Space','Enter','ArrowRight'].includes(e.code)) {
+    e.preventDefault();
+    advanceLine();
+  }
+  if (passage.type === 'decision' && !S.showResult) {
+    const idx = { a:0, b:1, c:2, d:3, '1':0, '2':1, '3':2, '4':3 }[e.key.toLowerCase()];
+    if (idx !== undefined) choose(idx);
+  }
+  if (passage.type === 'decision' && S.showResult && ['Space','Enter'].includes(e.code)) {
+    e.preventDefault();
+    goNextFromResult();
+  }
+});
+
+loadScenario();
+</script>
+</body>
+</html>

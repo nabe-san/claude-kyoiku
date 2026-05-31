@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "title": "シナリオタイトル",
+    "titleHtml": "シナリオタイトル",
+    "subject": "歴史総合",
+    "subtitle": "歴史の分岐点を追体験する",
+    "bigQuestion": "このシナリオで考える大きな問いを書く。",
+    "description": "ここにシナリオの説明文を入れる。主人公・時代・テーマを1〜2文で紹介する。",
+    "note": "選択肢はすべて当時の視点で合理的に見えます。史実と同じ判断を探しながら、当時の制約を体感してください。",
+    "start": "scene01",
+    "timerSeconds": 60
+  },
+  "characters": {
+    "protagonist": {
+      "name": "主人公名",
+      "role": "役割・肩書",
+      "photo": null,
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)"
+    },
+    "advisor": {
+      "name": "助言者名",
+      "role": "役割・肩書",
+      "photo": null,
+      "bg": "linear-gradient(180deg,#5a4a3a 0%,#2a1a0a 100%)"
+    }
+  },
+  "timeline": [
+    "時期1\n年代",
+    "時期2\n年代",
+    "時期3\n年代",
+    "終幕"
+  ],
+  "passages": {
+    "title": {
+      "type": "title",
+      "tl": 0
+    },
+    "scene01": {
+      "type": "story",
+      "tl": 0,
+      "year": "年代",
+      "title": "導入シーン",
+      "next": "decision01",
+      "lines": [
+        {
+          "speaker": null,
+          "text": "ナレーション本文。主人公が置かれた状況を説明する。"
+        },
+        {
+          "speaker": "advisor",
+          "text": "助言者のセリフ。判断に必要な制約や背景を示す。"
+        },
+        {
+          "type": "status",
+          "title": "現在の制約",
+          "items": [
+            "制約1：財政・軍事・世論など",
+            "制約2：国際関係・制度・情報不足など"
+          ]
+        }
+      ]
+    },
+    "decision01": {
+      "type": "decision",
+      "tl": 1,
+      "year": "年代",
+      "title": "最初の決断",
+      "tag": "決断 1",
+      "context": "この場面で生徒に考えさせたい状況説明を書く。",
+      "choices": [
+        {
+          "text": "選択肢A。史実に近い判断。",
+          "isHistorical": true,
+          "playerConsequence": "この選択をした場合に起こりそうな帰結。",
+          "historicalText": "<p>史実では、なぜこの判断が選ばれたのかを説明する。</p>",
+          "next": "ending"
+        },
+        {
+          "text": "選択肢B。別の合理性をもつ判断。",
+          "isHistorical": false,
+          "playerConsequence": "この選択をした場合に起こりそうな帰結。",
+          "historicalText": "<p>なぜ史実では選ばれにくかったのかを、当時の制約から説明する。</p>",
+          "next": "ending"
+        }
+      ]
+    },
+    "ending": {
+      "type": "ending",
+      "tl": 3
+    }
+  },
+  "ending": {
+    "narration": "<p>エンディングのナレーション。史実の結末と、その歴史的意味を説明する。</p>",
+    "scoreEvaluations": {
+      "perfect": "史実とすべて一致しました。当時の制約の中での合理性を深く理解できています。",
+      "good": "史実と一致した判断も、異なる判断もありました。それぞれの選択肢の合理性を振り返りましょう。",
+      "low": "史実と異なる判断が多かったようです。当時の制約が判断をどう狭めたのかを考えてみましょう。"
+    },
+    "conceptCards": [
+      {
+        "tag": "歴史的概念 1",
+        "title": "制約の中の合理性",
+        "body": "歴史上の人物は、現代から見れば不十分な情報や限られた選択肢の中で判断していた。"
+      },
+      {
+        "tag": "歴史的概念 2",
+        "title": "因果と帰結",
+        "body": "ある判断は、意図した結果だけでなく、意図しない結果も生み出す。"
+      }
+    ]
+  }
+}
