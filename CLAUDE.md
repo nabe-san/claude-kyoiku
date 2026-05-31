@@ -64,13 +64,22 @@ claude開発/
 │
 ├── books/                  ← 参照用読書データ（.txt）歴史シミュレーションv2・授業自動生成で共有
 │
-├── 歴史シミュレーションv2/ ← 歴史人物の視点を追体験するビジュアルノベル型 単体HTMLアプリ（v2）
+├── 歴史シミュレーションv2/        ← 開発用（JSONシナリオ・先生用legacy含む）
 │   ├── index.html          ← シナリオ選択トップ画面
+│   ├── player.html         ← JSON共通プレイヤー
+│   ├── scenarios.json      ← シナリオ一覧
 │   ├── CLAUDE.md           ← シナリオ設計の詳細指示書
 │   └── scenarios/
-│       ├── 01_日露戦争_桂太郎/   ← index.html（ゲーム本体）
-│       ├── 02_帝国主義_ローズ/
-│       └── _template/      ← 新シナリオ作成用のひな型
+│       ├── 01_日露戦争_桂太郎/
+│       ├── 03_帝国主義_ドゥメール/
+│       ├── _json_template/
+│       └── _template/
+│
+├── 歴史シミュレーションv2_public/ ← 生徒公開用（GitHub Pages対象）
+│   ├── index.html
+│   ├── player.html
+│   ├── scenarios.json
+│   └── scenarios/
 │
 ├── 参考資料/               ← 授業設計の参考資料（中核概念モデル等）
 │

@@ -1,7 +1,7 @@
 # 歴史シミュレーションv2 — CLAUDE.md
 
 高校生向け歴史人物視点シミュレーションゲーム（ビジュアルノベル形式）のv2。  
-v1（歴史シミュレーション）からUI・画像管理を全面刷新。HTML単体ファイルで動作。
+v1（歴史シミュレーション）からUI・画像管理を全面刷新。現在は **JSONシナリオ + 共通プレイヤー** を基本形とする。
 
 ---
 
@@ -22,15 +22,74 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。H
 ```
 歴史シミュレーションv2/
 ├── CLAUDE.md                     ← この指示書
-├── index.html                    ← シナリオ選択トップ画面
+├── index.html                    ← シナリオ選択トップ画面（scenarios.jsonを読む）
+├── player.html                   ← JSON共通プレイヤー
+├── scenarios.json                ← トップ画面のシナリオ一覧
+├── JSON化メモ.md                 ← JSON運用メモ
 └── scenarios/
+    ├── _json_template/
+    │   └── scenario.json         ← JSONシナリオ作成用テンプレート
     ├── _template/
-    │   └── index.html            ← 新シナリオ作成用テンプレート
+    │   └── index.html            ← 旧HTML作成用テンプレート（原則使わない）
     ├── 01_日露戦争_桂太郎/
-    │   └── index.html
+    │   ├── scenario.json         ← 生徒用JSONシナリオ
+    │   ├── index.html            ← JSON版への案内・リダイレクト
+    │   └── index_legacy.html     ← 先生用旧HTML確認（?teacher=1 のみ）
+    └── 03_帝国主義_ドゥメール/
+        ├── scenario.json
+        ├── index.html
+        └── index_legacy.html     ← 先生用旧HTML確認（?teacher=1 のみ）
+
+../歴史シミュレーションv2_public/
+├── index.html
+├── player.html
+├── scenarios.json
+└── scenarios/*/scenario.json      ← 生徒公開用。先生用ファイルは入れない
 ```
 
 ---
+
+## 現在の運用ルール（重要）
+
+### 生徒用はJSON版を使う
+
+- 生徒用の正規版は `player.html` + 各シナリオの `scenario.json`。
+- トップ画面 `index.html` は `scenarios.json` を読み、`data` に指定されたJSONを `player.html?data=...` で開く。
+- 新規シナリオは原則 `scenarios/_json_template/scenario.json` をもとに作る。
+- 旧HTML直書き方式は新規作成では使わない。
+
+### JSONシナリオで必ず入れる項目
+
+- `meta.title`, `meta.titleHtml`, `meta.bigQuestion`, `meta.description`
+- `meta.scenarioPoints`：タイトル画面に出す「シナリオの要点」
+- `passages`：タイトル・物語・決断・終了画面
+- `ending.narration`：エピローグ
+- `ending.learningPoints`：終了画面に出す「このシミュレーションで学ぶこと」
+- `ending.conceptCards`：歴史的概念カード
+
+`learningPoints` は生徒に考えさせる振り返りではなく、先生側から短文で示し、生徒が紙のプリントに転記しやすい形にする。
+
+### 旧HTML版は先生用だけ
+
+- `index_legacy.html` は教材作成・比較確認用のバックアップ。
+- 通常アクセスでは「先生用の旧HTML版です」という案内だけ表示する。
+- 先生が旧版を確認するときだけ `index_legacy.html?teacher=1` を使う。
+- 生徒用導線から `index_legacy.html` へのリンクを出さない。
+
+### 生徒公開用フォルダ
+
+- 生徒公開用は `../歴史シミュレーションv2_public/`。
+- このフォルダには `index.html`, `player.html`, `scenarios.json`, `scenarios/*/scenario.json`, `.nojekyll` だけを入れる。
+- `CLAUDE.md`, `JSON化メモ.md`, `_template`, `_json_template`, `index_legacy.html` は公開用に入れない。
+- シナリオを更新したら、開発用 `歴史シミュレーションv2/` だけでなく公開用 `歴史シミュレーションv2_public/` にも反映する。
+
+### GitHub Pages公開
+
+- リポジトリ：`nabe-san/claude-kyoiku`
+- 公開URL：`https://nabe-san.github.io/claude-kyoiku/`
+- ルート `index.html` は `歴史シミュレーションv2_public/` へリダイレクトする。
+- GitHub Actions：`.github/workflows/deploy-history-simulation.yml`
+- 公開前に、公開用フォルダへ先生用ファイルが混ざっていないか検索する。
 
 ## シナリオ作成手順
 
@@ -46,19 +105,20 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。H
 2. **概念確定の参照：中核概念参考資料**（`../参考資料/`）→ 詳細は後述「中核的な概念一覧」セクション
 3. **補助：ウェブ検索**（上記に該当資料がない場合のみ）
 
-### Step 3：テンプレートをコピーして編集
+### Step 3：JSONテンプレートをコピーして編集
 
 ```powershell
-Copy-Item -Recurse "scenarios/_template" "scenarios/XX_タイトル_人物名"
+Copy-Item -Recurse "scenarios/_json_template" "scenarios/XX_タイトル_人物名"
 ```
 
-`scenarios/XX_タイトル_人物名/index.html` を開き、★マークのついたセクションを編集する：
-- `CHARS`（キャラクター定義・写真）
-- `SCENARIO_TITLE`, `PLAYER_ROLE_DESC`, `TL`（タイムライン）
-- `P`（ストーリーデータ）
-- `ENDING_NARRATION`, `SCORE_EVALS`, `CONCEPT_CARDS`
+`scenarios/XX_タイトル_人物名/scenario.json` を編集する。主な編集箇所：
+- `meta`（タイトル・大きな問い・シナリオの要点）
+- `characters`（登場人物・役割・写真）
+- `timeline`
+- `passages`（物語・決断・結果解説）
+- `ending`（エピローグ・学びの要点・概念カード）
 
-### Step 4：写真をBase64でHTMLに埋め込む
+### Step 4：写真を設定する
 
 ```powershell
 # ① 写真をダウンロード（Wikimedia Commons などから）
@@ -82,9 +142,28 @@ protagonist: {
 
 写真がない場合は `photo: null` → シルエットSVGが自動表示される。
 
-### Step 5：index.html（トップ画面）を更新
+### Step 5：scenarios.json（トップ画面）を更新
 
-`歴史シミュレーションv2/index.html` の `scenarios-grid` に新しいカードを追加する。
+`歴史シミュレーションv2/scenarios.json` にカード情報を追加する。生徒用に開くシナリオは `url` ではなく `data` を指定する。
+
+```json
+{
+  "id": "example_id",
+  "title": "シナリオ名",
+  "tag": "単元名",
+  "data": "scenarios/XX_タイトル_人物名/scenario.json",
+  "status": "ready"
+}
+```
+
+### Step 6：公開用フォルダへ反映
+
+公開する場合は、次も更新する。
+
+- `../歴史シミュレーションv2_public/scenarios.json`
+- `../歴史シミュレーションv2_public/scenarios/XX_タイトル_人物名/scenario.json`
+
+公開用フォルダに `index_legacy.html` や先生用メモを入れない。
 
 ---
 
@@ -252,9 +331,16 @@ const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
 ## 構成パターン（テンプレートに準拠）
 
 1. **タイトル画面**
+   - 大きな問い
+   - シナリオ説明
+   - シナリオの要点（`meta.scenarioPoints`）
 2. **導入シーン**（背景・人物紹介・状況説明）
-3. **決断①〜③**（A/B/C選択 → 結果 → 史実解説）
-4. **エンディング**（ナレーション + スコア + 概念カード4枚）
+3. **決断①〜③/④**（A/B/C選択 → 結果 → 史実解説）
+4. **エンディング**
+   - エピローグ
+   - 選択記録
+   - 学びの要点（`ending.learningPoints`）
+   - 歴史的概念カード
 
 ---
 
@@ -291,7 +377,8 @@ const displayKey = (!isStatus && !speakerKey) ? 'protagonist' : speakerKey;
 
 | フォルダ名 | 人物 | 授業回（教科書単元） | 対象概念 | 状態 |
 |---|---|---|---|---|
-| `_template/` | テンプレート | ─ | ─ | 完成 |
+| `_json_template/` | JSONテンプレート | ─ | ─ | 完成 |
+| `_template/` | 旧HTMLテンプレート | ─ | ─ | 参考用 |
 | `01_日露戦争_桂太郎/` | 桂太郎 | 第7回 日露戦争 | ② 因果と帰結・④ 歴史的パースペクティブ | 完成 |
 | `03_帝国主義_ドゥメール/` | ポール・ドゥメール | 第5回 帝国主義 | ⑨ 帝国主義と植民地主義・⑤ 解釈と論争性 | 完成 |
 
