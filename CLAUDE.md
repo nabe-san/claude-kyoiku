@@ -66,9 +66,12 @@ claude開発/
 │
 ├── 歴史シミュレーションv2/        ← 開発用（JSONシナリオ・先生用legacy含む）
 │   ├── index.html          ← シナリオ選択トップ画面
-│   ├── player.html         ← JSON共通プレイヤー
+│   ├── player.html         ← JSON共通プレイヤー（ポートレート・ヒーロー画像表示対応）
 │   ├── scenarios.json      ← シナリオ一覧
 │   ├── CLAUDE.md           ← シナリオ設計の詳細指示書
+│   ├── assets/
+│   │   ├── portraits/      ← 登場人物ポートレート画像（katsura-taro.webp 等）
+│   │   └── scenes/         ← シナリオヒーロー画像（*-hero.webp）
 │   └── scenarios/
 │       ├── 01_日露戦争_桂太郎/
 │       ├── 02_帝国主義_ドゥメール/
@@ -79,6 +82,9 @@ claude開発/
 │   ├── index.html
 │   ├── player.html
 │   ├── scenarios.json
+│   ├── assets/
+│   │   ├── portraits/      ← 登場人物ポートレート画像
+│   │   └── scenes/         ← シナリオヒーロー画像
 │   └── scenarios/
 │
 ├── 参考資料/               ← 授業設計の参考資料（中核概念モデル等）
