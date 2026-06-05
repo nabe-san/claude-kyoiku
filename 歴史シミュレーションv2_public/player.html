@@ -317,6 +317,11 @@ function renderResult(passage) {
   const ch = S.pendingChoice;
   const historicalChoice = (passage.choices || []).find(getChoiceHistorical);
   const isMatch = getChoiceHistorical(ch);
+  const isFictional = META.protagonistType === 'fictional';
+  const matchLabel = isFictional ? '歴史の流れに沿った選択' : '史実と一致';
+  const mismatchLabel = isFictional ? '別の視点からの選択' : '史実とは異なる判断';
+  const historicalTag = isFictional ? '当時の人々の行動' : '史実の判断';
+  const historicalTitle = isFictional ? '当時、実際に起きたこと' : `${escapeHtml((CHARS.protagonist || {}).name || '主人公')}が実際に選んだこと`;
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
     <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
@@ -328,12 +333,12 @@ function renderResult(passage) {
       </div>
       <div class="match-banner ${isMatch ? 'match' : 'mismatch'}">
         <span class="match-icon">${isMatch ? '◎' : '△'}</span>
-        <span>${isMatch ? '史実と一致' : '史実とは異なる判断'}</span>
+        <span>${isMatch ? matchLabel : mismatchLabel}</span>
       </div>
       <div class="result-historical">
         <div class="result-historical-header">
-          <span class="result-historical-tag">史実の判断</span>
-          <span class="result-historical-title">${escapeHtml((CHARS.protagonist || {}).name || '主人公')}が実際に選んだこと</span>
+          <span class="result-historical-tag">${historicalTag}</span>
+          <span class="result-historical-title">${historicalTitle}</span>
         </div>
         <div class="result-historical-choice">${historicalChoice ? historicalChoice.text : ''}</div>
         <div class="result-historical-why">── なぜその判断をしたのか ──</div>
@@ -355,7 +360,8 @@ function renderEnding() {
   const score = S.matches;
   const evals = ENDING.scoreEvaluations || {};
   const evalText = score === total ? evals.perfect : score >= Math.ceil(total / 2) ? evals.good : evals.low;
-  const log = S.log.map(r => `<div class="choice-record"><span class="record-badge ${r.isMatch ? 'match' : 'mismatch'}">${r.isMatch ? '一致' : '相違'}</span><div><div class="record-decision">${escapeHtml(r.tag)}</div><div class="record-text">${r.text}</div></div></div>`).join('');
+  const isFictional = META.protagonistType === 'fictional';
+  const log = S.log.map(r => `<div class="choice-record"><span class="record-badge ${r.isMatch ? 'match' : 'mismatch'}">${r.isMatch ? (isFictional ? '◎' : '一致') : (isFictional ? '△' : '相違')}</span><div><div class="record-decision">${escapeHtml(r.tag)}</div><div class="record-text">${r.text}</div></div></div>`).join('');
   const learningPoints = ENDING.learningPoints || [];
   const learningHtml = learningPoints.length ? `<div class="ending-section page-enter"><div class="ending-section-title">── このシミュレーションで学ぶこと ──</div><div class="learning-points"><ol>${learningPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ol></div></div>` : '';
   const cards = (ENDING.conceptCards || []).map(card => `<div class="concept-card"><div class="concept-tag">${escapeHtml(card.tag)}</div><div class="concept-title">${escapeHtml(card.title)}</div><div class="concept-body">${card.body}</div></div>`).join('');
@@ -365,7 +371,7 @@ function renderEnding() {
     <div class="ending-section page-enter">
       <div class="ending-section-title">── 選択記録 ──</div>
       <div class="score-display">
-        <div class="score-num-wrap"><div><span class="score-num">${score}</span><span class="score-denom"> / ${total}</span></div><div class="score-label">史実と一致した判断</div></div>
+        <div class="score-num-wrap"><div><span class="score-num">${score}</span><span class="score-denom"> / ${total}</span></div><div class="score-label">${isFictional ? '歴史の流れと重なった判断' : '史実と一致した判断'}</div></div>
         <div class="score-text">${evalText || ''}</div>
       </div>
       <div class="choice-log">${log}</div>

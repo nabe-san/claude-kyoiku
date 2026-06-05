@@ -27,6 +27,19 @@
                           "image":  "assets/scenes/doumer-indochina-hero.webp"
                       },
                       {
+                          "id":  "03_iran_constitutional_revolution",
+                          "title":  "大国のはざまで ── テヘランの少年の選択",
+                          "tag":  "帝国主義",
+                          "era":  "1905〜1908年 イラン立憲革命",
+                          "concept":  "帝国主義と植民地主義 / 歴史的パースペクティブ",
+                          "bigQuestion":  "自分たちの国のことを自分たちで決められないとき、人々はどうすればよいのか？",
+                          "description":  "テヘランのバザール少年アリーの目を通して、英露に翻弄されたイラン立憲革命を追体験する。",
+                          "data":  "scenarios/03_帝国主義_イラン立憲革命/scenario.json",
+                          "bg":  "linear-gradient(180deg,#7a5a3a 0%,#3a2a18 100%)",
+                          "status":  "ready",
+                          "image":  "assets/scenes/iran-constitutional-hero.png"
+                      },
+                      {
                           "id":  "04_bismarck_nation_state",
                           "title":  "ビスマルクと国民国家の建設",
                           "tag":  "準備中",

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大国のはざまで ─ テヘランの少年の選択</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh;
+  background: #ede4cc;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(150,110,40,.035) 38px, rgba(150,110,40,.035) 39px);
+  color: #1e1208;
+  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+.notice {
+  width: min(720px, 100%);
+  background: #faf6ec;
+  border: 1px solid #c8a84b66;
+  border-left: 5px solid #8b2020;
+  border-radius: 4px;
+  padding: 28px 32px;
+  line-height: 1.9;
+  box-shadow: 0 6px 24px rgba(42,26,10,.12);
+}
+h1 { font-size: 22px; margin-bottom: 12px; color: #8b2020; }
+p { margin-bottom: 12px; }
+a { color: #8b2020; font-weight: bold; }
+code { background: #f5e8c8; padding: 2px 6px; border-radius: 2px; font-family: Consolas, monospace; font-size: 13px; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.button {
+  display: inline-block;
+  background: #2a1a0a;
+  border: 1px solid #c8a84b;
+  color: #c8a84b;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+.button.secondary { background: transparent; color: #8b2020; }
+</style>
+</head>
+<body>
+<div class="notice">
+  <h1>このシナリオはJSON版で動作します</h1>
+  <p>「大国のはざまで」編は <code>player.html + scenario.json</code> で管理しています。</p>
+  <p>ローカルサーバーで開いている場合は、自動でJSON版プレイヤーへ移動します。</p>
+  <p>ダブルクリックで開いている場合は、先に <code>歴史シミュレーションv2</code> フォルダで <code>python -m http.server 8001</code> を実行し、<code>http://localhost:8001/index.html</code> から開いてください。</p>
+  <div class="actions">
+    <a class="button" href="../../player.html?data=scenarios/03_%E5%B8%9D%E5%9B%BD%E4%B8%BB%E7%BE%A9_%E3%82%A4%E3%83%A9%E3%83%B3%E7%AB%8B%E6%86%B2%E9%9D%A9%E5%91%BD/scenario.json">JSON版で開く</a>
+    <a class="button secondary" href="../../index.html">シナリオ一覧へ戻る</a>
+  </div>
+</div>
+<script>
+const target = '../../player.html?data=scenarios/03_%E5%B8%9D%E5%9B%BD%E4%B8%BB%E7%BE%A9_%E3%82%A4%E3%83%A9%E3%83%B3%E7%AB%8B%E6%86%B2%E9%9D%A9%E5%91%BD/scenario.json';
+if (location.protocol !== 'file:') {
+  location.replace(target);
+}
+</script>
+</body>
+</html>
