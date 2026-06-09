@@ -8,6 +8,7 @@ Phase 2: 分析テキスト → Claude でテスト問題生成 → Word 出力
 2回目以降は画像送信なしで高速・低コストに動作する。
 """
 
+import argparse
 import os, sys, json, base64, yaml, unicodedata
 from pathlib import Path
 from datetime import datetime
@@ -45,9 +46,20 @@ TEXT_EXTS  = {".txt", ".pdf", ".docx"}
 # 共通ユーティリティ
 # ================================================================
 
-def load_config() -> dict:
-    with open(CONFIG_PATH, encoding="utf-8") as f:
+def load_config(config_path: Path = CONFIG_PATH) -> dict:
+    with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="教科書・資料から定期試験問題を生成します。")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=CONFIG_PATH,
+        help="設定YAMLのパス。省略時は exam_config.yaml を使います。",
+    )
+    return parser.parse_args()
 
 
 def find_path(path_str: str) -> Path | None:
@@ -185,6 +197,10 @@ def get_or_create_analysis(folder: Path) -> str:
     キャッシュがあれば読み込む。なければ画像を分析してキャッシュに保存する。
     キャッシュファイル: 教科書/分析キャッシュ/<フォルダ名>.json
     """
+    if not folder.exists():
+        sprint(f"  [情報] 教科書画像フォルダは未作成です: {folder}")
+        return ""
+
     folder_name = unicodedata.normalize("NFC", folder.name)
     cache_file = CACHE_DIR / f"{folder_name}.json"
 
@@ -226,6 +242,9 @@ def collect_sources(cfg: dict) -> list[str]:
     text_chunks: list[str] = []
 
     def add_texts(folder: Path, label: str):
+        if not folder.exists():
+            sprint(f"  [情報] {label}フォルダは未作成です: {folder}")
+            return
         for p in sorted(folder.iterdir()):
             if p.suffix.lower() in TEXT_EXTS:
                 text = read_text_file(p)
@@ -239,8 +258,14 @@ def collect_sources(cfg: dict) -> list[str]:
     # input/ 以下
     if src.get("use_past_exams"):
         add_texts(INPUT_DIR / "past_exams", "過去問")
+    if src.get("use_textbook_images"):
+        analysis = get_or_create_analysis(INPUT_DIR / "textbook_images")
+        if analysis:
+            text_chunks.append(f"【教科書分析：input/textbook_images】\n{analysis}")
     if src.get("use_worksheets"):
         add_texts(INPUT_DIR / "worksheets", "プリント")
+    if src.get("use_web_sources"):
+        add_texts(INPUT_DIR / "web_sources", "Web資料")
 
     # 外部フォルダ
     ext = src.get("external", {})
@@ -269,6 +294,13 @@ def collect_sources(cfg: dict) -> list[str]:
         else:
             sprint(f"  [警告] プリントフォルダが見つかりません: {folder_str}")
 
+    for folder_str in ext.get("web_sources", []):
+        folder = find_path(folder_str)
+        if folder:
+            add_texts(folder, "Web資料")
+        else:
+            sprint(f"  [警告] Web資料フォルダが見つかりません: {folder_str}")
+
     return text_chunks
 
 
@@ -290,10 +322,16 @@ def build_prompt(cfg: dict, text_chunks: list[str]) -> str:
     n_timeline  = q.get("timeline_order", 2)
     n_other     = q.get("other", 4)
 
+    web_source_note = (
+        "Web資料問題は【Web資料】として読み込まれた資料だけを使う。"
+        "【Web資料】がない場合は、URLや出典を推測せず、④は概念問題として作る。"
+    )
+
     return f"""\
 あなたは高校の{exam['subject']}教員のアシスタントです。
 以下の【教科書分析テキスト】を唯一の根拠として定期試験の問題を作成してください。
 分析テキストに記載のない事実・年号・人名・因果関係を問題や選択肢に使わないでください。
+{web_source_note}
 
 ## 試験設定
 - 科目: {exam['subject']}　学年: {exam['grade']}　単元: {exam.get('unit') or '（指定なし）'}
@@ -324,8 +362,9 @@ def build_prompt(cfg: dict, text_chunks: list[str]) -> str:
 - 「次のア〜エの出来事を古い順に並べたものとして正しいものを選べ」形式
 
 ### ④ Web資料・概念問題等（{n_other}問）
-- うち1問以上は、Web上で入手できる史料・グラフ・画像を使った問題にする
-- 解説欄にURL・出典を必ず明記する
+- 【Web資料】が読み込まれている場合、うち1問以上はその史料・グラフ・画像を使った問題にする
+- Web資料を使った場合、解説欄にURL・出典を必ず明記する
+- 【Web資料】が読み込まれていない場合、URLを作らず、因果関係・歴史的意義を問う概念問題にする
 - 残りは因果関係・歴史的意義を問う概念問題
 
 ## 作成方針
@@ -555,8 +594,10 @@ def build_word(cfg: dict, raw_text: str) -> Path:
     base      = cfg["output"].get("filename", "テスト_{subject}_{unit}.docx")
     base      = base.format(subject=subject, unit=unit or "未設定").replace(".docx", "")
     timestamp = datetime.today().strftime("%Y%m%d_%H%M%S")
-    out_path  = OUTPUT_DIR / f"{base}_{timestamp}.docx"
-    OUTPUT_DIR.mkdir(exist_ok=True)
+    output_subdir = cfg["output"].get("subdir", "")
+    out_dir = OUTPUT_DIR / output_subdir if output_subdir else OUTPUT_DIR
+    out_path  = out_dir / f"{base}_{timestamp}.docx"
+    out_dir.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
     return out_path
 
@@ -567,9 +608,12 @@ def build_word(cfg: dict, raw_text: str) -> Path:
 
 def main():
     sprint("=== テスト問題作成ツール（2フェーズ方式）===")
-    cfg = load_config()
+    args = parse_args()
+    config_path = args.config if args.config.is_absolute() else BASE_DIR / args.config
+    cfg = load_config(config_path)
     unit = cfg["exam"].get("unit") or "単元未設定"
     sprint(f"設定: {cfg['exam']['subject']} / {cfg['exam']['grade']} / {unit}")
+    sprint(f"設定ファイル: {config_path}")
 
     sprint("\n--- Phase 1: 資料収集・教科書分析 ---")
     text_chunks = collect_sources(cfg)
@@ -577,7 +621,7 @@ def main():
 
     if not text_chunks:
         sprint("\n[エラー] 資料が1件も読み込めませんでした。")
-        sprint("  exam_config.yaml の sources 設定を確認してください。")
+        sprint("  設定YAMLの sources 設定を確認してください。")
         sys.exit(1)
 
     sprint("\n--- Phase 2: 問題生成 ---")

@@ -22,6 +22,7 @@ difficulty:
 
 output:
   filename: "テスト_{subject}_{unit}.docx"   # 出力ファイル名テンプレート
+  subdir: "generated"                      # output/ 以下の保存先。空欄なら output/ 直下
   include_answer_sheet: true               # 解答・解説シートを別シートで出力
   include_scoring_rubric: true             # 採点基準を付ける（論述のみ）
 
@@ -30,13 +31,15 @@ sources:
   use_past_exams: false       # past_exams/ の過去問を参照
   use_textbook_images: false  # textbook_images/ の画像を参照
   use_worksheets: false       # worksheets/ のプリントを参照
+  use_web_sources: false      # web_sources/ のWeb資料メモを参照
 
-  # このフォルダ直下の資料フォルダ（絶対パスで指定）
+  # 共通教材フォルダなど、外部の資料フォルダ（絶対パスで指定）
   external:
     past_exams: []  # 今回は教科書のみ使用
     textbooks:
       - "C:\\Users\\kengo\\OneDrive\\デスクトップ\\claude開発\\教科書\\歴史総合\\教科書 JPEG　前期中間２"
     worksheets: []  # 今回は教科書のみ使用
+    web_sources: [] # Web資料を使う場合は、URL・出典・本文メモを入れたtxt/docxフォルダを指定
 
 instructions: |
   - 問題文は高校生が読む試験問題として完結した自然な日本語で書く
@@ -48,7 +51,7 @@ instructions: |
   - 【構成比率】一次史料問題30%・教科書「問い」問題40%・年代整序2問・Web資料/概念問題等20%
   - 【一次史料問題】枠囲み番号付き資料（例：資料6「キャラコ禁止法」）の本文を問題文に引用して出題する
   - 【問い問題】教科書の「問い」をそのまままたは4択化して出題する
-  - Web上で教科書の概念を問える史料・グラフ・画像を検索し、それを使った問題を1問以上作る。解説欄にURL・出典を明記する
+  - Web資料問題を作る場合は、sources で読み込んだWeb資料だけを使う。URLや出典を推測して作らない
   - 全問題の問題文・選択肢・正答が互いに被らないよう、生成後に確認・修正する
   - 【セルフチェック①】問題文・選択肢が自然な日本語として成立しているか確認し、破綻があれば書き直す
   - 【セルフチェック②】正答の根拠が教科書の内容から取れるか確認し、根拠がなければ修正する

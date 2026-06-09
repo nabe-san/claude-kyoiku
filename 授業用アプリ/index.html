@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>選挙コンサルタント疑似体験</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; }
+    * { box-sizing: border-box; }
+    input[type="range"] { cursor: pointer; width: 100%; }
+    input[type="number"]::-webkit-inner-spin-button { opacity: 0.6; }
+    textarea { font-family: 'Noto Sans JP', sans-serif; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef } = React;
+
+    // ============================================================
+    // 定数データ
+    // ============================================================
+
+    const DISTRICTS = [
+      { id:"d1", name:"第1区（沿岸部）", short:"第1区", feature:"漁業・観光・高齢者が多い",
+        voters:{ elderly:45, middle:35, young:20 }, issues:["漁業補助金","医療","観光振興"], color:"#0EA5E9" },
+      { id:"d2", name:"第2区（内陸部）", short:"第2区", feature:"工場・労働者・中年が多い",
+        voters:{ elderly:30, middle:50, young:20 }, issues:["最低賃金","雇用","社会保険"], color:"#8B5CF6" },
+      { id:"d3", name:"第3区（中央部）", short:"第3区", feature:"大学・商業・若者が多い",
+        voters:{ elderly:15, middle:40, young:45 }, issues:["奨学金","物価","デジタル化"], color:"#F59E0B" }
+    ];
+
+    const PARTIES = [
+      { id:"mirai",   name:"みなと未来党", color:"#2563EB", base:"中年・労働者",   policy:"賃上げ・産業支援・安定重視",    isPlayer:true,  baseSupport:{ d1:28, d2:35, d3:25 } },
+      { id:"kaikaku", name:"海風改革党",   color:"#16A34A", base:"若者・無党派",   policy:"奨学金無償化・デジタル・環境",  isPlayer:false, baseSupport:{ d1:20, d2:22, d3:35 } },
+      { id:"hozen",   name:"港湾保守党",   color:"#DC2626", base:"高齢者・伝統産業", policy:"漁業保護・医療充実・地域重視", isPlayer:false, baseSupport:{ d1:35, d2:25, d3:18 } },
+      { id:"rengo",   name:"市民連合",     color:"#CA8A04", base:"無党派・幅広い層", policy:"物価対策・子育て・中道",       isPlayer:false, baseSupport:{ d1:17, d2:18, d3:22 } }
+    ];
+
+    const ACTIVITIES = [
+      { id:"street",  name:"街頭演説",   minCost:10, effectMultiplier:{ elderly:1.5, middle:1.3, young:0.7 } },
+      { id:"sns",     name:"SNS広告",    minCost:10, effectMultiplier:{ elderly:0.5, middle:1.0, young:1.8 } },
+      { id:"poster",  name:"ポスター掲示", minCost:10, effectMultiplier:{ elderly:1.0, middle:1.0, young:1.0 } },
+      { id:"visit",   name:"個人訪問",   minCost:20, effectMultiplier:{ elderly:1.8, middle:1.0, young:0.4 } },
+      { id:"debate",  name:"政策討論会", minCost:15, effectMultiplier:{ elderly:1.0, middle:1.5, young:1.2 } }
+    ];
+
+    const PROPORTIONAL_VOTES = { mirai:350, kaikaku:280, hozen:220, rengo:150 };
+
+    const EVENTS = [
+      { id:"scandal",   name:"🚨 スキャンダル発覚",   description:"対立候補に不祥事発覚！無党派層が流動化しています",                        effect:{ unpolitical:+5 } },
+      { id:"fishery",   name:"🐟 漁業不況ニュース",    description:"第1区で漁業不況が深刻化。高齢者・沿岸部の関心が高まっています",          effect:{ d1Boost:+8 } },
+      { id:"sns_viral", name:"📱 SNS拡散",            description:"若者の政治関心が急上昇！第3区・若者層の投票率が上がっています",           effect:{ youngBoost:+8, d3Boost:+5 } },
+      { id:"inflation", name:"📈 物価高騰ニュース",    description:"物価高騰が話題に。中年・無党派層への訴えかけが有効になっています",        effect:{ middleBoost:+6 } }
+    ];
+
+    const INITIAL_TEAMS = Array.from({ length:10 }, (_, i) => ({
+      id: i + 1,
+      name: `${i + 1}班`,
+      submitted: false,
+      strategy: {
+        districtAllocation: { d1:34, d2:33, d3:33 },
+        activities: {
+          d1:{ street:0, sns:0, poster:0, visit:0, debate:0 },
+          d2:{ street:0, sns:0, poster:0, visit:0, debate:0 },
+          d3:{ street:0, sns:0, poster:0, visit:0, debate:0 }
+        },
+        memo: ""
+      },
+      results: { d1VoteRate:null, d2VoteRate:null, d3VoteRate:null, totalVoteRate:null, rank:null }
+    }));
+
+    const SCREEN_LABELS = {
+      teamSelect:       "班選択",
+      scenario:         "① シナリオ説明",
+      strategy:         "② 戦略入力",
+      confirm:          "③ 戦略確認",
+      submitted:        "提出完了",
+      results_district: "④ 小選挙区結果",
+      dontMethod:       "⑤ ドント式計算",
+      results_final:    "⑥ 最終結果",
+      teacher:          "教師管理画面"
+    };
+
+    // ============================================================
+    // ヘルパー関数
+    // ============================================================
+
+    function adjustDistrictSliders(changed, newValue, prev) {
+      const v = Math.max(0, Math.min(100, newValue));
+      const others = ["d1","d2","d3"].filter(k => k !== changed);
+      const otherSum = others.reduce((s, k) => s + prev[k], 0);
+      const remaining = 100 - v;
+      const result = { ...prev, [changed]: v };
+
+      if (otherSum === 0) {
+        result[others[0]] = Math.floor(remaining / 2);
+        result[others[1]] = remaining - result[others[0]];
+      } else {
+        let distributed = 0;
+        others.forEach((k, i) => {
+          if (i < others.length - 1) {
+            const share = Math.round(remaining * prev[k] / otherSum);
+            result[k] = Math.max(0, share);
+            distributed += result[k];
+          } else {
+            result[k] = Math.max(0, remaining - distributed);
+          }
+        });
+      }
+      const total = result.d1 + result.d2 + result.d3;
+      if (total !== 100) {
+        const fix = others.find(k => result[k] > 0) || others[0];
+        result[fix] = Math.max(0, result[fix] + (100 - total));
+      }
+      return result;
+    }
+
+    function calculateTotalPoints(activities) {
+      return ["d1","d2","d3"].reduce((sum, d) =>
+        sum + Object.values(activities[d]).reduce((s, v) => s + (Number(v) || 0), 0), 0);
+    }
+
+    function calculateVoteRate(team, district, activeEvents) {
+      const d = district.id;
+      let voteRate = PARTIES.find(p => p.isPlayer).baseSupport[d];
+
+      const districtWeight = team.strategy.districtAllocation[d] / 100;
+      voteRate += districtWeight * 10;
+
+      const acts = team.strategy.activities[d];
+      const vc = district.voters;
+      ACTIVITIES.forEach(activity => {
+        const points = Number(acts[activity.id]) || 0;
+        if (points === 0) return;
+        const elderlyEff = (points / 100) * activity.effectMultiplier.elderly * (vc.elderly / 100);
+        const middleEff  = (points / 100) * activity.effectMultiplier.middle  * (vc.middle  / 100);
+        const youngEff   = (points / 100) * activity.effectMultiplier.young   * (vc.young   / 100);
+        voteRate += (elderlyEff + middleEff + youngEff) * 15;
+      });
+
+      activeEvents.forEach(event => {
+        if (event.id === "fishery"   && d === "d1") voteRate += 5;
+        if (event.id === "sns_viral" && d === "d3") voteRate += 4;
+        if (event.id === "inflation")               voteRate += 3;
+        if (event.id === "scandal")                 voteRate += 3;
+      });
+
+      return Math.min(Math.max(voteRate, 5), 60);
+    }
+
+    function calculateAIVoteRate(party, district, activeEvents) {
+      const d = district.id;
+      let voteRate = party.baseSupport[d];
+      const aiBonus = { kaikaku:{ d3:18, d1:4, d2:4 }, hozen:{ d1:20, d2:4, d3:4 }, rengo:{ d1:8, d2:8, d3:8 } };
+      const bonus = (aiBonus[party.id] || {})[d] || 5;
+      voteRate += bonus / 100 * 10;
+      activeEvents.forEach(e => {
+        if (e.id === "fishery"   && d === "d1" && party.id === "hozen")   voteRate += 6;
+        if (e.id === "sns_viral" && d === "d3" && party.id === "kaikaku") voteRate += 6;
+      });
+      const seed = party.id.charCodeAt(0) + d.charCodeAt(1);
+      voteRate += Math.sin(seed) * 3;
+      return Math.min(Math.max(voteRate, 5), 55);
+    }
+
+    function effectIcon(m) {
+      if (m >= 1.5) return { label:"強", color:"#FCD34D" };
+      if (m >= 1.0) return { label:"中", color:"#86EFAC" };
+      return { label:"弱", color:"#6B7280" };
+    }
+
+    // ============================================================
+    // EventBanner
+    // ============================================================
+
+    function EventBanner({ events }) {
+      const [expanded, setExpanded] = useState(false);
+      const prevLen = useRef(0);
+
+      useEffect(() => {
+        if (events.length > prevLen.current) {
+          setExpanded(true);
+          const t = setTimeout(() => setExpanded(false), 3000);
+          prevLen.current = events.length;
+          return () => clearTimeout(t);
+        }
+        prevLen.current = events.length;
+      }, [events.length]);
+
+      if (events.length === 0) return null;
+      const latest = events[events.length - 1];
+
+      if (expanded) {
+        return (
+          <div className="rounded-xl p-4 mb-4" style={{ background:"rgba(153,27,27,0.7)", border:"1px solid #EF4444" }}>
+            <p className="font-black text-lg" style={{ color:"#FCA5A5" }}>{latest.name}</p>
+            <p className="text-sm mt-1" style={{ color:"#FEE2E2" }}>{latest.description}</p>
+          </div>
+        );
+      }
+      return (
+        <div className="rounded-lg px-3 py-2 mb-4 flex items-center gap-2 flex-wrap"
+          style={{ background:"rgba(153,27,27,0.35)", border:"1px solid rgba(239,68,68,0.4)" }}>
+          <span className="text-xs" style={{ color:"#FCA5A5" }}>📢 発生中のイベント:</span>
+          {events.map(e => (
+            <span key={e.id} className="text-xs rounded px-2 py-0.5"
+              style={{ background:"rgba(153,27,27,0.5)", color:"#FEE2E2" }}>{e.name}</span>
+          ))}
+        </div>
+      );
+    }
+
+    // ============================================================
+    // TeamSelectScreen
+    // ============================================================
+
+    function TeamSelectScreen({ savedTeamId, onSelect }) {
+      return (
+        <div className="flex flex-col items-center justify-center py-10">
+          <div className="text-center mb-8">
+            <p className="text-xs mb-2 tracking-widest" style={{ color:"rgba(255,255,255,0.4)" }}>みなと市議会議員選挙</p>
+            <h1 className="text-3xl font-black text-white mb-1">選挙コンサルタント</h1>
+            <p style={{ color:"rgba(255,255,255,0.6)" }}>疑似体験ゲーム</p>
+          </div>
+          <div className="rounded-2xl p-6 w-full max-w-sm"
+            style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)" }}>
+            <h2 className="text-lg font-black text-white text-center mb-1">あなたは何班ですか？</h2>
+            <p className="text-xs text-center mb-6" style={{ color:"rgba(255,255,255,0.4)" }}>
+              タブレットを担当している班番号を選んでください
+            </p>
+            <div className="grid grid-cols-5 gap-3">
+              {Array.from({ length:10 }, (_, i) => i + 1).map(id => (
+                <button
+                  key={id}
+                  onClick={() => onSelect(id)}
+                  className="font-black text-xl text-white transition-all"
+                  style={{
+                    aspectRatio:"1/1",
+                    borderRadius:"12px",
+                    background: savedTeamId === id
+                      ? "linear-gradient(135deg,#2563EB,#1D4ED8)"
+                      : "rgba(255,255,255,0.08)",
+                    border: `2px solid ${savedTeamId === id ? "#3B82F6" : "rgba(255,255,255,0.15)"}`,
+                    boxShadow: savedTeamId === id ? "0 0 20px rgba(37,99,235,0.4)" : "none"
+                  }}
+                >
+                  {id}
+                </button>
+              ))}
+            </div>
+            {savedTeamId && (
+              <p className="text-xs text-center mt-4" style={{ color:"rgba(255,255,255,0.25)" }}>
+                前回の選択: {savedTeamId}班
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // StrategyScreen
+    // ============================================================
+
+    const OPPONENT_HINTS = [
+      "🔍 海風改革党が第3区のSNS広告に注力している模様…",
+      "🔍 港湾保守党が第1区の個人訪問を強化しているようだ…",
+      "🔍 市民連合が第2区での街頭演説を増やしているようだ…"
+    ];
+
+    function StrategyScreen({ team, activeEvents, onSaveAndNext }) {
+      const [allocation, setAllocation] = useState(() => ({ ...team.strategy.districtAllocation }));
+      const [activities, setActivities] = useState(() => ({
+        d1: { ...team.strategy.activities.d1 },
+        d2: { ...team.strategy.activities.d2 },
+        d3: { ...team.strategy.activities.d3 }
+      }));
+      const [memo, setMemo] = useState(team.strategy.memo || "");
+
+      const total = calculateTotalPoints(activities);
+      const remaining = 100 - total;
+      const isOver = total > 100;
+
+      function handleSlider(districtId, val) {
+        setAllocation(prev => adjustDistrictSliders(districtId, val, prev));
+      }
+
+      function handleActivity(dId, actId, val) {
+        const v = Math.max(0, Number(val) || 0);
+        setActivities(prev => ({ ...prev, [dId]: { ...prev[dId], [actId]: v } }));
+      }
+
+      function colTotal(dId) {
+        return Object.values(activities[dId]).reduce((s, v) => s + (Number(v)||0), 0);
+      }
+      function rowTotal(actId) {
+        return ["d1","d2","d3"].reduce((s, d) => s + (Number(activities[d][actId])||0), 0);
+      }
+
+      const cellStyle = {
+        background:"rgba(255,255,255,0.07)",
+        border:"1px solid rgba(255,255,255,0.12)",
+        color:"white", outline:"none", borderRadius:"8px",
+        width:"60px", textAlign:"center", padding:"6px 2px", fontWeight:"700"
+      };
+
+      const sectionStyle = {
+        background:"rgba(255,255,255,0.04)",
+        border:"1px solid rgba(255,255,255,0.1)",
+        borderRadius:"12px", padding:"16px", marginBottom:"16px"
+      };
+
+      return (
+        <div style={{ paddingBottom:"32px" }}>
+          <EventBanner events={activeEvents} />
+
+          {/* ヘッダー */}
+          <div className="flex items-center justify-between rounded-xl p-4 mb-5"
+            style={{ background:"rgba(0,0,0,0.3)" }}>
+            <div>
+              <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>担当班</p>
+              <p className="font-black text-2xl text-white">{team.name}</p>
+              <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>みなと未来党 選挙コンサルタント</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>残り活動ポイント</p>
+              <p className="font-black leading-none" style={{
+                fontSize:"40px",
+                color: isOver ? "#F87171" : remaining === 0 ? "#FCD34D" : "#4ADE80"
+              }}>
+                {remaining}
+              </p>
+              <p className="text-xs mt-0.5" style={{
+                color: isOver ? "#F87171" : remaining === 0 ? "#FCD34D" : "rgba(255,255,255,0.3)"
+              }}>
+                {isOver ? "⚠️ 超過しています" : remaining === 0 ? "✅ 使い切りました" : "/ 100pt"}
+              </p>
+            </div>
+          </div>
+
+          {/* 選挙区重点配分 */}
+          <div style={sectionStyle}>
+            <h3 className="font-black text-white mb-1">📍 選挙区重点配分</h3>
+            <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>
+              スライダーを動かすと残り2区が自動調整されます（合計100%）
+            </p>
+            {DISTRICTS.map(d => (
+              <div key={d.id} className="mb-4">
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <span className="font-bold text-sm" style={{ color:d.color }}>{d.name}</span>
+                    <span className="text-xs ml-2" style={{ color:"rgba(255,255,255,0.35)" }}>{d.feature}</span>
+                  </div>
+                  <span className="font-black text-xl" style={{ color:d.color }}>{allocation[d.id]}%</span>
+                </div>
+                <input type="range" min="0" max="100" value={allocation[d.id]}
+                  onChange={e => handleSlider(d.id, Number(e.target.value))}
+                  style={{ accentColor:d.color }} />
+                <div className="flex gap-3 text-xs mt-1" style={{ color:"rgba(255,255,255,0.35)" }}>
+                  <span>👴 高齢者 {d.voters.elderly}%</span>
+                  <span>👔 中年 {d.voters.middle}%</span>
+                  <span>👩 若者 {d.voters.young}%</span>
+                </div>
+                <div className="flex gap-1 mt-1 flex-wrap">
+                  {d.issues.map(issue => (
+                    <span key={issue} className="text-xs px-2 py-0.5 rounded-full"
+                      style={{ border:"1px solid rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.5)" }}>
+                      {issue}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {/* 配分バービジュアル */}
+            <div className="flex rounded-full overflow-hidden mt-1" style={{ height:"10px" }}>
+              {DISTRICTS.map(d => (
+                <div key={d.id} style={{
+                  width:`${allocation[d.id]}%`, background:d.color, transition:"width 0.25s ease"
+                }} />
+              ))}
+            </div>
+          </div>
+
+          {/* 活動ポイント配分表 */}
+          <div style={sectionStyle}>
+            <h3 className="font-black text-white mb-1">⚡ 活動ポイント配分</h3>
+            <p className="text-xs mb-3" style={{ color:"rgba(255,255,255,0.4)" }}>
+              合計100ptを3選挙区・5活動に配分してください
+            </p>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", minWidth:"480px", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
+                    <th className="text-left py-2 pr-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)", width:"140px" }}>
+                      活動手段
+                    </th>
+                    {DISTRICTS.map(d => (
+                      <th key={d.id} className="text-center py-2 text-xs font-bold" style={{ color:d.color }}>
+                        {d.short}
+                      </th>
+                    ))}
+                    <th className="text-center py-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)" }}>合計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ACTIVITIES.map(act => {
+                    const rt = rowTotal(act.id);
+                    return (
+                      <tr key={act.id} style={{ borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                        <td className="py-2 pr-2">
+                          <p className="font-bold text-white text-xs">{act.name}</p>
+                          <div className="flex gap-1 mt-0.5">
+                            {[{k:"elderly",e:"👴"},{k:"middle",e:"👔"},{k:"young",e:"👩"}].map(({k,e}) => {
+                              const ic = effectIcon(act.effectMultiplier[k]);
+                              return (
+                                <span key={k} className="text-xs" style={{ color:ic.color }}>
+                                  {e}{ic.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        {DISTRICTS.map(d => (
+                          <td key={d.id} className="py-2 text-center">
+                            <input
+                              type="number" min="0" step="5" inputMode="numeric"
+                              value={activities[d.id][act.id]}
+                              onChange={e => handleActivity(d.id, act.id, e.target.value)}
+                              style={cellStyle}
+                            />
+                          </td>
+                        ))}
+                        <td className="py-2 text-center font-bold text-sm"
+                          style={{ color: rt > 0 ? "#FCD34D" : "rgba(255,255,255,0.25)" }}>
+                          {rt}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop:"1px solid rgba(255,255,255,0.15)" }}>
+                    <td className="py-2 text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>区合計</td>
+                    {DISTRICTS.map(d => (
+                      <td key={d.id} className="py-2 text-center font-bold text-sm" style={{ color:d.color }}>
+                        {colTotal(d.id)}
+                      </td>
+                    ))}
+                    <td className="py-2 text-center font-black" style={{
+                      fontSize:"18px",
+                      color: isOver ? "#F87171" : total === 100 ? "#4ADE80" : "white"
+                    }}>
+                      {total}
+                      {isOver && <span className="text-xs block" style={{ color:"#F87171" }}>超過!</span>}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* 対立候補の動向 */}
+          <div style={sectionStyle}>
+            <h3 className="font-black text-white mb-3">🕵️ 対立候補の動向</h3>
+            {OPPONENT_HINTS.map((hint, i) => (
+              <p key={i} className="text-sm mb-1" style={{ color:"rgba(255,255,255,0.35)" }}>{hint}</p>
+            ))}
+          </div>
+
+          {/* 戦略メモ */}
+          <div style={sectionStyle}>
+            <h3 className="font-black text-white mb-1">📝 戦略メモ</h3>
+            <p className="text-xs mb-2" style={{ color:"rgba(255,255,255,0.4)" }}>
+              この班の戦略の理由を記録しよう（最大200文字）
+            </p>
+            <textarea
+              value={memo}
+              onChange={e => setMemo(e.target.value.slice(0, 200))}
+              rows={3}
+              placeholder="例：第3区の若者層にSNS広告を集中させ、比例票も狙う戦略…"
+              style={{
+                width:"100%", borderRadius:"8px", padding:"10px 12px",
+                background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)",
+                color:"white", outline:"none", resize:"none", fontSize:"14px"
+              }}
+            />
+            <p className="text-xs text-right mt-1" style={{ color:"rgba(255,255,255,0.25)" }}>
+              {memo.length} / 200
+            </p>
+          </div>
+
+          {/* 確定ボタン */}
+          <button
+            onClick={() => !isOver && onSaveAndNext({ districtAllocation:allocation, activities, memo })}
+            disabled={isOver}
+            className="w-full font-black text-lg transition-all"
+            style={{
+              padding:"16px",
+              borderRadius:"12px",
+              background: isOver ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg,#2563EB,#1D4ED8)",
+              border: `1px solid ${isOver ? "rgba(255,255,255,0.08)" : "#3B82F6"}`,
+              color: isOver ? "#6B7280" : "white",
+              cursor: isOver ? "not-allowed" : "pointer"
+            }}
+          >
+            {isOver ? "⚠️ ポイントが超過しています — 配分を見直してください" : "戦略を確定する →"}
+          </button>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // ConfirmScreen
+    // ============================================================
+
+    function ConfirmScreen({ team, onSubmit, onBack }) {
+      const { strategy } = team;
+      const total = calculateTotalPoints(strategy.activities);
+
+      function rowTotal(actId) {
+        return ["d1","d2","d3"].reduce((s, d) => s + (strategy.activities[d][actId] || 0), 0);
+      }
+
+      const sectionStyle = {
+        background:"rgba(255,255,255,0.04)",
+        border:"1px solid rgba(255,255,255,0.1)",
+        borderRadius:"12px", padding:"16px", marginBottom:"16px"
+      };
+
+      return (
+        <div style={{ paddingBottom:"32px" }}>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-black text-white">戦略確認</h2>
+            <p className="text-sm mt-1" style={{ color:"rgba(255,255,255,0.5)" }}>
+              {team.name} — 内容を確認して提出してください
+            </p>
+          </div>
+
+          {/* 配分バー */}
+          <div style={sectionStyle}>
+            <h3 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>📍 選挙区重点配分</h3>
+            <div className="flex rounded-xl overflow-hidden" style={{ height:"44px" }}>
+              {DISTRICTS.map(d => (
+                <div key={d.id} className="flex items-center justify-center font-bold text-sm text-white"
+                  style={{ width:`${strategy.districtAllocation[d.id]}%`, background:d.color, transition:"width 0.3s" }}>
+                  {strategy.districtAllocation[d.id] > 12 ? `${strategy.districtAllocation[d.id]}%` : ""}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-4 mt-2 flex-wrap">
+              {DISTRICTS.map(d => (
+                <div key={d.id} className="flex items-center gap-1">
+                  <div style={{ width:"10px", height:"10px", borderRadius:"2px", background:d.color }} />
+                  <span className="text-xs" style={{ color:"rgba(255,255,255,0.55)" }}>
+                    {d.short} {strategy.districtAllocation[d.id]}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 活動ポイント表（読み取り専用） */}
+          <div style={sectionStyle}>
+            <h3 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>⚡ 活動ポイント配分（合計 {total}pt）</h3>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", minWidth:"380px", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+                    <th className="text-left py-1.5 text-xs font-normal" style={{ color:"rgba(255,255,255,0.35)", width:"100px" }}>活動</th>
+                    {DISTRICTS.map(d => (
+                      <th key={d.id} className="text-center py-1.5 text-xs font-bold" style={{ color:d.color }}>{d.short}</th>
+                    ))}
+                    <th className="text-center py-1.5 text-xs font-normal" style={{ color:"rgba(255,255,255,0.35)" }}>計</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ACTIVITIES.map(act => {
+                    const rt = rowTotal(act.id);
+                    return (
+                      <tr key={act.id} style={{ borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                        <td className="py-1.5 text-xs" style={{ color:"rgba(255,255,255,0.75)" }}>{act.name}</td>
+                        {DISTRICTS.map(d => (
+                          <td key={d.id} className="py-1.5 text-center font-bold text-sm text-white">
+                            {strategy.activities[d.id][act.id] || 0}
+                          </td>
+                        ))}
+                        <td className="py-1.5 text-center font-bold text-sm" style={{ color:"#FCD34D" }}>{rt}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop:"1px solid rgba(255,255,255,0.15)" }}>
+                    <td className="py-1.5 text-xs" style={{ color:"rgba(255,255,255,0.35)" }}>合計</td>
+                    {DISTRICTS.map(d => {
+                      const col = Object.values(strategy.activities[d.id]).reduce((s,v)=>s+(v||0),0);
+                      return <td key={d.id} className="py-1.5 text-center font-bold text-sm" style={{ color:d.color }}>{col}</td>;
+                    })}
+                    <td className="py-1.5 text-center font-black" style={{ fontSize:"18px", color:"#4ADE80" }}>{total}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* 戦略メモ */}
+          {strategy.memo ? (
+            <div style={sectionStyle}>
+              <h3 className="font-bold text-sm mb-2" style={{ color:"rgba(255,255,255,0.6)" }}>📝 戦略メモ</h3>
+              <p className="text-sm" style={{ color:"rgba(255,255,255,0.8)" }}>{strategy.memo}</p>
+            </div>
+          ) : null}
+
+          {/* ボタン */}
+          <div className="flex gap-3">
+            <button onClick={onBack} className="font-bold text-sm text-white transition-all"
+              style={{
+                flex:1, padding:"14px", borderRadius:"12px",
+                background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)"
+              }}>
+              ← 修正する
+            </button>
+            <button onClick={onSubmit} className="font-black text-base text-white transition-all"
+              style={{
+                flex:2, padding:"14px", borderRadius:"12px",
+                background:"linear-gradient(135deg,#16A34A,#15803D)", border:"1px solid #22C55E"
+              }}>
+              この戦略で提出する ✓
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // SubmittedScreen
+    // ============================================================
+
+    function SubmittedScreen({ team }) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div style={{ fontSize:"72px", marginBottom:"16px" }}>✅</div>
+          <h2 className="text-3xl font-black text-white mb-2">提出完了！</h2>
+          <p className="text-lg mb-1" style={{ color:"rgba(255,255,255,0.65)" }}>結果発表をお待ちください</p>
+          <p className="text-sm" style={{ color:"rgba(255,255,255,0.35)" }}>{team.name}の戦略が受け付けられました</p>
+          <div className="mt-8 rounded-xl p-4 max-w-xs w-full"
+            style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>
+              先生が全班の提出を確認次第、<br />結果発表が始まります。
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Placeholders（フェーズ3以降で実装）
+    // ============================================================
+
+    function PlaceholderCard({ title, description }) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-64">
+          <div className="text-center rounded-2xl p-10 max-w-md w-full"
+            style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)" }}>
+            <div style={{ fontSize:"48px", marginBottom:"12px" }}>🚧</div>
+            <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
+            <p className="text-sm" style={{ color:"rgba(255,255,255,0.45)" }}>{description}</p>
+          </div>
+        </div>
+      );
+    }
+
+    function ScenarioScreen({ onNext }) {
+      return (
+        <div>
+          <PlaceholderCard title="シナリオ説明画面" description="フェーズ3で実装 — 選挙区・政党・ルールの説明" />
+          <button onClick={onNext} className="w-full font-black text-lg text-white mt-4"
+            style={{ padding:"14px", borderRadius:"12px", background:"linear-gradient(135deg,#2563EB,#1D4ED8)", border:"1px solid #3B82F6" }}>
+            戦略入力へ →
+          </button>
+        </div>
+      );
+    }
+
+    function DistrictResultsScreen({ teams, activeEvents, revealedDistrict, onReveal, onNext }) {
+      return <PlaceholderCard title="小選挙区結果画面" description="フェーズ3で実装 — 各区の開票結果・演出" />;
+    }
+
+    function DontMethodScreen({ teams, activeEvents, onNext }) {
+      return <PlaceholderCard title="ドント式計算画面" description="フェーズ3で実装 — 比例代表制の議席配分計算" />;
+    }
+
+    function FinalResultsScreen({ teams, activeEvents }) {
+      return <PlaceholderCard title="最終結果画面" description="フェーズ3で実装 — 総合ランキング・振り返り" />;
+    }
+
+    function TeacherScreen({ teams, activeEvents, setActiveEvents, gamePhase, setGamePhase, onBack }) {
+      return <PlaceholderCard title="教師管理画面" description="フェーズ3で実装 — 班管理・イベント発動・結果公開コントロール" />;
+    }
+
+    // ============================================================
+    // メインアプリ
+    // ============================================================
+
+    function App() {
+      const [currentTeamId] = useState(() => Number(localStorage.getItem("election_team_id")) || null);
+      const [currentScreen, setCurrentScreen] = useState(() =>
+        localStorage.getItem("election_team_id") ? "scenario" : "teamSelect"
+      );
+      const [teamId, setTeamId] = useState(currentTeamId);
+      const [teams, setTeams] = useState(INITIAL_TEAMS);
+      const [activeEvents, setActiveEvents] = useState([]);
+      const [revealedDistrict, setRevealedDistrict] = useState(0);
+      const [gamePhase, setGamePhase] = useState("waiting");
+
+      const navigate = useCallback((screen) => setCurrentScreen(screen), []);
+
+      function handleTeamSelect(id) {
+        localStorage.setItem("election_team_id", String(id));
+        setTeamId(id);
+        navigate("scenario");
+      }
+
+      function handleSaveAndNext(strategy) {
+        setTeams(prev => prev.map(t => t.id === teamId ? { ...t, strategy } : t));
+        navigate("confirm");
+      }
+
+      function handleSubmit() {
+        setTeams(prev => prev.map(t => t.id === teamId ? { ...t, submitted:true } : t));
+        navigate("submitted");
+      }
+
+      const currentTeam = teams.find(t => t.id === teamId) || teams[0];
+
+      const DEV_SCREENS = ["teamSelect","scenario","strategy","confirm","submitted","results_district","dontMethod","results_final","teacher"];
+
+      function renderScreen() {
+        switch (currentScreen) {
+          case "teamSelect":
+            return <TeamSelectScreen savedTeamId={teamId} onSelect={handleTeamSelect} />;
+          case "scenario":
+            return <ScenarioScreen onNext={() => navigate("strategy")} />;
+          case "strategy":
+            return <StrategyScreen team={currentTeam} activeEvents={activeEvents} onSaveAndNext={handleSaveAndNext} />;
+          case "confirm":
+            return <ConfirmScreen team={currentTeam} onSubmit={handleSubmit} onBack={() => navigate("strategy")} />;
+          case "submitted":
+            return <SubmittedScreen team={currentTeam} />;
+          case "results_district":
+            return <DistrictResultsScreen teams={teams} activeEvents={activeEvents}
+              revealedDistrict={revealedDistrict}
+              onReveal={() => setRevealedDistrict(r => Math.min(r+1,3))}
+              onNext={() => navigate("dontMethod")} />;
+          case "dontMethod":
+            return <DontMethodScreen teams={teams} activeEvents={activeEvents} onNext={() => navigate("results_final")} />;
+          case "results_final":
+            return <FinalResultsScreen teams={teams} activeEvents={activeEvents} />;
+          case "teacher":
+            return <TeacherScreen teams={teams} activeEvents={activeEvents}
+              setActiveEvents={setActiveEvents} gamePhase={gamePhase}
+              setGamePhase={setGamePhase} onBack={() => navigate("scenario")} />;
+          default: return null;
+        }
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col" style={{ background:"#1E3A5F", color:"white" }}>
+          {/* ヘッダー */}
+          <header className="flex items-center justify-between px-4 py-3"
+            style={{ borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.2)" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-xs tracking-widest uppercase" style={{ color:"rgba(255,255,255,0.35)" }}>SCREEN</span>
+              <span className="font-bold text-white text-sm">{SCREEN_LABELS[currentScreen] ?? currentScreen}</span>
+            </div>
+            <div className="hidden sm:block text-center">
+              <p className="text-xs tracking-widest" style={{ color:"rgba(255,255,255,0.35)" }}>みなと市議会議員選挙</p>
+              <p className="font-black text-white text-sm tracking-wide">選挙コンサルタント疑似体験</p>
+            </div>
+            <button
+              onClick={() => navigate(currentScreen === "teacher" ? "scenario" : "teacher")}
+              className="text-xs font-bold text-white transition-all"
+              style={{
+                padding:"6px 12px", borderRadius:"8px",
+                background: currentScreen === "teacher" ? "#2563EB" : "rgba(255,255,255,0.08)",
+                border:"1px solid rgba(255,255,255,0.15)"
+              }}>
+              {currentScreen === "teacher" ? "← 生徒画面へ" : "教師画面へ"}
+            </button>
+          </header>
+
+          {/* メインコンテンツ */}
+          <main className="flex-1 flex flex-col px-4 py-5 mx-auto w-full" style={{ maxWidth:"860px" }}>
+            {renderScreen()}
+          </main>
+
+          {/* 開発用ナビ */}
+          <footer style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.25)", padding:"10px 16px" }}>
+            <p className="text-xs text-center mb-2" style={{ color:"rgba(255,255,255,0.25)" }}>【開発用】画面切り替え</p>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {DEV_SCREENS.map(s => (
+                <button key={s} onClick={() => navigate(s)}
+                  className="text-xs transition-all"
+                  style={{
+                    padding:"3px 8px", borderRadius:"6px",
+                    background: currentScreen === s ? "#2563EB" : "rgba(255,255,255,0.06)",
+                    border:`1px solid ${currentScreen === s ? "#2563EB" : "rgba(255,255,255,0.1)"}`,
+                    color: currentScreen === s ? "white" : "rgba(255,255,255,0.5)"
+                  }}>
+                  {SCREEN_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    // コンソールテスト用
+    window.calculateVoteRate = calculateVoteRate;
+    window.calculateAIVoteRate = calculateAIVoteRate;
+    window.DISTRICTS = DISTRICTS;
+    window.INITIAL_TEAMS = INITIAL_TEAMS;
+    window.PARTIES = PARTIES;
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

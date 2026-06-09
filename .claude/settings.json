@@ -7,7 +7,9 @@
       "Read(*)",
       "Write(*)",
       "Bash(python3)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(mv \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2\\\\scenarios\\\\03_帝国主義_ドゥメール\" \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2\\\\scenarios\\\\02_帝国主義_ドゥメール\")",
+      "Bash(mv \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2_public\\\\scenarios\\\\03_帝国主義_ドゥメール\" \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2_public\\\\scenarios\\\\02_帝国主義_ドゥメール\")"
     ]
   }
 }

@@ -1,0 +1,52 @@
+# テスト問題作成 設定サンプル
+
+exam:
+  subject: "歴史総合"
+  grade: "2年"
+  unit: "前期中間"
+  exam_date: ""
+
+questions:
+  total: 20
+  points_per_question: 2
+  primary_source: 6
+  textbook_question: 8
+  timeline_order: 2
+  other: 4
+
+difficulty:
+  easy: 0
+  standard: 20
+  hard: 80
+
+output:
+  filename: "テスト_{subject}_{unit}.docx"
+  subdir: "generated"
+  include_answer_sheet: true
+  include_scoring_rubric: true
+
+sources:
+  # input/ 以下を使う場合
+  use_past_exams: false
+  use_textbook_images: false
+  use_worksheets: false
+  use_web_sources: false
+
+  # 共通教材フォルダなどを使う場合
+  external:
+    past_exams: []
+    textbooks:
+      # 例: "C:\\Users\\kengo\\Desktop\\claude開発\\教科書\\歴史総合\\第7回 日露戦争"
+    worksheets: []
+    web_sources: []
+
+instructions: |
+  - 問題文は高校生が読む試験問題として完結した自然な日本語で書く
+  - 「教科書分析テキストによれば」など、試験問題として不自然な表現は使わない
+  - 論述問題・語句記述問題は作らない。4択・年代整序のみ使用する
+  - 選択問題は4択以上。2択は不可
+  - 難易度は「標準20%・難しい80%」で構成し、易しい問題は作らない
+  - 一次史料問題では、枠囲み番号付き資料の本文を問題文に引用して出題する
+  - 教科書の「問い」は、そのまままたは4択化して出題する
+  - Web資料問題を作る場合は、sources で読み込んだWeb資料だけを使う。URLや出典を推測して作らない
+  - 全問題の問題文・選択肢・正答が互いに被らないよう、生成後に確認・修正する
