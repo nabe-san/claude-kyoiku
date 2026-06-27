@@ -1,0 +1,45 @@
+---
+interface Props {
+  concept: string;
+  size?: 'sm' | 'md';
+}
+const { concept, size = 'md' } = Astro.props;
+---
+
+<a
+  href={`/concepts/${encodeURIComponent(concept)}/`}
+  class:list={['concept-badge', `concept-badge--${size}`]}
+>
+  {concept}
+</a>
+
+<style>
+  .concept-badge {
+    display: inline-block;
+    padding: 0.3em 0.85em;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .concept-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--glow-color);
+  }
+  .concept-badge--sm {
+    padding: 0.2em 0.65em;
+    font-size: 0.72rem;
+  }
+
+  :global([data-theme="parchment"]) .concept-badge {
+    background: rgba(0, 0, 0, 0.03);
+  }
+</style>

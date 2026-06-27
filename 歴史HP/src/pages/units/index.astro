@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import UnitCard from '../../components/UnitCard.astro';
+import { getCollection } from 'astro:content';
+
+const units = await getCollection('units');
+---
+
+<BaseLayout title="授業単元一覧">
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-title">授業単元</h1>
+      <p class="page-desc">
+        先行オーガナイザーと「大きな問い」を軸にした授業設計ノート。
+      </p>
+    </div>
+  </header>
+
+  <div class="container" style="padding: 3rem 1.5rem 5rem;">
+    <div class="units-grid">
+      {units.map(unit => (
+        <UnitCard
+          id={unit.id}
+          title={unit.data.title}
+          subject={unit.data.subject}
+          concepts={unit.data.concepts}
+          bigQuestion={unit.data.bigQuestion}
+        />
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 3rem 0 2.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .page-title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .page-desc {
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .units-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 1.25rem;
+  }
+</style>

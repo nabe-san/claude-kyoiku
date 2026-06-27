@@ -1,0 +1,319 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ConceptBadge from '../../components/ConceptBadge.astro';
+import SubjectBadge from '../../components/SubjectBadge.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const units = await getCollection('units');
+  return units.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, subject, concepts, bigQuestion, relatedBooks, relatedNotes, materials } = entry.data;
+
+// ダミーの関連書籍・思考ノートデータ（本番では各コレクションから取得）
+const dummyBooks: Record<string, { title: string; summary: string }> = {
+  'hobson-imperialism': {
+    title: 'J.A. ホブソン『帝国主義論』',
+    summary: '帝国主義の経済的根拠を過剰貯蓄・過剰生産に求めた古典。レーニンの帝国主義論の出発点。',
+  },
+};
+const dummyNotes: Record<string, { title: string }> = {
+  'why-empires-fall': { title: '帝国はなぜ崩壊するのか——権力の自己侵食について' },
+};
+---
+
+<BaseLayout title={title}>
+  <!-- ── ① ヘッダー ── -->
+  <header class="unit-header">
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="/">ホーム</a>
+        <span>›</span>
+        <a href="/units/">単元一覧</a>
+        <span>›</span>
+        <span>{title}</span>
+      </nav>
+
+      <div class="unit-meta">
+        <SubjectBadge subject={subject} />
+      </div>
+
+      <h1 class="unit-title">{title}</h1>
+
+      <div class="concept-tags">
+        {concepts.map(c => <ConceptBadge concept={c} />)}
+      </div>
+    </div>
+  </header>
+
+  <!-- ── ② 大きな問い ── -->
+  <section class="big-question-section">
+    <div class="container">
+      <div class="big-question-band">
+        <span class="big-question-label">大きな問い</span>
+        <p class="big-question-text">{bigQuestion}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ③ 本文（先行オーガナイザー + まとめ）── -->
+  <article class="unit-body">
+    <div class="container">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  </article>
+
+  <!-- ── ④ 配布資料 ── -->
+  {materials.length > 0 && (
+    <section class="materials-section">
+      <div class="container">
+        <h2 class="side-section-title">配布資料</h2>
+        <ul class="materials-list">
+          {materials.map(m => (
+            <li class="material-item">
+              <span class="material-icon">📄</span>
+              <a href={m.file} class="material-link" download>
+                {m.label}
+              </a>
+              <span class="material-note">（PDF）</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <!-- ── ⑤ 関連書籍 ── -->
+  {relatedBooks.length > 0 && (
+    <section class="related-section">
+      <div class="container">
+        <h2 class="side-section-title">関連読書ノート</h2>
+        <div class="book-cards">
+          {relatedBooks.map(slug => {
+            const book = dummyBooks[slug];
+            if (!book) return null;
+            return (
+              <div class="book-card card">
+                <h3 class="book-title">{book.title}</h3>
+                <p class="book-summary">{book.summary}</p>
+                <a href={`/books/${slug}/`} class="btn btn-ghost" style="margin-top:0.75rem; font-size:0.82rem;">
+                  読書ノートを読む →
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── ⑥ 関連思考ノート ── -->
+  {relatedNotes.length > 0 && (
+    <section class="related-section">
+      <div class="container">
+        <h2 class="side-section-title">関連思考ノート</h2>
+        <div class="note-links">
+          {relatedNotes.map(slug => {
+            const note = dummyNotes[slug];
+            if (!note) return null;
+            return (
+              <a href={`/notes/${slug}/`} class="note-link-card card">
+                <span class="note-link-label">思考ノート</span>
+                <span class="note-link-title">{note.title}</span>
+                <span class="note-link-arrow">→</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  /* ── ヘッダー ── */
+  .unit-header {
+    padding: 3rem 0 2.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .breadcrumb a { color: var(--text-muted); }
+  .breadcrumb a:hover { color: var(--primary); }
+
+  .unit-meta {
+    margin-bottom: 1rem;
+  }
+
+  .unit-title {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .concept-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* ── 大きな問い ── */
+  .big-question-section {
+    background: var(--bg);
+    padding: 2.5rem 0;
+  }
+
+  .big-question-band {
+    position: relative;
+    background: var(--bg-elevated);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 12px 12px 0;
+    padding: 1.75rem 2rem;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .big-question-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .big-question-text {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── 本文 ── */
+  .unit-body {
+    padding: 3.5rem 0;
+    background: var(--bg);
+  }
+
+  /* ── 配布資料 ── */
+  .materials-section {
+    padding: 2.5rem 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .side-section-title {
+    font-size: 1.1rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .materials-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .material-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .material-icon { font-size: 1rem; }
+  .material-link {
+    color: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .material-link:hover { text-decoration: underline; }
+  .material-note {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* ── 関連書籍・ノート ── */
+  .related-section {
+    padding: 2.5rem 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .book-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  .book-card { padding: 1.5rem; }
+  .book-title {
+    font-size: 1rem;
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+  }
+  .book-summary {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .note-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .note-link-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 1rem 1.5rem;
+  }
+  .note-link-label {
+    font-size: 0.72rem;
+    color: var(--node-note);
+    font-weight: 600;
+    padding: 0.2em 0.6em;
+    background: rgba(249, 168, 212, 0.1);
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .note-link-title {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+  .note-link-arrow {
+    color: var(--text-dim);
+    transition: transform 0.2s, color 0.2s;
+  }
+  .note-link-card:hover .note-link-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
+  }
+</style>

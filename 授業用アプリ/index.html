@@ -20,12 +20,45 @@
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+    @keyframes cellReveal {
+      0%, 30% { background: rgba(34,197,94,0.85); color: #fff; }
+      100%     { background: rgba(255,255,255,0.07); color: inherit; }
+    }
+    .cell-reveal { animation: cellReveal 1.2s ease-out forwards; }
+
+    @keyframes topCellReveal {
+      0%, 30% { background: rgba(245,158,11,0.9); color: #fff; box-shadow: 0 0 18px rgba(245,158,11,0.5); }
+      100%     { background: rgba(120,53,15,0.35); box-shadow: 0 0 8px rgba(245,158,11,0.2); }
+    }
+    .top-cell-reveal { animation: topCellReveal 1.5s ease-out forwards; border: 2px solid #F59E0B !important; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+
+    @keyframes timerPulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+    .timer-pulse { animation: timerPulse 0.9s ease-in-out infinite; }
+
+    @keyframes scaleIn { from{opacity:0;transform:scale(0.92);} to{opacity:1;transform:scale(1);} }
+    .scale-in { animation: scaleIn 0.25s ease-out forwards; }
+
+    @keyframes districtWin { 0%{transform:scale(1);} 40%{transform:scale(1.04);} 100%{transform:scale(1);} }
+    .district-win { animation: districtWin 0.6s ease-out; }
+
+    @media print {
+      header, footer, .no-print { display: none !important; }
+      body { background: #fff !important; color: #111 !important; font-size: 11pt; }
+      .print-page { page-break-after: always; }
+      #root > div { background: #fff !important; }
+      [style*="background"] { background: transparent !important; }
+      * { color: #111 !important; border-color: #ccc !important; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useCallback, useEffect, useRef } = React;
+    const { useState, useCallback, useEffect, useRef, useMemo } = React;
 
     // ============================================================
     // 定数データ
@@ -41,33 +74,32 @@
     ];
 
     const PARTIES = [
-      { id:"mirai",   name:"みなと未来党", color:"#2563EB", base:"中年・労働者",   policy:"賃上げ・産業支援・安定重視",    isPlayer:true,  baseSupport:{ d1:28, d2:35, d3:25 } },
-      { id:"kaikaku", name:"海風改革党",   color:"#16A34A", base:"若者・無党派",   policy:"奨学金無償化・デジタル・環境",  isPlayer:false, baseSupport:{ d1:20, d2:22, d3:35 } },
+      { id:"mirai",   name:"みなと未来党", color:"#2563EB", base:"中年・労働者",     policy:"賃上げ・産業支援・安定重視",   isPlayer:true,  baseSupport:{ d1:28, d2:35, d3:25 } },
+      { id:"kaikaku", name:"海風改革党",   color:"#16A34A", base:"若者・無党派",     policy:"奨学金無償化・デジタル・環境", isPlayer:false, baseSupport:{ d1:20, d2:22, d3:35 } },
       { id:"hozen",   name:"港湾保守党",   color:"#DC2626", base:"高齢者・伝統産業", policy:"漁業保護・医療充実・地域重視", isPlayer:false, baseSupport:{ d1:35, d2:25, d3:18 } },
       { id:"rengo",   name:"市民連合",     color:"#CA8A04", base:"無党派・幅広い層", policy:"物価対策・子育て・中道",       isPlayer:false, baseSupport:{ d1:17, d2:18, d3:22 } }
     ];
 
     const ACTIVITIES = [
-      { id:"street",  name:"街頭演説",   minCost:10, effectMultiplier:{ elderly:1.5, middle:1.3, young:0.7 } },
-      { id:"sns",     name:"SNS広告",    minCost:10, effectMultiplier:{ elderly:0.5, middle:1.0, young:1.8 } },
+      { id:"street",  name:"街頭演説",    minCost:10, effectMultiplier:{ elderly:1.5, middle:1.3, young:0.7 } },
+      { id:"sns",     name:"SNS広告",     minCost:10, effectMultiplier:{ elderly:0.5, middle:1.0, young:1.8 } },
       { id:"poster",  name:"ポスター掲示", minCost:10, effectMultiplier:{ elderly:1.0, middle:1.0, young:1.0 } },
-      { id:"visit",   name:"個人訪問",   minCost:20, effectMultiplier:{ elderly:1.8, middle:1.0, young:0.4 } },
-      { id:"debate",  name:"政策討論会", minCost:15, effectMultiplier:{ elderly:1.0, middle:1.5, young:1.2 } }
+      { id:"visit",   name:"個人訪問",    minCost:20, effectMultiplier:{ elderly:1.8, middle:1.0, young:0.4 } },
+      { id:"debate",  name:"政策討論会",  minCost:15, effectMultiplier:{ elderly:1.0, middle:1.5, young:1.2 } }
     ];
 
     const PROPORTIONAL_VOTES = { mirai:350, kaikaku:280, hozen:220, rengo:150 };
+    const PROP_SEATS_TOTAL = 10;
 
     const EVENTS = [
-      { id:"scandal",   name:"🚨 スキャンダル発覚",   description:"対立候補に不祥事発覚！無党派層が流動化しています",                        effect:{ unpolitical:+5 } },
-      { id:"fishery",   name:"🐟 漁業不況ニュース",    description:"第1区で漁業不況が深刻化。高齢者・沿岸部の関心が高まっています",          effect:{ d1Boost:+8 } },
-      { id:"sns_viral", name:"📱 SNS拡散",            description:"若者の政治関心が急上昇！第3区・若者層の投票率が上がっています",           effect:{ youngBoost:+8, d3Boost:+5 } },
-      { id:"inflation", name:"📈 物価高騰ニュース",    description:"物価高騰が話題に。中年・無党派層への訴えかけが有効になっています",        effect:{ middleBoost:+6 } }
+      { id:"scandal",   name:"🚨 スキャンダル発覚",  description:"対立候補に不祥事発覚！無党派層が流動化しています",                      effect:{ unpolitical:+5 } },
+      { id:"fishery",   name:"🐟 漁業不況ニュース",   description:"第1区で漁業不況が深刻化。高齢者・沿岸部の関心が高まっています",        effect:{ d1Boost:+8 } },
+      { id:"sns_viral", name:"📱 SNS拡散",           description:"若者の政治関心が急上昇！第3区・若者層の投票率が上がっています",         effect:{ youngBoost:+8, d3Boost:+5 } },
+      { id:"inflation", name:"📈 物価高騰ニュース",   description:"物価高騰が話題に。中年・無党派層への訴えかけが有効になっています",      effect:{ middleBoost:+6 } }
     ];
 
     const INITIAL_TEAMS = Array.from({ length:10 }, (_, i) => ({
-      id: i + 1,
-      name: `${i + 1}班`,
-      submitted: false,
+      id: i + 1, name: `${i + 1}班`, submitted: false,
       strategy: {
         districtAllocation: { d1:34, d2:33, d3:33 },
         activities: {
@@ -81,19 +113,13 @@
     }));
 
     const SCREEN_LABELS = {
-      teamSelect:       "班選択",
-      scenario:         "① シナリオ説明",
-      strategy:         "② 戦略入力",
-      confirm:          "③ 戦略確認",
-      submitted:        "提出完了",
-      results_district: "④ 小選挙区結果",
-      dontMethod:       "⑤ ドント式計算",
-      results_final:    "⑥ 最終結果",
-      teacher:          "教師管理画面"
+      teamSelect:"班選択", scenario:"① シナリオ説明", strategy:"② 戦略入力",
+      confirm:"③ 戦略確認", submitted:"提出完了", results_district:"④ 小選挙区結果",
+      dontMethod:"⑤ ドント式計算", results_final:"⑥ 最終結果", teacher:"教師管理画面"
     };
 
     // ============================================================
-    // ヘルパー関数
+    // ヘルパー関数（フェーズ1&2）
     // ============================================================
 
     function adjustDistrictSliders(changed, newValue, prev) {
@@ -102,7 +128,6 @@
       const otherSum = others.reduce((s, k) => s + prev[k], 0);
       const remaining = 100 - v;
       const result = { ...prev, [changed]: v };
-
       if (otherSum === 0) {
         result[others[0]] = Math.floor(remaining / 2);
         result[others[1]] = remaining - result[others[0]];
@@ -111,18 +136,12 @@
         others.forEach((k, i) => {
           if (i < others.length - 1) {
             const share = Math.round(remaining * prev[k] / otherSum);
-            result[k] = Math.max(0, share);
-            distributed += result[k];
-          } else {
-            result[k] = Math.max(0, remaining - distributed);
-          }
+            result[k] = Math.max(0, share); distributed += result[k];
+          } else { result[k] = Math.max(0, remaining - distributed); }
         });
       }
       const total = result.d1 + result.d2 + result.d3;
-      if (total !== 100) {
-        const fix = others.find(k => result[k] > 0) || others[0];
-        result[fix] = Math.max(0, result[fix] + (100 - total));
-      }
+      if (total !== 100) { const fix = others.find(k => result[k] > 0) || others[0]; result[fix] = Math.max(0, result[fix] + (100 - total)); }
       return result;
     }
 
@@ -134,10 +153,8 @@
     function calculateVoteRate(team, district, activeEvents) {
       const d = district.id;
       let voteRate = PARTIES.find(p => p.isPlayer).baseSupport[d];
-
       const districtWeight = team.strategy.districtAllocation[d] / 100;
       voteRate += districtWeight * 10;
-
       const acts = team.strategy.activities[d];
       const vc = district.voters;
       ACTIVITIES.forEach(activity => {
@@ -148,14 +165,12 @@
         const youngEff   = (points / 100) * activity.effectMultiplier.young   * (vc.young   / 100);
         voteRate += (elderlyEff + middleEff + youngEff) * 15;
       });
-
       activeEvents.forEach(event => {
         if (event.id === "fishery"   && d === "d1") voteRate += 5;
         if (event.id === "sns_viral" && d === "d3") voteRate += 4;
         if (event.id === "inflation")               voteRate += 3;
         if (event.id === "scandal")                 voteRate += 3;
       });
-
       return Math.min(Math.max(voteRate, 5), 60);
     }
 
@@ -181,13 +196,158 @@
     }
 
     // ============================================================
+    // ヘルパー関数（フェーズ3）
+    // ============================================================
+
+    function computeDistrictResult(teams, district, activeEvents) {
+      const playerParty = PARTIES.find(p => p.isPlayer);
+      const teamRaws = teams.map(team => ({ team, rawRate: calculateVoteRate(team, district, activeEvents) }));
+      const avgPlayerRaw = teamRaws.reduce((s, r) => s + r.rawRate, 0) / teams.length;
+      const aiRaws = PARTIES.filter(p => !p.isPlayer).map(party => ({
+        party, rawRate: calculateAIVoteRate(party, district, activeEvents)
+      }));
+      const allRaw = [{ party: playerParty, rawRate: avgPlayerRaw }, ...aiRaws];
+      const totalRaw = allRaw.reduce((s, r) => s + r.rawRate, 0);
+      const partyRates = allRaw.map(r => ({
+        party: r.party,
+        voteRate: Math.round((r.rawRate / totalRaw) * 1000) / 10
+      })).sort((a, b) => b.voteRate - a.voteRate);
+      const winner = partyRates[0];
+      const deadVoteRate = Math.round((100 - winner.voteRate) * 10) / 10;
+      const teamRanking = [...teamRaws]
+        .sort((a, b) => b.rawRate - a.rawRate)
+        .map(r => ({ team: r.team, rawRate: Math.round(r.rawRate * 10) / 10 }));
+      return { district, partyRates, winner, deadVoteRate, teamRanking };
+    }
+
+    function computeSmallSeats(allResults) {
+      const seats = Object.fromEntries(PARTIES.map(p => [p.id, 0]));
+      allResults.forEach(dr => { if (dr.winner) seats[dr.winner.party.id]++; });
+      return seats;
+    }
+
+    function computeDhont(votes, totalSeats) {
+      const ids = Object.keys(votes);
+      const seats = Object.fromEntries(ids.map(id => [id, 0]));
+      for (let i = 0; i < totalSeats; i++) {
+        let maxQ = -Infinity, winner = null;
+        ids.forEach(id => { const q = votes[id] / (seats[id] + 1); if (q > maxQ) { maxQ = q; winner = id; } });
+        seats[winner]++;
+      }
+      return seats;
+    }
+
+    function dhontValue(votes, divisor) {
+      const v = votes / divisor;
+      return Number.isInteger(v) ? v : Math.round(v * 10) / 10;
+    }
+
+    function getDhontTop10() {
+      const cells = [];
+      Object.keys(PROPORTIONAL_VOTES).forEach(id => {
+        [1,2,3,4,5].forEach(div => cells.push({ key:`${id}-${div}`, value: PROPORTIONAL_VOTES[id] / div }));
+      });
+      cells.sort((a, b) => b.value - a.value);
+      return new Set(cells.slice(0, PROP_SEATS_TOTAL).map(c => c.key));
+    }
+
+    // ============================================================
+    // PasswordModal
+    // ============================================================
+
+    function PasswordModal({ onSuccess, onCancel }) {
+      const [value, setValue] = useState("");
+      const [error, setError] = useState(false);
+      function submit() {
+        if (value === "teacher2025") { onSuccess(); }
+        else { setError(true); setValue(""); setTimeout(() => setError(false), 2000); }
+      }
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center scale-in" style={{ background:"rgba(0,0,0,0.75)" }}>
+          <div className="rounded-2xl p-6 w-80" style={{ background:"#1A3050", border:"2px solid rgba(239,68,68,0.5)" }}>
+            <p className="font-black text-white text-lg mb-1">🔐 教師専用画面</p>
+            <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>パスワードを入力してください</p>
+            <input type="password" value={value}
+              onChange={e => setValue(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              placeholder="パスワード" autoFocus
+              className="w-full rounded-xl px-4 py-3 text-white mb-1 outline-none"
+              style={{ background:"rgba(255,255,255,0.1)", border:`1px solid ${error?"#EF4444":"rgba(255,255,255,0.2)"}`, fontFamily:"inherit" }} />
+            {error && <p className="text-xs mb-2" style={{ color:"#F87171" }}>パスワードが違います</p>}
+            <div className={`flex gap-2 ${error?"mt-0":"mt-3"}`}>
+              <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                style={{ background:"rgba(255,255,255,0.07)", color:"rgba(255,255,255,0.5)", border:"none", cursor:"pointer" }}>キャンセル</button>
+              <button onClick={submit} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
+                style={{ background:"#2563EB", border:"none", cursor:"pointer" }}>ログイン</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // CountdownTimer
+    // ============================================================
+
+    function CountdownTimer({ seconds, label }) {
+      const min = Math.floor(Math.max(0, seconds) / 60);
+      const sec = Math.max(0, seconds) % 60;
+      const isLow = seconds > 0 && seconds <= 60;
+      const isDone = seconds <= 0;
+      return (
+        <div className="text-center rounded-xl p-3" style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${isLow?"rgba(239,68,68,0.6)":"rgba(255,255,255,0.1)"}` }}>
+          <p className="text-xs mb-1" style={{ color:"rgba(255,255,255,0.4)" }}>{label}</p>
+          <p className={`font-black text-4xl leading-none ${isLow?"timer-pulse":""}`}
+            style={{ color:isDone?"rgba(255,255,255,0.2)":isLow?"#F87171":"#4ADE80", fontFamily:"monospace", letterSpacing:"0.05em" }}>
+            {isDone ? "--:--" : `${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`}
+          </p>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // CityMap (SVG)
+    // ============================================================
+
+    function CityMap({ selectedDistrict, onSelect }) {
+      const areas = [
+        { id:"d3", label:"第3区", sub:"中央部", color:"#F59E0B",
+          path:"M 20,5 L 280,5 L 305,100 L -5,100 Z", cx:150, cy:52 },
+        { id:"d1", label:"第1区", sub:"沿岸部", color:"#0EA5E9",
+          path:"M -5,100 L 145,100 L 145,195 L -5,195 Z", cx:70, cy:152 },
+        { id:"d2", label:"第2区", sub:"内陸部", color:"#8B5CF6",
+          path:"M 145,100 L 305,100 L 305,195 L 145,195 Z", cx:225, cy:152 }
+      ];
+      return (
+        <svg viewBox="-5 0 310 205" style={{ width:"100%", maxWidth:"360px", display:"block", margin:"0 auto" }}>
+          <defs>
+            <pattern id="seaPattern" patternUnits="userSpaceOnUse" width="20" height="8">
+              <path d="M0,4 Q5,0 10,4 Q15,8 20,4" fill="none" stroke="#0EA5E9" strokeWidth="1" opacity="0.35" />
+            </pattern>
+          </defs>
+          <rect x="-5" y="193" width="155" height="12" fill="url(#seaPattern)" />
+          <text x="65" y="202" textAnchor="middle" fill="#0EA5E9" fontSize="7" opacity="0.5" fontFamily="sans-serif">≈ 海 ≈</text>
+          {areas.map(a => (
+            <g key={a.id} onClick={() => onSelect(a.id === selectedDistrict ? null : a.id)} style={{ cursor:"pointer" }}>
+              <path d={a.path}
+                fill={selectedDistrict===a.id?`${a.color}45`:`${a.color}18`}
+                stroke={a.color} strokeWidth={selectedDistrict===a.id?2.5:1.5}
+                style={{ transition:"all 0.18s" }} />
+              <text x={a.cx} y={a.cy-7} textAnchor="middle" fill={a.color} fontSize="13" fontWeight="bold" fontFamily="'Noto Sans JP',sans-serif">{a.label}</text>
+              <text x={a.cx} y={a.cy+8} textAnchor="middle" fill={a.color} fontSize="9" opacity="0.7" fontFamily="sans-serif">{a.sub}</text>
+            </g>
+          ))}
+        </svg>
+      );
+    }
+
+    // ============================================================
     // EventBanner
     // ============================================================
 
     function EventBanner({ events }) {
       const [expanded, setExpanded] = useState(false);
       const prevLen = useRef(0);
-
       useEffect(() => {
         if (events.length > prevLen.current) {
           setExpanded(true);
@@ -197,10 +357,8 @@
         }
         prevLen.current = events.length;
       }, [events.length]);
-
       if (events.length === 0) return null;
       const latest = events[events.length - 1];
-
       if (expanded) {
         return (
           <div className="rounded-xl p-4 mb-4" style={{ background:"rgba(153,27,27,0.7)", border:"1px solid #EF4444" }}>
@@ -241,28 +399,20 @@
             </p>
             <div className="grid grid-cols-5 gap-3">
               {Array.from({ length:10 }, (_, i) => i + 1).map(id => (
-                <button
-                  key={id}
-                  onClick={() => onSelect(id)}
+                <button key={id} onClick={() => onSelect(id)}
                   className="font-black text-xl text-white transition-all"
                   style={{
-                    aspectRatio:"1/1",
-                    borderRadius:"12px",
-                    background: savedTeamId === id
-                      ? "linear-gradient(135deg,#2563EB,#1D4ED8)"
-                      : "rgba(255,255,255,0.08)",
-                    border: `2px solid ${savedTeamId === id ? "#3B82F6" : "rgba(255,255,255,0.15)"}`,
+                    aspectRatio:"1/1", borderRadius:"12px",
+                    background: savedTeamId === id ? "linear-gradient(135deg,#2563EB,#1D4ED8)" : "rgba(255,255,255,0.08)",
+                    border:`2px solid ${savedTeamId === id ? "#3B82F6" : "rgba(255,255,255,0.15)"}`,
                     boxShadow: savedTeamId === id ? "0 0 20px rgba(37,99,235,0.4)" : "none"
-                  }}
-                >
+                  }}>
                   {id}
                 </button>
               ))}
             </div>
             {savedTeamId && (
-              <p className="text-xs text-center mt-4" style={{ color:"rgba(255,255,255,0.25)" }}>
-                前回の選択: {savedTeamId}班
-              </p>
+              <p className="text-xs text-center mt-4" style={{ color:"rgba(255,255,255,0.25)" }}>前回の選択: {savedTeamId}班</p>
             )}
           </div>
         </div>
@@ -287,47 +437,21 @@
         d3: { ...team.strategy.activities.d3 }
       }));
       const [memo, setMemo] = useState(team.strategy.memo || "");
-
       const total = calculateTotalPoints(activities);
       const remaining = 100 - total;
       const isOver = total > 100;
-
-      function handleSlider(districtId, val) {
-        setAllocation(prev => adjustDistrictSliders(districtId, val, prev));
-      }
-
-      function handleActivity(dId, actId, val) {
-        const v = Math.max(0, Number(val) || 0);
-        setActivities(prev => ({ ...prev, [dId]: { ...prev[dId], [actId]: v } }));
-      }
-
-      function colTotal(dId) {
-        return Object.values(activities[dId]).reduce((s, v) => s + (Number(v)||0), 0);
-      }
-      function rowTotal(actId) {
-        return ["d1","d2","d3"].reduce((s, d) => s + (Number(activities[d][actId])||0), 0);
-      }
-
       const cellStyle = {
-        background:"rgba(255,255,255,0.07)",
-        border:"1px solid rgba(255,255,255,0.12)",
+        background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)",
         color:"white", outline:"none", borderRadius:"8px",
         width:"60px", textAlign:"center", padding:"6px 2px", fontWeight:"700"
       };
-
-      const sectionStyle = {
-        background:"rgba(255,255,255,0.04)",
-        border:"1px solid rgba(255,255,255,0.1)",
-        borderRadius:"12px", padding:"16px", marginBottom:"16px"
-      };
-
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"16px" };
+      function colTotal(dId) { return Object.values(activities[dId]).reduce((s,v)=>s+(Number(v)||0),0); }
+      function rowTotal(actId) { return ["d1","d2","d3"].reduce((s,d)=>s+(Number(activities[d][actId])||0),0); }
       return (
         <div style={{ paddingBottom:"32px" }}>
           <EventBanner events={activeEvents} />
-
-          {/* ヘッダー */}
-          <div className="flex items-center justify-between rounded-xl p-4 mb-5"
-            style={{ background:"rgba(0,0,0,0.3)" }}>
+          <div className="flex items-center justify-between rounded-xl p-4 mb-5" style={{ background:"rgba(0,0,0,0.3)" }}>
             <div>
               <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>担当班</p>
               <p className="font-black text-2xl text-white">{team.name}</p>
@@ -335,26 +459,17 @@
             </div>
             <div className="text-right">
               <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>残り活動ポイント</p>
-              <p className="font-black leading-none" style={{
-                fontSize:"40px",
-                color: isOver ? "#F87171" : remaining === 0 ? "#FCD34D" : "#4ADE80"
-              }}>
+              <p className="font-black leading-none" style={{ fontSize:"40px", color:isOver?"#F87171":remaining===0?"#FCD34D":"#4ADE80" }}>
                 {remaining}
               </p>
-              <p className="text-xs mt-0.5" style={{
-                color: isOver ? "#F87171" : remaining === 0 ? "#FCD34D" : "rgba(255,255,255,0.3)"
-              }}>
+              <p className="text-xs mt-0.5" style={{ color:isOver?"#F87171":remaining===0?"#FCD34D":"rgba(255,255,255,0.3)" }}>
                 {isOver ? "⚠️ 超過しています" : remaining === 0 ? "✅ 使い切りました" : "/ 100pt"}
               </p>
             </div>
           </div>
-
-          {/* 選挙区重点配分 */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-black text-white mb-1">📍 選挙区重点配分</h3>
-            <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>
-              スライダーを動かすと残り2区が自動調整されます（合計100%）
-            </p>
+            <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>スライダーを動かすと残り2区が自動調整されます（合計100%）</p>
             {DISTRICTS.map(d => (
               <div key={d.id} className="mb-4">
                 <div className="flex justify-between items-start mb-1">
@@ -365,7 +480,7 @@
                   <span className="font-black text-xl" style={{ color:d.color }}>{allocation[d.id]}%</span>
                 </div>
                 <input type="range" min="0" max="100" value={allocation[d.id]}
-                  onChange={e => handleSlider(d.id, Number(e.target.value))}
+                  onChange={e => setAllocation(prev => adjustDistrictSliders(d.id, Number(e.target.value), prev))}
                   style={{ accentColor:d.color }} />
                 <div className="flex gap-3 text-xs mt-1" style={{ color:"rgba(255,255,255,0.35)" }}>
                   <span>👴 高齢者 {d.voters.elderly}%</span>
@@ -375,40 +490,27 @@
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {d.issues.map(issue => (
                     <span key={issue} className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ border:"1px solid rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.5)" }}>
-                      {issue}
-                    </span>
+                      style={{ border:"1px solid rgba(255,255,255,0.15)", color:"rgba(255,255,255,0.5)" }}>{issue}</span>
                   ))}
                 </div>
               </div>
             ))}
-            {/* 配分バービジュアル */}
             <div className="flex rounded-full overflow-hidden mt-1" style={{ height:"10px" }}>
               {DISTRICTS.map(d => (
-                <div key={d.id} style={{
-                  width:`${allocation[d.id]}%`, background:d.color, transition:"width 0.25s ease"
-                }} />
+                <div key={d.id} style={{ width:`${allocation[d.id]}%`, background:d.color, transition:"width 0.25s ease" }} />
               ))}
             </div>
           </div>
-
-          {/* 活動ポイント配分表 */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-black text-white mb-1">⚡ 活動ポイント配分</h3>
-            <p className="text-xs mb-3" style={{ color:"rgba(255,255,255,0.4)" }}>
-              合計100ptを3選挙区・5活動に配分してください
-            </p>
+            <p className="text-xs mb-3" style={{ color:"rgba(255,255,255,0.4)" }}>合計100ptを3選挙区・5活動に配分してください</p>
             <div style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", minWidth:"480px", borderCollapse:"collapse" }}>
                 <thead>
                   <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
-                    <th className="text-left py-2 pr-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)", width:"140px" }}>
-                      活動手段
-                    </th>
+                    <th className="text-left py-2 pr-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)", width:"140px" }}>活動手段</th>
                     {DISTRICTS.map(d => (
-                      <th key={d.id} className="text-center py-2 text-xs font-bold" style={{ color:d.color }}>
-                        {d.short}
-                      </th>
+                      <th key={d.id} className="text-center py-2 text-xs font-bold" style={{ color:d.color }}>{d.short}</th>
                     ))}
                     <th className="text-center py-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)" }}>合計</th>
                   </tr>
@@ -423,28 +525,23 @@
                           <div className="flex gap-1 mt-0.5">
                             {[{k:"elderly",e:"👴"},{k:"middle",e:"👔"},{k:"young",e:"👩"}].map(({k,e}) => {
                               const ic = effectIcon(act.effectMultiplier[k]);
-                              return (
-                                <span key={k} className="text-xs" style={{ color:ic.color }}>
-                                  {e}{ic.label}
-                                </span>
-                              );
+                              return <span key={k} className="text-xs" style={{ color:ic.color }}>{e}{ic.label}</span>;
                             })}
                           </div>
                         </td>
                         {DISTRICTS.map(d => (
                           <td key={d.id} className="py-2 text-center">
-                            <input
-                              type="number" min="0" step="5" inputMode="numeric"
+                            <input type="number" min="0" step="5" inputMode="numeric"
                               value={activities[d.id][act.id]}
-                              onChange={e => handleActivity(d.id, act.id, e.target.value)}
-                              style={cellStyle}
-                            />
+                              onChange={e => {
+                                const v = Math.max(0, Number(e.target.value) || 0);
+                                setActivities(prev => ({ ...prev, [d.id]: { ...prev[d.id], [act.id]: v } }));
+                              }}
+                              style={cellStyle} />
                           </td>
                         ))}
                         <td className="py-2 text-center font-bold text-sm"
-                          style={{ color: rt > 0 ? "#FCD34D" : "rgba(255,255,255,0.25)" }}>
-                          {rt}
-                        </td>
+                          style={{ color:rt>0?"#FCD34D":"rgba(255,255,255,0.25)" }}>{rt}</td>
                       </tr>
                     );
                   })}
@@ -453,67 +550,37 @@
                   <tr style={{ borderTop:"1px solid rgba(255,255,255,0.15)" }}>
                     <td className="py-2 text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>区合計</td>
                     {DISTRICTS.map(d => (
-                      <td key={d.id} className="py-2 text-center font-bold text-sm" style={{ color:d.color }}>
-                        {colTotal(d.id)}
-                      </td>
+                      <td key={d.id} className="py-2 text-center font-bold text-sm" style={{ color:d.color }}>{colTotal(d.id)}</td>
                     ))}
-                    <td className="py-2 text-center font-black" style={{
-                      fontSize:"18px",
-                      color: isOver ? "#F87171" : total === 100 ? "#4ADE80" : "white"
-                    }}>
-                      {total}
-                      {isOver && <span className="text-xs block" style={{ color:"#F87171" }}>超過!</span>}
+                    <td className="py-2 text-center font-black" style={{ fontSize:"18px", color:isOver?"#F87171":total===100?"#4ADE80":"white" }}>
+                      {total}{isOver && <span className="text-xs block" style={{ color:"#F87171" }}>超過!</span>}
                     </td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
-
-          {/* 対立候補の動向 */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-black text-white mb-3">🕵️ 対立候補の動向</h3>
-            {OPPONENT_HINTS.map((hint, i) => (
-              <p key={i} className="text-sm mb-1" style={{ color:"rgba(255,255,255,0.35)" }}>{hint}</p>
-            ))}
+            {OPPONENT_HINTS.map((hint, i) => <p key={i} className="text-sm mb-1" style={{ color:"rgba(255,255,255,0.35)" }}>{hint}</p>)}
           </div>
-
-          {/* 戦略メモ */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-black text-white mb-1">📝 戦略メモ</h3>
-            <p className="text-xs mb-2" style={{ color:"rgba(255,255,255,0.4)" }}>
-              この班の戦略の理由を記録しよう（最大200文字）
-            </p>
-            <textarea
-              value={memo}
-              onChange={e => setMemo(e.target.value.slice(0, 200))}
-              rows={3}
+            <p className="text-xs mb-2" style={{ color:"rgba(255,255,255,0.4)" }}>この班の戦略の理由を記録しよう（最大200文字）</p>
+            <textarea value={memo} onChange={e => setMemo(e.target.value.slice(0,200))} rows={3}
               placeholder="例：第3区の若者層にSNS広告を集中させ、比例票も狙う戦略…"
-              style={{
-                width:"100%", borderRadius:"8px", padding:"10px 12px",
-                background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.12)",
-                color:"white", outline:"none", resize:"none", fontSize:"14px"
-              }}
-            />
-            <p className="text-xs text-right mt-1" style={{ color:"rgba(255,255,255,0.25)" }}>
-              {memo.length} / 200
-            </p>
+              style={{ width:"100%", borderRadius:"8px", padding:"10px 12px", background:"rgba(255,255,255,0.05)",
+                border:"1px solid rgba(255,255,255,0.12)", color:"white", outline:"none", resize:"none", fontSize:"14px" }} />
+            <p className="text-xs text-right mt-1" style={{ color:"rgba(255,255,255,0.25)" }}>{memo.length} / 200</p>
           </div>
-
-          {/* 確定ボタン */}
-          <button
-            onClick={() => !isOver && onSaveAndNext({ districtAllocation:allocation, activities, memo })}
-            disabled={isOver}
-            className="w-full font-black text-lg transition-all"
+          <button onClick={() => !isOver && onSaveAndNext({ districtAllocation:allocation, activities, memo })}
+            disabled={isOver} className="w-full font-black text-lg transition-all"
             style={{
-              padding:"16px",
-              borderRadius:"12px",
-              background: isOver ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg,#2563EB,#1D4ED8)",
-              border: `1px solid ${isOver ? "rgba(255,255,255,0.08)" : "#3B82F6"}`,
-              color: isOver ? "#6B7280" : "white",
-              cursor: isOver ? "not-allowed" : "pointer"
-            }}
-          >
+              padding:"16px", borderRadius:"12px",
+              background:isOver?"rgba(255,255,255,0.05)":"linear-gradient(135deg,#2563EB,#1D4ED8)",
+              border:`1px solid ${isOver?"rgba(255,255,255,0.08)":"#3B82F6"}`,
+              color:isOver?"#6B7280":"white", cursor:isOver?"not-allowed":"pointer"
+            }}>
             {isOver ? "⚠️ ポイントが超過しています — 配分を見直してください" : "戦略を確定する →"}
           </button>
         </div>
@@ -527,33 +594,20 @@
     function ConfirmScreen({ team, onSubmit, onBack }) {
       const { strategy } = team;
       const total = calculateTotalPoints(strategy.activities);
-
-      function rowTotal(actId) {
-        return ["d1","d2","d3"].reduce((s, d) => s + (strategy.activities[d][actId] || 0), 0);
-      }
-
-      const sectionStyle = {
-        background:"rgba(255,255,255,0.04)",
-        border:"1px solid rgba(255,255,255,0.1)",
-        borderRadius:"12px", padding:"16px", marginBottom:"16px"
-      };
-
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"16px" };
+      function rowTotal(actId) { return ["d1","d2","d3"].reduce((s,d)=>s+(strategy.activities[d][actId]||0),0); }
       return (
         <div style={{ paddingBottom:"32px" }}>
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-white">戦略確認</h2>
-            <p className="text-sm mt-1" style={{ color:"rgba(255,255,255,0.5)" }}>
-              {team.name} — 内容を確認して提出してください
-            </p>
+            <p className="text-sm mt-1" style={{ color:"rgba(255,255,255,0.5)" }}>{team.name} — 内容を確認して提出してください</p>
           </div>
-
-          {/* 配分バー */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>📍 選挙区重点配分</h3>
             <div className="flex rounded-xl overflow-hidden" style={{ height:"44px" }}>
               {DISTRICTS.map(d => (
                 <div key={d.id} className="flex items-center justify-center font-bold text-sm text-white"
-                  style={{ width:`${strategy.districtAllocation[d.id]}%`, background:d.color, transition:"width 0.3s" }}>
+                  style={{ width:`${strategy.districtAllocation[d.id]}%`, background:d.color }}>
                   {strategy.districtAllocation[d.id] > 12 ? `${strategy.districtAllocation[d.id]}%` : ""}
                 </div>
               ))}
@@ -562,25 +616,19 @@
               {DISTRICTS.map(d => (
                 <div key={d.id} className="flex items-center gap-1">
                   <div style={{ width:"10px", height:"10px", borderRadius:"2px", background:d.color }} />
-                  <span className="text-xs" style={{ color:"rgba(255,255,255,0.55)" }}>
-                    {d.short} {strategy.districtAllocation[d.id]}%
-                  </span>
+                  <span className="text-xs" style={{ color:"rgba(255,255,255,0.55)" }}>{d.short} {strategy.districtAllocation[d.id]}%</span>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* 活動ポイント表（読み取り専用） */}
-          <div style={sectionStyle}>
+          <div style={sec}>
             <h3 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>⚡ 活動ポイント配分（合計 {total}pt）</h3>
             <div style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", minWidth:"380px", borderCollapse:"collapse" }}>
                 <thead>
                   <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
                     <th className="text-left py-1.5 text-xs font-normal" style={{ color:"rgba(255,255,255,0.35)", width:"100px" }}>活動</th>
-                    {DISTRICTS.map(d => (
-                      <th key={d.id} className="text-center py-1.5 text-xs font-bold" style={{ color:d.color }}>{d.short}</th>
-                    ))}
+                    {DISTRICTS.map(d => <th key={d.id} className="text-center py-1.5 text-xs font-bold" style={{ color:d.color }}>{d.short}</th>)}
                     <th className="text-center py-1.5 text-xs font-normal" style={{ color:"rgba(255,255,255,0.35)" }}>計</th>
                   </tr>
                 </thead>
@@ -590,11 +638,7 @@
                     return (
                       <tr key={act.id} style={{ borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
                         <td className="py-1.5 text-xs" style={{ color:"rgba(255,255,255,0.75)" }}>{act.name}</td>
-                        {DISTRICTS.map(d => (
-                          <td key={d.id} className="py-1.5 text-center font-bold text-sm text-white">
-                            {strategy.activities[d.id][act.id] || 0}
-                          </td>
-                        ))}
+                        {DISTRICTS.map(d => <td key={d.id} className="py-1.5 text-center font-bold text-sm text-white">{strategy.activities[d.id][act.id]||0}</td>)}
                         <td className="py-1.5 text-center font-bold text-sm" style={{ color:"#FCD34D" }}>{rt}</td>
                       </tr>
                     );
@@ -613,29 +657,19 @@
               </table>
             </div>
           </div>
-
-          {/* 戦略メモ */}
-          {strategy.memo ? (
-            <div style={sectionStyle}>
+          {strategy.memo && (
+            <div style={sec}>
               <h3 className="font-bold text-sm mb-2" style={{ color:"rgba(255,255,255,0.6)" }}>📝 戦略メモ</h3>
               <p className="text-sm" style={{ color:"rgba(255,255,255,0.8)" }}>{strategy.memo}</p>
             </div>
-          ) : null}
-
-          {/* ボタン */}
+          )}
           <div className="flex gap-3">
-            <button onClick={onBack} className="font-bold text-sm text-white transition-all"
-              style={{
-                flex:1, padding:"14px", borderRadius:"12px",
-                background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)"
-              }}>
+            <button onClick={onBack} className="font-bold text-sm text-white"
+              style={{ flex:1, padding:"14px", borderRadius:"12px", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)" }}>
               ← 修正する
             </button>
-            <button onClick={onSubmit} className="font-black text-base text-white transition-all"
-              style={{
-                flex:2, padding:"14px", borderRadius:"12px",
-                background:"linear-gradient(135deg,#16A34A,#15803D)", border:"1px solid #22C55E"
-              }}>
+            <button onClick={onSubmit} className="font-black text-base text-white"
+              style={{ flex:2, padding:"14px", borderRadius:"12px", background:"linear-gradient(135deg,#16A34A,#15803D)", border:"1px solid #22C55E" }}>
               この戦略で提出する ✓
             </button>
           </div>
@@ -656,8 +690,174 @@
           <p className="text-sm" style={{ color:"rgba(255,255,255,0.35)" }}>{team.name}の戦略が受け付けられました</p>
           <div className="mt-8 rounded-xl p-4 max-w-xs w-full"
             style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>
-              先生が全班の提出を確認次第、<br />結果発表が始まります。
+            <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>先生が全班の提出を確認次第、<br />結果発表が始まります。</p>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // DistrictResultCard（小選挙区1区分の詳細カード）
+    // ============================================================
+
+    function DistrictResultCard({ result }) {
+      const [animated, setAnimated] = useState(false);
+      useEffect(() => {
+        const t = setTimeout(() => setAnimated(true), 80);
+        return () => clearTimeout(t);
+      }, []);
+
+      const winner = result.partyRates[0];
+      const medal = (i) => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"12px" };
+
+      return (
+        <div className="fade-up">
+          {/* 開票結果タイトル */}
+          <div className="text-center mb-4">
+            <p className="text-sm font-bold" style={{ color:"rgba(255,255,255,0.5)" }}>{result.district.feature}</p>
+            <h3 className="text-2xl font-black text-white">{result.district.name} 開票結果</h3>
+          </div>
+
+          {/* 政党バーグラフ */}
+          <div style={sec}>
+            {result.partyRates.map((pr, i) => {
+              const isWinner = pr.party.id === winner.party.id;
+              return (
+                <div key={pr.party.id} className="mb-3 rounded-lg p-3" style={{
+                  background: isWinner ? `${pr.party.color}18` : "transparent",
+                  border: `1px solid ${isWinner ? pr.party.color : "rgba(255,255,255,0.06)"}`,
+                  boxShadow: isWinner ? `0 0 16px ${pr.party.color}30` : "none"
+                }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm" style={{ color:pr.party.color }}>{pr.party.name}</span>
+                      {isWinner && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-black text-white"
+                          style={{ background:"linear-gradient(135deg,#B45309,#92400E)", border:"1px solid #F59E0B" }}>
+                          🏆 当選
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-black text-lg" style={{ color: isWinner ? "#FCD34D" : pr.party.color }}>
+                      {pr.voteRate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="overflow-hidden rounded-full" style={{ height:"24px", background:"rgba(255,255,255,0.07)" }}>
+                    <div style={{
+                      width: animated ? `${pr.voteRate}%` : "0%", height:"100%",
+                      background: isWinner ? `linear-gradient(90deg,${pr.party.color},${pr.party.color}cc)` : pr.party.color,
+                      transition: `width 1.2s ease-out ${i * 0.2}s`, borderRadius:"9999px",
+                      boxShadow: isWinner ? `0 0 10px ${pr.party.color}80` : "none"
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 死票率 */}
+          <div className="text-center rounded-xl p-5 mb-3" style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.3)" }}>
+            <p className="text-sm font-bold mb-1" style={{ color:"rgba(255,255,255,0.5)" }}>死 票 率</p>
+            <p className="font-black" style={{ fontSize:"60px", color:"#F87171", lineHeight:1 }}>
+              {result.deadVoteRate.toFixed(1)}%
+            </p>
+            <p className="text-sm mt-2" style={{ color:"rgba(255,255,255,0.45)" }}>
+              この選挙区では <span style={{ color:"#F87171", fontWeight:"bold" }}>{result.deadVoteRate.toFixed(1)}%</span> の票が議席に結びつきませんでした
+            </p>
+          </div>
+
+          {/* 班別ランキング */}
+          <div style={sec}>
+            <h4 className="font-black text-white text-sm mb-3">みなと未来党 班別得票率</h4>
+            <div className="grid grid-cols-2 gap-1.5">
+              {result.teamRanking.map((item, i) => {
+                const m = medal(i);
+                return (
+                  <div key={item.team.id} className="flex items-center justify-between rounded-lg px-3 py-2"
+                    style={{
+                      background: m ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${m ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)"}`
+                    }}>
+                    <span className="text-sm font-bold" style={{ color:m?"white":"rgba(255,255,255,0.45)" }}>
+                      {m || `${i+1}.`} {item.team.name}
+                    </span>
+                    <span className="font-black text-sm" style={{ color:m?"#FCD34D":"rgba(255,255,255,0.35)" }}>
+                      {item.rawRate.toFixed(1)}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // DistrictSummary（全3区発表後のまとめ）
+    // ============================================================
+
+    function DistrictSummary({ allResults, smallSeats }) {
+      const totalDeadRate = allResults.reduce((s, r) => s + r.deadVoteRate, 0) / allResults.length;
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"12px" };
+
+      return (
+        <div className="fade-up">
+          <div className="text-center mb-5">
+            <h3 className="text-2xl font-black text-white">小選挙区 結果まとめ</h3>
+          </div>
+
+          {/* 各区の勝者 */}
+          <div style={sec}>
+            <h4 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>各選挙区 当選政党</h4>
+            {allResults.map(r => {
+              const w = r.winner;
+              return (
+                <div key={r.district.id} className="flex items-center justify-between rounded-lg px-4 py-3 mb-2"
+                  style={{ background:`${w.party.color}18`, border:`1px solid ${w.party.color}` }}>
+                  <div>
+                    <p className="font-bold text-white">{r.district.name}</p>
+                    <p className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>{r.district.feature}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-lg" style={{ color:w.party.color }}>🏆 {w.party.name}</p>
+                    <p className="text-sm" style={{ color:"rgba(255,255,255,0.5)" }}>{w.voteRate.toFixed(1)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 小選挙区議席数 */}
+          <div style={sec}>
+            <h4 className="font-bold text-sm mb-3" style={{ color:"rgba(255,255,255,0.6)" }}>小選挙区 獲得議席（全3議席）</h4>
+            <div className="flex gap-3 flex-wrap">
+              {PARTIES.map(p => (
+                <div key={p.id} className="flex-1 text-center rounded-xl py-4"
+                  style={{
+                    background: (smallSeats[p.id]||0) > 0 ? `${p.color}20` : "rgba(255,255,255,0.03)",
+                    border: `2px solid ${(smallSeats[p.id]||0) > 0 ? p.color : "rgba(255,255,255,0.08)"}`,
+                    minWidth:"100px"
+                  }}>
+                  <p className="text-xs font-bold mb-1" style={{ color:p.color }}>{p.name}</p>
+                  <p className="font-black" style={{ fontSize:"36px", color:(smallSeats[p.id]||0)>0?"white":"rgba(255,255,255,0.2)", lineHeight:1 }}>
+                    {smallSeats[p.id]||0}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>議席</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 死票合計 */}
+          <div className="text-center rounded-xl p-5" style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.25)" }}>
+            <p className="text-sm font-bold mb-1" style={{ color:"rgba(255,255,255,0.5)" }}>全選挙区 平均死票率</p>
+            <p className="font-black" style={{ fontSize:"52px", color:"#F87171", lineHeight:1 }}>
+              {totalDeadRate.toFixed(1)}%
+            </p>
+            <p className="text-sm mt-2" style={{ color:"rgba(255,255,255,0.45)" }}>
+              小選挙区制では多くの票が議席に反映されません
             </p>
           </div>
         </div>
@@ -665,7 +865,463 @@
     }
 
     // ============================================================
-    // Placeholders（フェーズ3以降で実装）
+    // DistrictResultsScreen（フェーズ3実装）
+    // ============================================================
+
+    function DistrictResultsScreen({ teams, activeEvents, revealedDistrict, onReveal, onNext }) {
+      const [viewing, setViewing] = useState(() => revealedDistrict > 0 ? revealedDistrict - 1 : null);
+      const prevRevealed = useRef(revealedDistrict);
+
+      useEffect(() => {
+        if (revealedDistrict > prevRevealed.current) {
+          prevRevealed.current = revealedDistrict;
+          setViewing(revealedDistrict - 1);
+        }
+      }, [revealedDistrict]);
+
+      const allResults = useMemo(() => DISTRICTS.map(d => computeDistrictResult(teams, d, activeEvents)), [teams, activeEvents]);
+      const smallSeats = useMemo(() => computeSmallSeats(allResults), [allResults]);
+
+      const tabStyle = (active) => ({
+        padding:"8px 14px", borderRadius:"8px", fontWeight:"bold", fontSize:"13px",
+        cursor:"pointer", border:"none", transition:"all 0.2s",
+        background: active ? "#2563EB" : "rgba(255,255,255,0.08)",
+        color: active ? "white" : "rgba(255,255,255,0.55)"
+      });
+
+      const ctrlBtn = (label, onClick, primary=false) => (
+        <button onClick={onClick} className="w-full font-black text-base text-white"
+          style={{
+            padding:"14px", borderRadius:"12px",
+            background: primary ? "linear-gradient(135deg,#2563EB,#1D4ED8)" : "rgba(255,255,255,0.1)",
+            border: `1px solid ${primary ? "#3B82F6" : "rgba(255,255,255,0.2)"}`
+          }}>
+          {label}
+        </button>
+      );
+
+      if (revealedDistrict === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div style={{ fontSize:"64px", marginBottom:"16px" }}>🗳️</div>
+            <h2 className="text-2xl font-black text-white mb-2">開票結果発表</h2>
+            <p className="text-sm mb-8" style={{ color:"rgba(255,255,255,0.5)" }}>準備ができたら第1区から発表してください</p>
+            <button onClick={onReveal} className="font-black text-lg text-white"
+              style={{ padding:"16px 40px", borderRadius:"12px", background:"linear-gradient(135deg,#DC2626,#B91C1C)", border:"1px solid #EF4444", boxShadow:"0 0 20px rgba(239,68,68,0.3)" }}>
+              🗳️ 第1区を発表する
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ paddingBottom:"32px" }}>
+          {/* タブナビ */}
+          <div className="flex gap-2 mb-5 flex-wrap">
+            {DISTRICTS.slice(0, revealedDistrict).map((d, i) => (
+              <button key={d.id} style={tabStyle(viewing === i)} onClick={() => setViewing(i)}>
+                {d.short}
+              </button>
+            ))}
+            {revealedDistrict >= 3 && (
+              <button style={tabStyle(viewing === "summary")} onClick={() => setViewing("summary")}>
+                まとめ
+              </button>
+            )}
+          </div>
+
+          {/* メインコンテンツ */}
+          {viewing === "summary"
+            ? <DistrictSummary key="summary" allResults={allResults} smallSeats={smallSeats} />
+            : viewing !== null && <DistrictResultCard key={viewing} result={allResults[viewing]} />
+          }
+
+          {/* コントロール */}
+          <div className="mt-5 flex gap-3">
+            {revealedDistrict < 3 && ctrlBtn(
+              `🗳️ 第${revealedDistrict + 1}区を発表する`, onReveal, true
+            )}
+            {revealedDistrict >= 3 && viewing !== "summary" && ctrlBtn(
+              "まとめを見る →", () => setViewing("summary")
+            )}
+            {revealedDistrict >= 3 && viewing === "summary" && ctrlBtn(
+              "ドント式計算へ →", onNext, true
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // DontMethodScreen（フェーズ3実装）
+    // ============================================================
+
+    const DHONT_DIVISORS = [1, 2, 3, 4, 5];
+    const DHONT_PARTY_ORDER = ["mirai","kaikaku","hozen","rengo"];
+
+    function DontMethodScreen({ teams, activeEvents, onNext }) {
+      const initInputs = () => Object.fromEntries(
+        DHONT_PARTY_ORDER.map(id => [id, Object.fromEntries(DHONT_DIVISORS.map(d => [d, ""]))])
+      );
+      const [inputs, setInputs] = useState(initInputs);
+      const [revealed, setRevealed] = useState(false);
+
+      const top10 = useMemo(() => getDhontTop10(), []);
+      const propSeats = useMemo(() => computeDhont(PROPORTIONAL_VOTES, PROP_SEATS_TOTAL), []);
+
+      function handleInput(partyId, divisor, val) {
+        setInputs(prev => ({ ...prev, [partyId]: { ...prev[partyId], [divisor]: val } }));
+      }
+
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"16px" };
+
+      const inputCellStyle = {
+        width:"68px", textAlign:"center", padding:"7px 4px", fontWeight:"700",
+        background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)",
+        color:"white", outline:"none", borderRadius:"8px", fontSize:"14px"
+      };
+
+      return (
+        <div style={{ paddingBottom:"32px" }}>
+          <div className="text-center mb-5">
+            <h2 className="text-2xl font-black text-white">⑤ ドント式計算</h2>
+            <p className="text-sm mt-1" style={{ color:"rgba(255,255,255,0.5)" }}>比例代表制 — 議席の配分方法を自分で計算してみよう</p>
+          </div>
+
+          {/* 説明 */}
+          <div style={sec}>
+            <h3 className="font-black text-white mb-3">📖 ドント式とは？</h3>
+            <div className="rounded-lg p-3 mb-3" style={{ background:"rgba(37,99,235,0.15)", border:"1px solid rgba(37,99,235,0.3)" }}>
+              <p className="text-sm text-white font-bold mb-1">計算ルール</p>
+              <p className="text-sm" style={{ color:"rgba(255,255,255,0.7)" }}>
+                各政党の得票数を ÷1、÷2、÷3… と割り続け、<br />
+                商の大きい順に議席を配分する方法です。
+              </p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {DHONT_PARTY_ORDER.map(id => {
+                const p = PARTIES.find(p => p.id === id);
+                return (
+                  <div key={id} className="rounded-lg px-3 py-2" style={{ background:`${p.color}20`, border:`1px solid ${p.color}50` }}>
+                    <p className="text-xs font-bold" style={{ color:p.color }}>{p.name}</p>
+                    <p className="font-black text-white">{PROPORTIONAL_VOTES[id]}万票</p>
+                  </div>
+                );
+              })}
+              <div className="rounded-lg px-3 py-2" style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                <p className="text-xs font-bold" style={{ color:"rgba(255,255,255,0.5)" }}>配分議席</p>
+                <p className="font-black text-white">{PROP_SEATS_TOTAL}議席</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 計算表 */}
+          <div style={sec}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-black text-white">🧮 計算してみよう</h3>
+              {!revealed && (
+                <span className="text-xs px-2 py-1 rounded-full" style={{ background:"rgba(245,158,11,0.2)", color:"#FCD34D", border:"1px solid #F59E0B" }}>
+                  上位{PROP_SEATS_TOTAL}マスが議席獲得
+                </span>
+              )}
+            </div>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", minWidth:"520px", borderCollapse:"collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom:"1px solid rgba(255,255,255,0.12)" }}>
+                    <th className="py-2 pr-3 text-left text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)", width:"44px" }}>÷</th>
+                    {DHONT_PARTY_ORDER.map(id => {
+                      const p = PARTIES.find(p => p.id === id);
+                      return (
+                        <th key={id} className="py-2 text-center" style={{ color:p.color }}>
+                          <p className="font-black text-sm">{p.name}</p>
+                          <p className="text-xs font-normal" style={{ color:`${p.color}99` }}>{PROPORTIONAL_VOTES[id]}万票</p>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {DHONT_DIVISORS.map(div => (
+                    <tr key={div} style={{ borderBottom:"1px solid rgba(255,255,255,0.05)" }}>
+                      <td className="py-2.5 pr-3 font-black text-lg" style={{ color:"rgba(255,255,255,0.5)" }}>÷{div}</td>
+                      {DHONT_PARTY_ORDER.map(id => {
+                        const p = PARTIES.find(p => p.id === id);
+                        const isTop = top10.has(`${id}-${div}`);
+                        const answer = dhontValue(PROPORTIONAL_VOTES[id], div);
+                        const cellKey = `${revealed}-${id}-${div}`;
+                        return (
+                          <td key={id} className="py-2.5 text-center">
+                            {revealed ? (
+                              <span key={cellKey}
+                                className={isTop ? "top-cell-reveal" : "cell-reveal"}
+                                style={{
+                                  display:"inline-block", width:"68px", padding:"7px 4px",
+                                  borderRadius:"8px", fontWeight:"900", fontSize:"14px",
+                                  color:"white", border:`1px solid ${isTop ? "#F59E0B" : "rgba(255,255,255,0.1)"}`
+                                }}>
+                                {answer}
+                              </span>
+                            ) : (
+                              <input
+                                type="number" inputMode="decimal"
+                                value={inputs[id][div]}
+                                onChange={e => handleInput(id, div, e.target.value)}
+                                placeholder="?"
+                                style={{ ...inputCellStyle, accentColor: p.color }}
+                              />
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!revealed && (
+              <p className="text-xs text-center mt-3" style={{ color:"rgba(255,255,255,0.3)" }}>
+                各セルに計算結果を入力してください（例：350 ÷ 2 = 175）
+              </p>
+            )}
+          </div>
+
+          {/* 答え合わせボタン */}
+          {!revealed && (
+            <button onClick={() => setRevealed(true)}
+              className="w-full font-black text-lg text-white mb-4"
+              style={{ padding:"16px", borderRadius:"12px", background:"linear-gradient(135deg,#D97706,#B45309)", border:"1px solid #F59E0B" }}>
+              🔍 答え合わせ
+            </button>
+          )}
+
+          {/* 正解後：議席結果表示 */}
+          {revealed && (
+            <div className="fade-up mb-4">
+              <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"16px" }}>
+                <h3 className="font-black text-white mb-1">🏛️ 比例代表 議席配分結果</h3>
+                <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>
+                  金色セルの上位{PROP_SEATS_TOTAL}マスが議席を獲得します
+                </p>
+                <div className="flex gap-3 flex-wrap mb-4">
+                  {DHONT_PARTY_ORDER.map(id => {
+                    const p = PARTIES.find(p => p.id === id);
+                    const seats = propSeats[id] || 0;
+                    return (
+                      <div key={id} className="flex-1 text-center rounded-xl py-4"
+                        style={{ background:`${p.color}20`, border:`2px solid ${p.color}`, minWidth:"100px" }}>
+                        <p className="text-xs font-bold mb-1" style={{ color:p.color }}>{p.name}</p>
+                        <p className="font-black text-white" style={{ fontSize:"40px", lineHeight:1 }}>{seats}</p>
+                        <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.4)" }}>議席</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* 比例バー */}
+                <div className="flex rounded-full overflow-hidden" style={{ height:"12px" }}>
+                  {DHONT_PARTY_ORDER.map(id => {
+                    const p = PARTIES.find(p => p.id === id);
+                    return (
+                      <div key={id} style={{ width:`${((propSeats[id]||0)/PROP_SEATS_TOTAL)*100}%`, background:p.color }} />
+                    );
+                  })}
+                </div>
+              </div>
+              <button onClick={onNext} className="w-full font-black text-lg text-white"
+                style={{ padding:"16px", borderRadius:"12px", background:"linear-gradient(135deg,#2563EB,#1D4ED8)", border:"1px solid #3B82F6" }}>
+                比例議席を確定する → 最終結果へ
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ============================================================
+    // FinalResultsScreen（フェーズ3実装）
+    // ============================================================
+
+    const DISCUSSION_QUESTIONS = [
+      "① 得票率と議席率はなぜずれているのか？",
+      "② 小選挙区制と比例代表制、どちらが民意を反映しているか？",
+      "③ あなたならどの選挙区を捨てたか？それはなぜか？"
+    ];
+
+    function FinalResultsScreen({ teams, activeEvents }) {
+      const allResults = useMemo(() => DISTRICTS.map(d => computeDistrictResult(teams, d, activeEvents)), [teams, activeEvents]);
+      const smallSeats = useMemo(() => computeSmallSeats(allResults), [allResults]);
+      const propSeats  = useMemo(() => computeDhont(PROPORTIONAL_VOTES, PROP_SEATS_TOTAL), []);
+
+      const totalSeats = Object.fromEntries(PARTIES.map(p => [p.id, (smallSeats[p.id]||0) + (propSeats[p.id]||0)]));
+      const totalSeatCount = Object.values(totalSeats).reduce((s,v) => s+v, 0);
+
+      const totalVotes = Object.values(PROPORTIONAL_VOTES).reduce((s,v) => s+v, 0);
+      const voteShares = Object.fromEntries(Object.entries(PROPORTIONAL_VOTES).map(([id,v]) => [id, (v/totalVotes)*100]));
+      const seatShares = Object.fromEntries(Object.entries(totalSeats).map(([id,s]) => [id, (s/totalSeatCount)*100]));
+
+      // チームランキング（全3区の平均得票率）
+      const teamRankings = useMemo(() => teams.map(team => ({
+        team,
+        avgRate: allResults.reduce((s, r) => {
+          const tr = r.teamRanking.find(x => x.team.id === team.id);
+          return s + (tr ? tr.rawRate : 0);
+        }, 0) / allResults.length
+      })).sort((a, b) => b.avgRate - a.avgRate), [teams, allResults]);
+
+      const sec = { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", padding:"16px", marginBottom:"16px" };
+
+      const podiumItems = teamRankings.slice(0, 3);
+      const podiumHeights = [90, 120, 70]; // 2nd, 1st, 3rd
+      const podiumOrder = [podiumItems[1], podiumItems[0], podiumItems[2]]; // center=1st
+      const podiumColors = ["#94A3B8","#EAB308","#CD7F32"];
+      const podiumLabels = ["1位","2位","3位"];
+      const podiumHeightOrder = [podiumHeights[0], podiumHeights[1], podiumHeights[2]]; // center=1st height
+
+      return (
+        <div style={{ paddingBottom:"32px" }}>
+          <div className="text-center mb-5">
+            <h2 className="text-2xl font-black text-white">⑥ 最終結果</h2>
+            <p className="text-sm mt-1" style={{ color:"rgba(255,255,255,0.5)" }}>小選挙区 + 比例代表 合計議席</p>
+          </div>
+
+          {/* 最終議席数 */}
+          <div style={sec}>
+            <h3 className="font-black text-white mb-4">🏛️ 最終議席数（合計{totalSeatCount}議席）</h3>
+            {PARTIES.map(p => {
+              const total = totalSeats[p.id] || 0;
+              const small = smallSeats[p.id] || 0;
+              const prop  = propSeats[p.id] || 0;
+              return (
+                <div key={p.id} className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-sm" style={{ color:p.color }}>{p.name}</span>
+                    <span className="font-black text-xl" style={{ color:p.color }}>{total}議席</span>
+                  </div>
+                  <div className="flex rounded-lg overflow-hidden" style={{ height:"28px" }}>
+                    {small > 0 && (
+                      <div className="flex items-center justify-center text-xs font-bold text-white"
+                        style={{ width:`${(small/totalSeatCount)*100}%`, background:p.color }}>
+                        小{small}
+                      </div>
+                    )}
+                    {prop > 0 && (
+                      <div className="flex items-center justify-center text-xs font-bold text-white"
+                        style={{ width:`${(prop/totalSeatCount)*100}%`, background:`${p.color}88`, borderLeft:`1px solid ${p.color}` }}>
+                        比{prop}
+                      </div>
+                    )}
+                    <div style={{ flex:1, background:"rgba(255,255,255,0.05)" }} />
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex gap-4 mt-2 text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>
+              <span>■ 濃色 = 小選挙区</span>
+              <span>■ 薄色 = 比例代表</span>
+            </div>
+          </div>
+
+          {/* 民意 vs 議席 比較グラフ */}
+          <div style={sec}>
+            <h3 className="font-black text-white mb-1">⚖️ 民意 vs 議席率の比較</h3>
+            <p className="text-xs mb-4" style={{ color:"rgba(255,255,255,0.4)" }}>得票率（全国比例）と議席率の差を確認しよう</p>
+            {PARTIES.map(p => {
+              const vote = voteShares[p.id];
+              const seat = seatShares[p.id];
+              const diff = Math.abs(seat - vote);
+              const over = diff > 7;
+              return (
+                <div key={p.id} className="mb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-sm" style={{ color:p.color }}>{p.name}</span>
+                    {over && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background:"rgba(239,68,68,0.2)", color:"#F87171", border:"1px solid rgba(239,68,68,0.3)" }}>⚠️ ずれが大きい</span>}
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs w-12 text-right" style={{ color:"rgba(255,255,255,0.4)" }}>得票率</span>
+                    <div className="flex-1 rounded-full overflow-hidden" style={{ height:"16px", background:"rgba(255,255,255,0.07)" }}>
+                      <div style={{ width:`${vote}%`, height:"100%", background:p.color, borderRadius:"9999px" }} />
+                    </div>
+                    <span className="text-xs w-10 font-bold" style={{ color:p.color }}>{vote.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs w-12 text-right" style={{ color:"rgba(255,255,255,0.4)" }}>議席率</span>
+                    <div className="flex-1 rounded-full overflow-hidden" style={{ height:"16px", background:"rgba(255,255,255,0.07)" }}>
+                      <div style={{ width:`${seat}%`, height:"100%", background:`${p.color}77`, borderRadius:"9999px", border:`1px dashed ${p.color}` }} />
+                    </div>
+                    <span className="text-xs w-10 font-bold" style={{ color:`${p.color}aa` }}>{seat.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 班別ランキング 表彰台 */}
+          <div style={sec}>
+            <h3 className="font-black text-white mb-1">🏆 みなと未来党 班別ランキング</h3>
+            <p className="text-xs mb-5" style={{ color:"rgba(255,255,255,0.4)" }}>全3選挙区の平均得票率で順位決定</p>
+
+            {/* 表彰台 */}
+            <div className="flex items-end justify-center gap-2 mb-5" style={{ height:"160px" }}>
+              {[0,1,2].map(podiumPos => {
+                const item = podiumOrder[podiumPos]; // center=1st
+                const rank = podiumPos === 1 ? 0 : podiumPos === 0 ? 1 : 2; // map to rank index
+                const h = podiumPos === 1 ? 130 : podiumPos === 0 ? 95 : 70;
+                const color = podiumColors[rank];
+                const label = podiumLabels[rank];
+                if (!item) return <div key={podiumPos} style={{ flex:1 }} />;
+                return (
+                  <div key={podiumPos} className="flex-1 flex flex-col items-center justify-end">
+                    <p className="text-xs font-bold mb-1" style={{ color:"rgba(255,255,255,0.7)" }}>{item.team.name}</p>
+                    <p className="text-sm font-black" style={{ color:"#FCD34D" }}>{item.avgRate.toFixed(1)}%</p>
+                    <div className="w-full flex items-center justify-center rounded-t-lg mt-1"
+                      style={{ height:`${h}px`, background:color, boxShadow:`0 0 20px ${color}60` }}>
+                      <span className="font-black text-white" style={{ fontSize:podiumPos===1?"28px":"22px" }}>{label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 4〜10位リスト */}
+            {teamRankings.slice(3).map((item, i) => (
+              <div key={item.team.id} className="flex items-center justify-between rounded-lg px-3 py-2 mb-1"
+                style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)" }}>
+                <span className="text-sm" style={{ color:"rgba(255,255,255,0.55)" }}>{i+4}. {item.team.name}</span>
+                <span className="font-bold text-sm" style={{ color:"rgba(255,255,255,0.4)" }}>{item.avgRate.toFixed(1)}%</span>
+              </div>
+            ))}
+
+            {/* 1〜3位の戦略メモ */}
+            <div className="mt-4">
+              <p className="text-xs font-bold mb-2" style={{ color:"rgba(255,255,255,0.5)" }}>上位3班の戦略メモ</p>
+              {teamRankings.slice(0,3).map((item, i) => item.team.strategy.memo && (
+                <div key={item.team.id} className="rounded-lg p-3 mb-2"
+                  style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color:["#EAB308","#94A3B8","#CD7F32"][i] }}>
+                    {i+1}位 {item.team.name}
+                  </p>
+                  <p className="text-sm" style={{ color:"rgba(255,255,255,0.75)" }}>{item.team.strategy.memo}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 討論用の問い */}
+          <div className="rounded-xl p-5" style={{ background:"rgba(37,99,235,0.12)", border:"1px solid rgba(37,99,235,0.3)" }}>
+            <h3 className="font-black text-white mb-4 text-center">💬 討論してみよう</h3>
+            {DISCUSSION_QUESTIONS.map((q, i) => (
+              <div key={i} className="rounded-lg px-4 py-3 mb-2"
+                style={{ background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                <p className="text-sm font-bold text-white">{q}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Placeholders（未実装画面）
     // ============================================================
 
     function PlaceholderCard({ title, description }) {
@@ -681,32 +1337,328 @@
       );
     }
 
-    function ScenarioScreen({ onNext }) {
+    function ScenarioScreen({ onNext, gamePhase }) {
+      const [tab, setTab] = useState(0);
+      const [mapSelected, setMapSelected] = useState(null);
+      const tabs = ["状況説明", "選挙区", "政党", "ルール"];
+      const sec = { background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"12px", padding:"16px", marginBottom:"12px" };
+      const isWaiting = gamePhase === "waiting";
       return (
         <div>
-          <PlaceholderCard title="シナリオ説明画面" description="フェーズ3で実装 — 選挙区・政党・ルールの説明" />
-          <button onClick={onNext} className="w-full font-black text-lg text-white mt-4"
-            style={{ padding:"14px", borderRadius:"12px", background:"linear-gradient(135deg,#2563EB,#1D4ED8)", border:"1px solid #3B82F6" }}>
-            戦略入力へ →
-          </button>
+          <div className="flex gap-1 mb-4 rounded-xl p-1" style={{ background:"rgba(0,0,0,0.3)" }}>
+            {tabs.map((label, i) => (
+              <button key={i} onClick={() => setTab(i)}
+                className="flex-1 text-xs font-bold py-2 rounded-lg transition-all"
+                style={{ background:tab===i?"#2563EB":"transparent", color:tab===i?"white":"rgba(255,255,255,0.45)", border:"none", cursor:"pointer" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ minHeight:"320px" }}>
+            {tab === 0 && (
+              <div>
+                <div className="rounded-2xl p-5 mb-3" style={{ background:"rgba(37,99,235,0.2)", border:"1px solid rgba(37,99,235,0.5)" }}>
+                  <p className="text-xs font-bold mb-1 tracking-widest" style={{ color:"#93C5FD" }}>YOUR ROLE</p>
+                  <h2 className="text-xl font-black text-white mb-2">選挙コンサルタント</h2>
+                  <p className="text-sm leading-relaxed" style={{ color:"rgba(255,255,255,0.8)" }}>
+                    あなたは<strong style={{color:"#60A5FA"}}>みなと未来党</strong>の選挙コンサルタントです。
+                    限られた資源（活動ポイント<strong>100pt</strong>）を3つの選挙区に戦略的に配分し、
+                    できるだけ多くの議席を獲得してください。
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[{n:"13",l:"総議席数",c:"#FCD34D"},{n:"3",l:"選挙区",c:"#0EA5E9"},{n:"10",l:"比例議席",c:"#A78BFA"}].map(item => (
+                    <div key={item.l} className="rounded-xl p-3 text-center" style={{ background:"rgba(0,0,0,0.25)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                      <p className="text-2xl font-black" style={{ color:item.c }}>{item.n}</p>
+                      <p className="text-xs mt-0.5" style={{ color:"rgba(255,255,255,0.4)" }}>{item.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div style={sec}>
+                  <p className="text-xs font-bold mb-2" style={{ color:"rgba(255,255,255,0.4)" }}>みなと市について</p>
+                  <p className="text-sm leading-relaxed" style={{ color:"rgba(255,255,255,0.75)" }}>
+                    みなと市は海に面した中規模都市です。沿岸部・内陸部・中央部の3選挙区があり、
+                    有権者層や関心事が大きく異なります。4政党が13議席をかけて争います。
+                  </p>
+                  <p className="text-sm mt-2 leading-relaxed" style={{ color:"rgba(255,255,255,0.75)" }}>
+                    クラス全員が同じ党のコンサルタントです。班ごとに戦略を考え、
+                    <strong style={{color:"#FCD34D"}}>最も票を集めた班</strong>がMVPコンサルタントに！
+                  </p>
+                </div>
+              </div>
+            )}
+            {tab === 1 && (
+              <div>
+                <CityMap selectedDistrict={mapSelected} onSelect={setMapSelected} />
+                <p className="text-xs text-center mt-1 mb-3" style={{ color:"rgba(255,255,255,0.35)" }}>
+                  ▲ 選挙区をタップすると詳細が表示されます
+                </p>
+                {DISTRICTS.map(d => {
+                  const isOpen = mapSelected === d.id;
+                  return (
+                    <div key={d.id} className="rounded-xl mb-2 overflow-hidden" style={{ border:`2px solid ${isOpen?d.color:d.color+"40"}`, transition:"border-color 0.2s" }}>
+                      <button className="w-full flex items-center justify-between p-3"
+                        onClick={() => setMapSelected(isOpen ? null : d.id)}
+                        style={{ background:isOpen?`${d.color}20`:"rgba(255,255,255,0.04)", cursor:"pointer", border:"none" }}>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ background:d.color, display:"inline-block" }} />
+                          <span className="font-black text-white text-sm">{d.name}</span>
+                          <span className="text-xs" style={{ color:"rgba(255,255,255,0.4)" }}>{d.feature}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background:`${d.color}25`, color:d.color }}>1議席</span>
+                          <span style={{ color:d.color, fontSize:"12px" }}>{isOpen?"▲":"▼"}</span>
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className="p-3 pt-0" style={{ background:`${d.color}10` }}>
+                          <div className="flex gap-2 mb-2">
+                            {[{label:"高齢者",key:"elderly",emoji:"👴"},{label:"中年",key:"middle",emoji:"👔"},{label:"若者",key:"young",emoji:"👩"}].map(v => (
+                              <div key={v.key} className="flex-1 rounded-lg p-2 text-center" style={{ background:"rgba(0,0,0,0.25)" }}>
+                                <p className="text-lg">{v.emoji}</p>
+                                <p className="font-black text-base" style={{ color:d.color }}>{d.voters[v.key]}%</p>
+                                <p className="text-xs" style={{ color:"rgba(255,255,255,0.35)" }}>{v.label}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-1 flex-wrap items-center">
+                            <span className="text-xs" style={{ color:"rgba(255,255,255,0.35)" }}>関心:</span>
+                            {d.issues.map(issue => (
+                              <span key={issue} className="text-xs px-2 py-0.5 rounded-full" style={{ background:`${d.color}20`, color:d.color, border:`1px solid ${d.color}40` }}>{issue}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {tab === 2 && (
+              <div>
+                {PARTIES.map(p => (
+                  <div key={p.id} className="rounded-xl p-4 mb-3" style={{ background:p.isPlayer?"rgba(37,99,235,0.18)":"rgba(255,255,255,0.05)", border:`2px solid ${p.color}${p.isPlayer?"70":"30"}` }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background:p.color, display:"inline-block" }} />
+                      <span className="font-black text-white">{p.name}</span>
+                      {p.isPlayer && <span className="text-xs px-2 py-0.5 rounded-full font-black" style={{ background:"#2563EB", color:"white" }}>あなたの党</span>}
+                    </div>
+                    <p className="text-xs mb-1" style={{ color:"rgba(255,255,255,0.4)" }}>支持基盤: {p.base}</p>
+                    <p className="text-sm mb-3" style={{ color:"rgba(255,255,255,0.75)" }}>{p.policy}</p>
+                    <div className="flex gap-2">
+                      {DISTRICTS.map(d => (
+                        <div key={d.id} className="flex-1 text-center rounded-lg py-2" style={{ background:"rgba(0,0,0,0.2)" }}>
+                          <p className="text-xs" style={{ color:"rgba(255,255,255,0.3)" }}>{d.short}</p>
+                          <p className="font-black text-sm" style={{ color:p.color }}>{p.baseSupport[d.id]}%</p>
+                          <p className="text-xs" style={{ color:"rgba(255,255,255,0.25)" }}>支持率</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {tab === 3 && (
+              <div>
+                {[
+                  { icon:"🏆", title:"小選挙区制（3議席）", body:"3選挙区でそれぞれ最多得票の政党が1議席を獲得。2位以下の票は「死票」になります。", ex:"第1区: A党40% B党35% C党25% → A党が1議席" },
+                  { icon:"📊", title:"比例代表制（10議席・ドント式）", body:"全国得票数を1,2,3…で割り、商の大きい順に10議席を配分。得票に比例した配分になります。", ex:"票数: みなと350 / 海風280 / 港湾220 / 市民150" },
+                  { icon:"⚖️", title:"並立制", body:"小選挙区3議席＋比例代表10議席＝計13議席。日本の衆議院選挙と同じ仕組みです。", ex:"" }
+                ].map(r => (
+                  <div key={r.title} style={sec}>
+                    <p className="font-black text-white mb-1">{r.icon} {r.title}</p>
+                    <p className="text-sm mb-2" style={{ color:"rgba(255,255,255,0.7)" }}>{r.body}</p>
+                    {r.ex && <p className="text-xs px-3 py-1.5 rounded-lg" style={{ background:"rgba(0,0,0,0.25)", color:"rgba(255,255,255,0.45)", fontFamily:"monospace" }}>{r.ex}</p>}
+                  </div>
+                ))}
+                <div style={{ background:"rgba(37,99,235,0.15)", border:"1px solid rgba(37,99,235,0.3)", borderRadius:"12px", padding:"16px" }}>
+                  <p className="font-black text-white mb-2">🎮 ゲームの流れ</p>
+                  {["各班がスライダーと活動ポイントで戦略を入力・提出",
+                    "10班の平均値がみなと未来党の得票率として計算",
+                    "3選挙区の結果を1つずつ発表（勝者が1議席獲得）",
+                    "ドント式で比例10議席を配分・発表",
+                    "合計議席で最終結果 + 班ランキングを発表"].map((s, i) => (
+                    <div key={i} className="flex gap-2 items-start mt-1.5">
+                      <span className="text-xs font-black flex-shrink-0" style={{ color:"#93C5FD", minWidth:"16px" }}>{"①②③④⑤"[i]}</span>
+                      <p className="text-sm" style={{ color:"rgba(255,255,255,0.75)" }}>{s}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {isWaiting ? (
+            <div className="rounded-2xl p-4 mt-3 text-center" style={{ background:"rgba(0,0,0,0.3)", border:"2px dashed rgba(255,255,255,0.15)" }}>
+              <p className="text-2xl mb-1">⏳</p>
+              <p className="font-black text-white">先生がゲームを開始するまでお待ちください</p>
+              <p className="text-xs mt-1" style={{ color:"rgba(255,255,255,0.35)" }}>先生が「ゲーム開始」ボタンを押すと戦略入力が始まります</p>
+            </div>
+          ) : (
+            <button onClick={onNext} className="w-full font-black text-lg text-white mt-3"
+              style={{ padding:"14px", borderRadius:"12px", background:"linear-gradient(135deg,#2563EB,#1D4ED8)", border:"1px solid #3B82F6", cursor:"pointer" }}>
+              戦略入力へ →
+            </button>
+          )}
         </div>
       );
     }
 
-    function DistrictResultsScreen({ teams, activeEvents, revealedDistrict, onReveal, onNext }) {
-      return <PlaceholderCard title="小選挙区結果画面" description="フェーズ3で実装 — 各区の開票結果・演出" />;
-    }
+    function TeacherScreen({ teams, activeEvents, setActiveEvents, gamePhase, setGamePhase,
+      revealedDistrict, setRevealedDistrict, navigate, timerSeconds, startTimer, onReset }) {
+      const submittedCount = teams.filter(t => t.submitted).length;
+      const PHASES = [
+        { id:"waiting",   label:"待機中",   icon:"⏳", timerMin:null },
+        { id:"strategy",  label:"戦略入力", icon:"✏️", timerMin:15 },
+        { id:"revealing", label:"結果発表", icon:"📢", timerMin:10 },
+        { id:"done",      label:"完了",     icon:"🎉", timerMin:null }
+      ];
+      function fireEvent(eventId) {
+        if (activeEvents.some(e => e.id === eventId)) return;
+        setActiveEvents(prev => [...prev, EVENTS.find(e => e.id === eventId)]);
+      }
+      function handlePhaseClick(p) {
+        setGamePhase(p.id);
+        if (p.timerMin) startTimer(p.timerMin);
+      }
+      const sec = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"14px", padding:"16px", marginBottom:"14px" };
+      const secTitle = { color:"rgba(255,255,255,0.4)", fontSize:"11px", fontWeight:"700", letterSpacing:"0.1em", marginBottom:"10px" };
+      return (
+        <div>
+          <div className="rounded-2xl p-4 mb-5 flex items-start justify-between"
+            style={{ background:"rgba(239,68,68,0.12)", border:"2px solid rgba(239,68,68,0.4)" }}>
+            <div>
+              <p className="font-black text-white text-lg">🔐 教師管理画面</p>
+              <p className="text-xs mt-0.5" style={{ color:"rgba(255,255,255,0.4)" }}>授業進行コントロールパネル</p>
+            </div>
+            <CountdownTimer seconds={timerSeconds} label="残り時間" />
+          </div>
 
-    function DontMethodScreen({ teams, activeEvents, onNext }) {
-      return <PlaceholderCard title="ドント式計算画面" description="フェーズ3で実装 — 比例代表制の議席配分計算" />;
-    }
+          {/* フェーズ制御 */}
+          <div style={sec}>
+            <p style={secTitle}>GAME PHASE</p>
+            <div className="flex gap-2 mb-3">
+              {PHASES.map(p => (
+                <button key={p.id} onClick={() => handlePhaseClick(p)}
+                  className="flex-1 text-center rounded-xl py-3 px-1"
+                  style={{ background:gamePhase===p.id?"#2563EB":"rgba(255,255,255,0.06)", border:`1px solid ${gamePhase===p.id?"#3B82F6":"rgba(255,255,255,0.1)"}`, cursor:"pointer" }}>
+                  <p style={{ fontSize:"18px" }}>{p.icon}</p>
+                  <p className="text-xs font-bold mt-0.5" style={{ color:gamePhase===p.id?"white":"rgba(255,255,255,0.45)" }}>{p.label}</p>
+                  {p.timerMin && <p className="text-xs" style={{ color:gamePhase===p.id?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.25)" }}>{p.timerMin}分</p>}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-center" style={{ color:"rgba(255,255,255,0.35)" }}>
+              「戦略入力」「結果発表」ボタンを押すとタイマーが自動スタートします
+            </p>
+          </div>
 
-    function FinalResultsScreen({ teams, activeEvents }) {
-      return <PlaceholderCard title="最終結果画面" description="フェーズ3で実装 — 総合ランキング・振り返り" />;
-    }
+          {/* 提出状況 */}
+          <div style={sec}>
+            <div className="flex items-center justify-between mb-2">
+              <p style={{ ...secTitle, marginBottom:0 }}>SUBMISSION STATUS</p>
+              <span className="font-black text-sm" style={{ color:submittedCount===10?"#4ADE80":"#FCD34D" }}>
+                {submittedCount} / 10 班 提出済み
+              </span>
+            </div>
+            <div className="grid grid-cols-5 gap-2 mt-2">
+              {teams.map(t => (
+                <div key={t.id} className="rounded-xl py-3 text-center"
+                  style={{ background:t.submitted?"rgba(34,197,94,0.2)":"rgba(255,255,255,0.04)", border:`1px solid ${t.submitted?"rgba(34,197,94,0.45)":"rgba(255,255,255,0.08)"}` }}>
+                  <p className="font-black text-xl" style={{ color:t.submitted?"#4ADE80":"rgba(255,255,255,0.2)" }}>{t.id}</p>
+                  <p className="text-xs" style={{ color:t.submitted?"#86EFAC":"rgba(255,255,255,0.2)" }}>{t.submitted ? "提出済" : "未提出"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-    function TeacherScreen({ teams, activeEvents, setActiveEvents, gamePhase, setGamePhase, onBack }) {
-      return <PlaceholderCard title="教師管理画面" description="フェーズ3で実装 — 班管理・イベント発動・結果公開コントロール" />;
+          {/* イベント発動（一方向） */}
+          <div style={sec}>
+            <p style={secTitle}>EVENT TRIGGERS</p>
+            <p className="text-xs mb-3" style={{ color:"rgba(255,255,255,0.35)" }}>
+              発動したイベントは取り消せません（リセットで解除）
+            </p>
+            <div className="space-y-2">
+              {EVENTS.map(e => {
+                const isActive = activeEvents.some(ae => ae.id === e.id);
+                return (
+                  <div key={e.id} className="flex items-start gap-3 rounded-xl p-3"
+                    style={{ background:isActive?"rgba(239,68,68,0.18)":"rgba(255,255,255,0.04)", border:`1px solid ${isActive?"rgba(239,68,68,0.45)":"rgba(255,255,255,0.08)"}` }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-white">{e.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color:"rgba(255,255,255,0.4)" }}>{e.description}</p>
+                    </div>
+                    <button onClick={() => fireEvent(e.id)} disabled={isActive}
+                      className="font-bold text-xs rounded-lg px-3 py-1.5 flex-shrink-0"
+                      style={{
+                        background:isActive?"rgba(255,255,255,0.06)":"#DC2626",
+                        color:isActive?"rgba(255,255,255,0.3)":"white",
+                        border:"none", cursor:isActive?"not-allowed":"pointer", minWidth:"64px"
+                      }}>
+                      {isActive ? "✓ 発動済" : "発動"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 結果発表コントロール */}
+          <div style={sec}>
+            <p style={secTitle}>DISTRICT REVEAL</p>
+            <div className="space-y-2 mb-3">
+              {DISTRICTS.map((d, i) => (
+                <button key={d.id}
+                  onClick={() => { if (revealedDistrict === i) setRevealedDistrict(i + 1); }}
+                  disabled={revealedDistrict !== i}
+                  className="w-full rounded-xl py-3 px-4 flex items-center justify-between font-bold text-sm"
+                  style={{
+                    background:revealedDistrict>i?`${d.color}25`:revealedDistrict===i?`${d.color}15`:"rgba(255,255,255,0.04)",
+                    border:`1px solid ${revealedDistrict>i?d.color+"60":revealedDistrict===i?d.color+"50":"rgba(255,255,255,0.08)"}`,
+                    color:revealedDistrict>i?d.color:revealedDistrict===i?"white":"rgba(255,255,255,0.25)",
+                    cursor:revealedDistrict===i?"pointer":"not-allowed"
+                  }}>
+                  <span>{revealedDistrict>i?"✓ 発表済み":revealedDistrict===i?"👆 クリックして発表":"🔒 未発表"} {d.name}</span>
+                  <span style={{ color:`${d.color}` }}>{revealedDistrict===i?"→":""}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setRevealedDistrict(0)}
+              className="w-full text-xs rounded-lg py-2"
+              style={{ background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.3)", border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer" }}>
+              発表をリセット
+            </button>
+          </div>
+
+          {/* 画面遷移 */}
+          <div style={sec}>
+            <p style={secTitle}>SCREEN NAVIGATION</p>
+            <div className="space-y-2">
+              {[{label:"④ 小選挙区結果画面",screen:"results_district",color:"#0EA5E9"},
+                {label:"⑤ ドント式計算画面",screen:"dontMethod",color:"#8B5CF6"},
+                {label:"⑥ 最終結果画面",screen:"results_final",color:"#F59E0B"}].map(item => (
+                <button key={item.screen} onClick={() => navigate(item.screen)}
+                  className="w-full font-bold text-sm rounded-xl py-3 px-4 text-left"
+                  style={{ background:`${item.color}18`, border:`1px solid ${item.color}50`, color:item.color, cursor:"pointer" }}>
+                  {item.label} →
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* リセット */}
+          <div style={{ ...sec, borderColor:"rgba(239,68,68,0.3)", background:"rgba(239,68,68,0.06)" }}>
+            <p style={secTitle}>DANGER ZONE</p>
+            <p className="text-xs mb-3" style={{ color:"rgba(255,255,255,0.4)" }}>
+              次のクラスへ向けて全データをリセットします。班の提出データ・イベント・結果がすべてクリアされます。
+            </p>
+            <button onClick={onReset}
+              className="w-full font-black text-sm rounded-xl py-3"
+              style={{ background:"rgba(239,68,68,0.2)", border:"1px solid rgba(239,68,68,0.4)", color:"#F87171", cursor:"pointer" }}>
+              🗑️ 全データをリセット（次のクラス用）
+            </button>
+          </div>
+        </div>
+      );
     }
 
     // ============================================================
@@ -714,17 +1666,33 @@
     // ============================================================
 
     function App() {
-      const [currentTeamId] = useState(() => Number(localStorage.getItem("election_team_id")) || null);
-      const [currentScreen, setCurrentScreen] = useState(() =>
-        localStorage.getItem("election_team_id") ? "scenario" : "teamSelect"
-      );
-      const [teamId, setTeamId] = useState(currentTeamId);
+      const [currentScreen, setCurrentScreen] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("teacher") === "1") return "teacher";
+        return localStorage.getItem("election_team_id") ? "scenario" : "teamSelect";
+      });
+      const [teamId, setTeamId] = useState(() => Number(localStorage.getItem("election_team_id")) || null);
       const [teams, setTeams] = useState(INITIAL_TEAMS);
       const [activeEvents, setActiveEvents] = useState([]);
       const [revealedDistrict, setRevealedDistrict] = useState(0);
       const [gamePhase, setGamePhase] = useState("waiting");
+      const [teacherUnlocked, setTeacherUnlocked] = useState(() => {
+        return new URLSearchParams(window.location.search).get("teacher") === "1";
+      });
+      const [showPasswordModal, setShowPasswordModal] = useState(false);
+      const [timerSeconds, setTimerSeconds] = useState(0);
+      const [timerRunning, setTimerRunning] = useState(false);
+
+      useEffect(() => {
+        if (!timerRunning) return;
+        const id = setInterval(() => {
+          setTimerSeconds(s => { if (s <= 0) { setTimerRunning(false); return 0; } return s - 1; });
+        }, 1000);
+        return () => clearInterval(id);
+      }, [timerRunning]);
 
       const navigate = useCallback((screen) => setCurrentScreen(screen), []);
+      const currentTeam = teams.find(t => t.id === teamId) || teams[0];
 
       function handleTeamSelect(id) {
         localStorage.setItem("election_team_id", String(id));
@@ -742,81 +1710,110 @@
         navigate("submitted");
       }
 
-      const currentTeam = teams.find(t => t.id === teamId) || teams[0];
+      function handleTeacherButton() {
+        if (currentScreen === "teacher") { navigate("scenario"); return; }
+        if (teacherUnlocked) { navigate("teacher"); }
+        else { setShowPasswordModal(true); }
+      }
+
+      function startTimer(minutes) {
+        setTimerSeconds(minutes * 60);
+        setTimerRunning(true);
+      }
+
+      function handleReset() {
+        if (!window.confirm("全データをリセットしますか？\n班の提出データ・イベント・発表状況がすべてクリアされます。\nこの操作は元に戻せません。")) return;
+        setTeams(INITIAL_TEAMS);
+        setActiveEvents([]);
+        setRevealedDistrict(0);
+        setGamePhase("waiting");
+        setTimerSeconds(0);
+        setTimerRunning(false);
+        localStorage.removeItem("election_team_id");
+        setTeamId(null);
+        setCurrentScreen("teamSelect");
+      }
 
       const DEV_SCREENS = ["teamSelect","scenario","strategy","confirm","submitted","results_district","dontMethod","results_final","teacher"];
 
       function renderScreen() {
         switch (currentScreen) {
-          case "teamSelect":
-            return <TeamSelectScreen savedTeamId={teamId} onSelect={handleTeamSelect} />;
-          case "scenario":
-            return <ScenarioScreen onNext={() => navigate("strategy")} />;
-          case "strategy":
-            return <StrategyScreen team={currentTeam} activeEvents={activeEvents} onSaveAndNext={handleSaveAndNext} />;
-          case "confirm":
-            return <ConfirmScreen team={currentTeam} onSubmit={handleSubmit} onBack={() => navigate("strategy")} />;
-          case "submitted":
-            return <SubmittedScreen team={currentTeam} />;
-          case "results_district":
-            return <DistrictResultsScreen teams={teams} activeEvents={activeEvents}
+          case "teamSelect":         return <TeamSelectScreen savedTeamId={teamId} onSelect={handleTeamSelect} />;
+          case "scenario":           return <ScenarioScreen onNext={() => navigate("strategy")} gamePhase={gamePhase} />;
+          case "strategy":           return <StrategyScreen team={currentTeam} activeEvents={activeEvents} onSaveAndNext={handleSaveAndNext} />;
+          case "confirm":            return <ConfirmScreen team={currentTeam} onSubmit={handleSubmit} onBack={() => navigate("strategy")} />;
+          case "submitted":          return <SubmittedScreen team={currentTeam} />;
+          case "results_district":   return (
+            <DistrictResultsScreen teams={teams} activeEvents={activeEvents}
               revealedDistrict={revealedDistrict}
-              onReveal={() => setRevealedDistrict(r => Math.min(r+1,3))}
-              onNext={() => navigate("dontMethod")} />;
-          case "dontMethod":
-            return <DontMethodScreen teams={teams} activeEvents={activeEvents} onNext={() => navigate("results_final")} />;
-          case "results_final":
-            return <FinalResultsScreen teams={teams} activeEvents={activeEvents} />;
-          case "teacher":
-            return <TeacherScreen teams={teams} activeEvents={activeEvents}
-              setActiveEvents={setActiveEvents} gamePhase={gamePhase}
-              setGamePhase={setGamePhase} onBack={() => navigate("scenario")} />;
+              onReveal={() => setRevealedDistrict(r => Math.min(r+1, 3))}
+              onNext={() => navigate("dontMethod")} />
+          );
+          case "dontMethod":         return <DontMethodScreen teams={teams} activeEvents={activeEvents} onNext={() => navigate("results_final")} />;
+          case "results_final":      return <FinalResultsScreen teams={teams} activeEvents={activeEvents} />;
+          case "teacher":            return (
+            <TeacherScreen teams={teams} activeEvents={activeEvents}
+              setActiveEvents={setActiveEvents} gamePhase={gamePhase} setGamePhase={setGamePhase}
+              revealedDistrict={revealedDistrict} setRevealedDistrict={setRevealedDistrict}
+              navigate={navigate} timerSeconds={timerSeconds} startTimer={startTimer}
+              onReset={handleReset} />
+          );
           default: return null;
         }
       }
 
       return (
         <div className="min-h-screen flex flex-col" style={{ background:"#1E3A5F", color:"white" }}>
-          {/* ヘッダー */}
-          <header className="flex items-center justify-between px-4 py-3"
-            style={{ borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.2)" }}>
+          {showPasswordModal && (
+            <PasswordModal
+              onSuccess={() => { setTeacherUnlocked(true); setShowPasswordModal(false); navigate("teacher"); }}
+              onCancel={() => setShowPasswordModal(false)} />
+          )}
+          <header className="flex items-center justify-between px-4 py-2 no-print"
+            style={{ borderBottom:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.3)" }}>
+            <div>
+              <p className="text-xs font-bold tracking-widest" style={{ color:"rgba(255,255,255,0.3)" }}>みなと市衆議院選挙シミュレーション</p>
+              <p className="font-black text-white text-sm tracking-wide leading-tight">
+                選挙コンサルタント疑似体験
+                <span className="ml-2 text-xs font-normal" style={{ color:"rgba(255,255,255,0.4)" }}>
+                  {SCREEN_LABELS[currentScreen] ?? currentScreen}
+                </span>
+              </p>
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs tracking-widest uppercase" style={{ color:"rgba(255,255,255,0.35)" }}>SCREEN</span>
-              <span className="font-bold text-white text-sm">{SCREEN_LABELS[currentScreen] ?? currentScreen}</span>
+              {gamePhase === "strategy" && timerSeconds > 0 && (
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs" style={{ color:"rgba(255,255,255,0.35)" }}>戦略入力タイマー</p>
+                  <p className={`font-black text-lg leading-none ${timerSeconds<=60?"timer-pulse":""}`}
+                    style={{ color:timerSeconds<=60?"#F87171":"#4ADE80", fontFamily:"monospace" }}>
+                    {`${String(Math.floor(timerSeconds/60)).padStart(2,"0")}:${String(timerSeconds%60).padStart(2,"0")}`}
+                  </p>
+                </div>
+              )}
+              <button onClick={handleTeacherButton}
+                className="text-xs font-bold text-white no-print"
+                style={{ padding:"6px 12px", borderRadius:"8px",
+                  background:currentScreen==="teacher"?"#2563EB":"rgba(255,255,255,0.08)",
+                  border:"1px solid rgba(255,255,255,0.15)", cursor:"pointer" }}>
+                {currentScreen === "teacher" ? "← 生徒画面へ" : "🔐 教師"}
+              </button>
             </div>
-            <div className="hidden sm:block text-center">
-              <p className="text-xs tracking-widest" style={{ color:"rgba(255,255,255,0.35)" }}>みなと市議会議員選挙</p>
-              <p className="font-black text-white text-sm tracking-wide">選挙コンサルタント疑似体験</p>
-            </div>
-            <button
-              onClick={() => navigate(currentScreen === "teacher" ? "scenario" : "teacher")}
-              className="text-xs font-bold text-white transition-all"
-              style={{
-                padding:"6px 12px", borderRadius:"8px",
-                background: currentScreen === "teacher" ? "#2563EB" : "rgba(255,255,255,0.08)",
-                border:"1px solid rgba(255,255,255,0.15)"
-              }}>
-              {currentScreen === "teacher" ? "← 生徒画面へ" : "教師画面へ"}
-            </button>
           </header>
 
-          {/* メインコンテンツ */}
           <main className="flex-1 flex flex-col px-4 py-5 mx-auto w-full" style={{ maxWidth:"860px" }}>
             {renderScreen()}
           </main>
 
-          {/* 開発用ナビ */}
-          <footer style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.25)", padding:"10px 16px" }}>
-            <p className="text-xs text-center mb-2" style={{ color:"rgba(255,255,255,0.25)" }}>【開発用】画面切り替え</p>
+          <footer className="no-print" style={{ borderTop:"1px solid rgba(255,255,255,0.08)", background:"rgba(0,0,0,0.25)", padding:"10px 16px" }}>
+            <p className="text-xs text-center mb-2" style={{ color:"rgba(255,255,255,0.2)" }}>【開発用】画面切り替え</p>
             <div className="flex flex-wrap gap-1.5 justify-center">
               {DEV_SCREENS.map(s => (
-                <button key={s} onClick={() => navigate(s)}
-                  className="text-xs transition-all"
+                <button key={s} onClick={() => navigate(s)} className="text-xs"
                   style={{
                     padding:"3px 8px", borderRadius:"6px",
-                    background: currentScreen === s ? "#2563EB" : "rgba(255,255,255,0.06)",
-                    border:`1px solid ${currentScreen === s ? "#2563EB" : "rgba(255,255,255,0.1)"}`,
-                    color: currentScreen === s ? "white" : "rgba(255,255,255,0.5)"
+                    background:currentScreen===s?"#2563EB":"rgba(255,255,255,0.06)",
+                    border:`1px solid ${currentScreen===s?"#2563EB":"rgba(255,255,255,0.1)"}`,
+                    color:currentScreen===s?"white":"rgba(255,255,255,0.4)"
                   }}>
                   {SCREEN_LABELS[s]}
                 </button>
@@ -827,12 +1824,14 @@
       );
     }
 
-    // コンソールテスト用
     window.calculateVoteRate = calculateVoteRate;
     window.calculateAIVoteRate = calculateAIVoteRate;
+    window.computeDistrictResult = computeDistrictResult;
+    window.computeDhont = computeDhont;
     window.DISTRICTS = DISTRICTS;
-    window.INITIAL_TEAMS = INITIAL_TEAMS;
     window.PARTIES = PARTIES;
+    window.INITIAL_TEAMS = INITIAL_TEAMS;
+    window.PROPORTIONAL_VOTES = PROPORTIONAL_VOTES;
 
     ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>

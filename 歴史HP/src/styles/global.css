@@ -1,0 +1,433 @@
+/* ─────────────────────────────────────────
+   Google Fonts は BaseLayout.astro で読み込む
+   ───────────────────────────────────────── */
+
+/* ══════════════════════════════════════════
+   テーマ 1: Cosmos（デフォルト）
+   深い夜空 × インディゴ。知的で洗練された暗さ。
+══════════════════════════════════════════ */
+:root,
+:root[data-theme="cosmos"] {
+  --bg:           #0b0b18;
+  --bg-surface:   #111128;
+  --bg-elevated:  #1a1a3a;
+  --bg-card:      #14142e;
+
+  --primary:      #818cf8;  /* indigo-400 */
+  --primary-dark: #6366f1;  /* indigo-500 */
+  --accent:       #c084fc;  /* purple-400 */
+  --success:      #34d399;
+
+  --text:         #e2e8f0;
+  --text-muted:   #94a3b8;
+  --text-dim:     #475569;
+
+  --border:       rgba(129, 140, 248, 0.15);
+  --border-hover: rgba(129, 140, 248, 0.4);
+
+  --node-concept: #818cf8;
+  --node-unit:    #6ee7b7;
+  --node-book:    #fcd34d;
+  --node-note:    #f9a8d4;
+  --edge-color:   rgba(129, 140, 248, 0.3);
+  --glow-color:   rgba(129, 140, 248, 0.5);
+
+  --hero-from:    #0b0b18;
+  --hero-to:      #1a1a3a;
+
+  --badge-history-bg:  rgba(99, 102, 241, 0.2);
+  --badge-history-fg:  #a5b4fc;
+  --badge-japanese-bg: rgba(52, 211, 153, 0.15);
+  --badge-japanese-fg: #6ee7b7;
+  --badge-civics-bg:   rgba(249, 168, 212, 0.15);
+  --badge-civics-fg:   #f9a8d4;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 24px rgba(129,140,248,0.3);
+}
+
+/* ══════════════════════════════════════════
+   テーマ 2: Parchment（羊皮紙）
+   温かみのある紙 × アンバー。学術的な書物の質感。
+══════════════════════════════════════════ */
+:root[data-theme="parchment"] {
+  --bg:           #faf7f2;
+  --bg-surface:   #f5f0e8;
+  --bg-elevated:  #ede5d8;
+  --bg-card:      #f8f4ee;
+
+  --primary:      #92400e;  /* amber-800 */
+  --primary-dark: #78350f;  /* amber-900 */
+  --accent:       #b45309;  /* amber-700 */
+  --success:      #15803d;
+
+  --text:         #1c1007;
+  --text-muted:   #78573a;
+  --text-dim:     #a8856a;
+
+  --border:       rgba(146, 64, 14, 0.15);
+  --border-hover: rgba(146, 64, 14, 0.35);
+
+  --node-concept: #92400e;
+  --node-unit:    #15803d;
+  --node-book:    #1d4ed8;
+  --node-note:    #9d174d;
+  --edge-color:   rgba(146, 64, 14, 0.25);
+  --glow-color:   rgba(146, 64, 14, 0.3);
+
+  --hero-from:    #faf7f2;
+  --hero-to:      #ede5d8;
+
+  --badge-history-bg:  rgba(146, 64, 14, 0.12);
+  --badge-history-fg:  #92400e;
+  --badge-japanese-bg: rgba(21, 128, 61, 0.1);
+  --badge-japanese-fg: #166534;
+  --badge-civics-bg:   rgba(157, 23, 77, 0.1);
+  --badge-civics-fg:   #9d174d;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 24px rgba(146,64,14,0.15);
+}
+
+/* ══════════════════════════════════════════
+   テーマ 3: Archive（アーカイブ）
+   暗いグレー × ティール。デジタルアーカイブの静謐さ。
+══════════════════════════════════════════ */
+:root[data-theme="archive"] {
+  --bg:           #0d1117;
+  --bg-surface:   #161b22;
+  --bg-elevated:  #1c2329;
+  --bg-card:      #161b22;
+
+  --primary:      #2dd4bf;  /* teal-300 */
+  --primary-dark: #0d9488;  /* teal-600 */
+  --accent:       #34d399;  /* emerald-400 */
+  --success:      #34d399;
+
+  --text:         #e6edf3;
+  --text-muted:   #7d8590;
+  --text-dim:     #484f58;
+
+  --border:       rgba(45, 212, 191, 0.15);
+  --border-hover: rgba(45, 212, 191, 0.35);
+
+  --node-concept: #2dd4bf;
+  --node-unit:    #f9a8d4;
+  --node-book:    #fcd34d;
+  --node-note:    #818cf8;
+  --edge-color:   rgba(45, 212, 191, 0.25);
+  --glow-color:   rgba(45, 212, 191, 0.4);
+
+  --hero-from:    #0d1117;
+  --hero-to:      #0d2018;
+
+  --badge-history-bg:  rgba(45, 212, 191, 0.12);
+  --badge-history-fg:  #2dd4bf;
+  --badge-japanese-bg: rgba(249, 168, 212, 0.12);
+  --badge-japanese-fg: #f9a8d4;
+  --badge-civics-bg:   rgba(129, 140, 248, 0.12);
+  --badge-civics-fg:   #818cf8;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.6);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.7);
+  --shadow-glow: 0 0 24px rgba(45,212,191,0.3);
+}
+
+/* ══════════════════════════════════════════
+   タイポグラフィ & ベーススタイル
+══════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+  line-height: 1.7;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* ── 日本語テキストの最適化 ── */
+:lang(ja) {
+  font-feature-settings: "pkna" 1;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* ── 見出し ── */
+h1, h2, h3, h4 {
+  font-family: "Noto Serif JP", "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+h3 { font-size: clamp(1.2rem, 2.5vw, 1.5rem); }
+h4 { font-size: 1.125rem; }
+
+p {
+  margin-bottom: 1.25em;
+  color: var(--text-muted);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover { color: var(--accent); }
+
+/* ── コンテナ ── */
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ── セクション ── */
+.section {
+  padding: 5rem 0;
+}
+.section-title {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+.section-title h2 {
+  margin-bottom: 0.5rem;
+}
+.section-title p {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+}
+
+/* ── カード ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ── ボタン ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--primary-dark);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+/* ── ナビ ── */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  background: rgba(11, 11, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.3s;
+}
+
+:root[data-theme="parchment"] .site-nav {
+  background: rgba(250, 247, 242, 0.9);
+}
+:root[data-theme="archive"] .site-nav {
+  background: rgba(13, 17, 23, 0.9);
+}
+
+.site-nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: "Noto Serif JP", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.nav-logo span {
+  color: var(--primary);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.nav-links a:hover {
+  color: var(--text);
+}
+
+/* ── プロースコンテンツ（Markdownレンダリング） ── */
+.prose {
+  max-width: 72ch;
+  font-size: 1.0625rem;
+  line-height: 1.85;
+}
+.prose h2 {
+  font-size: 1.4rem;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.prose p {
+  color: var(--text-muted);
+  margin-bottom: 1.25em;
+}
+.prose strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.prose ol, .prose ul {
+  margin: 1em 0 1em 1.5em;
+  color: var(--text-muted);
+}
+.prose li {
+  margin-bottom: 0.5em;
+}
+.prose li strong {
+  color: var(--text);
+}
+
+/* ── テーマスイッチャー ── */
+.theme-switcher {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: var(--shadow-lg);
+}
+.theme-switcher-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.theme-btn:hover {
+  background: var(--bg-surface);
+  color: var(--text);
+}
+.theme-btn.active {
+  background: var(--bg-surface);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.theme-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ── フッター ── */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 0;
+  margin-top: 4rem;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+/* ── レスポンシブ ── */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .section {
+    padding: 3rem 0;
+  }
+  .theme-switcher {
+    bottom: 1rem;
+    right: 1rem;
+  }
+}

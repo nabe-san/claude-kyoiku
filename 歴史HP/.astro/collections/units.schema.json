@@ -1,0 +1,75 @@
+{
+  "$ref": "#/definitions/units",
+  "definitions": {
+    "units": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string",
+          "enum": [
+            "history-general",
+            "japanese-history",
+            "civics"
+          ]
+        },
+        "concepts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bigQuestion": {
+          "type": "string"
+        },
+        "relatedBooks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "relatedNotes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "file"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "subject",
+        "concepts",
+        "bigQuestion",
+        "relatedBooks",
+        "relatedNotes",
+        "materials"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

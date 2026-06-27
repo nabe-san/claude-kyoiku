@@ -1,0 +1,351 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NetworkHero from '../components/NetworkHero.astro';
+import UnitCard from '../components/UnitCard.astro';
+import ConceptBadge from '../components/ConceptBadge.astro';
+import { getCollection } from 'astro:content';
+
+const units = await getCollection('units');
+
+// 全概念タグを収集・重複除去
+const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
+---
+
+<BaseLayout title="歴史ノート" description="地理歴史・公民科教師による授業ノート。概念タグで単元・読書・思考を横断する。">
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hero">
+    <NetworkHero />
+    <div class="hero-content">
+      <div class="container">
+        <div class="hero-inner">
+          <p class="hero-eyebrow">歴史・公民の授業ノート</p>
+          <h1 class="hero-title">
+            概念でつながる、<br />知識の地図。
+          </h1>
+          <p class="hero-desc">
+            単元の設計、読んだ本、生まれた問い——
+            「帝国主義」「国民国家」といった概念タグが、
+            それらをひとつの網の目として編み上げる。
+          </p>
+          <div class="hero-actions">
+            <a href="/concepts/" class="btn btn-primary">概念タグを探す</a>
+            <a href="/units/" class="btn btn-ghost">授業単元を見る</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ FEATURES ══════════════ -->
+  <section class="section features-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>このサイトにあるもの</h2>
+        <p>授業設計の裏側を、3つの角度から記録する</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon unit-icon">単</div>
+          <h3>授業単元</h3>
+          <p>
+            先行オーガナイザーと「大きな問い」を軸にした授業設計ノート。
+            なぜこの問いを立てたかという設計の裏側まで記録する。
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon book-icon">読</div>
+          <h3>読書ノート</h3>
+          <p>
+            授業設計に影響を与えた本の記録。
+            要約ではなく「この本から何を授業に持ち込んだか」の視点で書く。
+          </p>
+          <span class="coming-soon">近日追加</span>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon note-icon">思</div>
+          <h3>思考ノート</h3>
+          <p>
+            授業を設計しながら浮かんだ問い、うまくいかなかった実践の記録。
+            失敗も含めた思考の痕跡。
+          </p>
+          <span class="coming-soon">近日追加</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONCEPTS ══════════════ -->
+  <section class="section concepts-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>概念タグ</h2>
+        <p>ひとつのタグが、単元・読書・思考を串刺しにする</p>
+      </div>
+      <div class="concepts-cloud">
+        {allConcepts.map(c => <ConceptBadge concept={c} />)}
+      </div>
+      <div style="text-align:center; margin-top:2rem;">
+        <a href="/concepts/" class="btn btn-ghost">すべての概念タグを見る →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ RECENT UNITS ══════════════ -->
+  {units.length > 0 && (
+    <section class="section recent-section">
+      <div class="container">
+        <div class="section-title">
+          <h2>最近の授業単元</h2>
+        </div>
+        <div class="units-grid">
+          {units.slice(0, 3).map(unit => (
+            <UnitCard
+              id={unit.id}
+              title={unit.data.title}
+              subject={unit.data.subject}
+              concepts={unit.data.concepts}
+              bigQuestion={unit.data.bigQuestion}
+            />
+          ))}
+        </div>
+        <div style="text-align:center; margin-top:2.5rem;">
+          <a href="/units/" class="btn btn-ghost">全単元を見る →</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ══════════════ ABOUT ══════════════ -->
+  <section class="section about-section">
+    <div class="container">
+      <div class="about-inner">
+        <div class="about-text">
+          <h2>このサイトについて</h2>
+          <p>
+            神奈川県立高校で地理歴史・公民科を担当する教員が運営する個人サイトです。
+            歴史総合・日本史探究・公共の授業内容を中心に、
+            設計の意図や参考にした文献を記録しています。
+          </p>
+          <p>
+            「知識を知っている」ではなく「概念を自分の言葉で語れる」状態を目指した
+            授業設計のノートとして、生徒・保護者・同業の先生に公開しています。
+          </p>
+        </div>
+        <div class="about-stat-grid">
+          <div class="about-stat">
+            <span class="stat-num">{units.length}</span>
+            <span class="stat-label">授業単元</span>
+          </div>
+          <div class="about-stat">
+            <span class="stat-num">{allConcepts.length}</span>
+            <span class="stat-label">概念タグ</span>
+          </div>
+          <div class="about-stat">
+            <span class="stat-num">0</span>
+            <span class="stat-label">読書ノート</span>
+          </div>
+          <div class="about-stat">
+            <span class="stat-num">0</span>
+            <span class="stat-label">思考ノート</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  /* ── Hero ── */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    padding: 6rem 0 5rem;
+  }
+
+  .hero-inner {
+    max-width: 640px;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.85;
+    margin-bottom: 2.5rem;
+    max-width: 520px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Features ── */
+  .features-section {
+    background: var(--bg-surface);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    position: relative;
+  }
+
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: "Noto Serif JP", serif;
+    margin-bottom: 1.25rem;
+  }
+  .unit-icon { background: rgba(110, 231, 183, 0.15); color: var(--node-unit); }
+  .book-icon { background: rgba(252, 211, 77, 0.12);  color: var(--node-book); }
+  .note-icon { background: rgba(249, 168, 212, 0.12); color: var(--node-note); }
+
+  .feature-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+  .feature-card p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .coming-soon {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.2em 0.7em;
+    font-size: 0.72rem;
+    border-radius: 100px;
+    background: var(--bg-elevated);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Concepts ── */
+  .concepts-section {
+    background: var(--bg);
+  }
+
+  .concepts-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* ── Recent Units ── */
+  .recent-section {
+    background: var(--bg-surface);
+  }
+
+  .units-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* ── About ── */
+  .about-section {
+    background: var(--bg);
+  }
+
+  .about-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  .about-text h2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .about-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .about-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .stat-num {
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+    color: var(--primary);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .about-inner {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+    .hero-inner {
+      max-width: 100%;
+    }
+  }
+</style>

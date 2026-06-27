@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ConceptBadge from '../../components/ConceptBadge.astro';
+import { getCollection } from 'astro:content';
+
+const units = await getCollection('units');
+
+// 概念タグごとのコンテンツ件数を集計
+const conceptMap = new Map<string, number>();
+for (const unit of units) {
+  for (const c of unit.data.concepts) {
+    conceptMap.set(c, (conceptMap.get(c) ?? 0) + 1);
+  }
+}
+const concepts = [...conceptMap.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="概念タグ一覧">
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-title">概念タグ</h1>
+      <p class="page-desc">
+        ひとつの概念タグが、単元・読書ノート・思考ノートを横断的につなぐ。
+        気になる概念から探索を始めよう。
+      </p>
+    </div>
+  </header>
+
+  <div class="container" style="padding: 3rem 1.5rem 5rem;">
+    <div class="concepts-list">
+      {concepts.map(([concept, count]) => (
+        <a href={`/concepts/${encodeURIComponent(concept)}/`} class="concept-row">
+          <span class="concept-name">
+            <span class="concept-hash">#</span>{concept}
+          </span>
+          <span class="concept-count">{count} 件</span>
+          <span class="concept-arrow">→</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding: 3rem 0 2.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .page-title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .page-desc {
+    font-size: 1rem;
+    color: var(--text-muted);
+    max-width: 55ch;
+  }
+
+  .concepts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .concept-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .concept-row:hover {
+    border-color: var(--border-hover);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .concept-name {
+    flex: 1;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+  }
+  .concept-hash {
+    color: var(--primary);
+    margin-right: 0.15em;
+  }
+
+  .concept-count {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .concept-arrow {
+    color: var(--text-dim);
+    transition: transform 0.2s, color 0.2s;
+  }
+  .concept-row:hover .concept-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
+  }
+</style>
