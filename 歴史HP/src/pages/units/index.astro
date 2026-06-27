@@ -4,34 +4,113 @@ import UnitCard from '../../components/UnitCard.astro';
 import { getCollection } from 'astro:content';
 
 const units = await getCollection('units');
+
+// 各概念タグがどの科目に属するかを計算（複数科目にまたがる場合あり）
+const conceptSubjectsMap = new Map<string, Set<string>>();
+units.forEach(u => {
+  u.data.concepts.forEach(c => {
+    if (!conceptSubjectsMap.has(c)) conceptSubjectsMap.set(c, new Set());
+    conceptSubjectsMap.get(c)!.add(u.data.subject);
+  });
+});
+const allConcepts = [...conceptSubjectsMap.entries()];
 ---
 
 <BaseLayout title="授業単元一覧">
   <header class="page-header">
     <div class="container">
       <h1 class="page-title">授業単元</h1>
-      <p class="page-desc">
-        「大きな問い」と授業の全体像を軸にした授業設計ノート。
-      </p>
+      <p class="page-desc">「大きな問い」と授業の全体像を軸にした授業設計ノート。</p>
     </div>
   </header>
 
-  <div class="container" style="padding: 3rem 1.5rem 5rem;">
-    <div class="units-grid">
+  <!-- ── 科目フィルター ── -->
+  <div class="filter-bar">
+    <div class="container">
+      <div class="filter-buttons" role="group" aria-label="科目で絞り込む">
+        <button class="filter-btn active" data-subject="all">すべて</button>
+        <button class="filter-btn" data-subject="history-general">歴史総合</button>
+        <button class="filter-btn" data-subject="japanese-history">日本史探究</button>
+        <button class="filter-btn" data-subject="civics">公共</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 概念タグ（科目連動） ── -->
+  <div class="concepts-bar">
+    <div class="container">
+      <p class="concepts-label">この科目の概念タグ</p>
+      <div class="concepts-row" id="concepts-row">
+        {allConcepts.map(([concept, subjects]) => (
+          <a
+            href={`/concepts/${concept}/`}
+            class="concept-chip"
+            data-subjects={[...subjects].join(',')}
+          >
+            {concept}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 単元グリッド ── -->
+  <div class="container units-container">
+    <div class="units-grid" id="units-grid">
       {units.map(unit => (
-        <UnitCard
-          id={unit.id}
-          title={unit.data.title}
-          subject={unit.data.subject}
-          concepts={unit.data.concepts}
-          bigQuestion={unit.data.bigQuestion}
-        />
+        <div class="unit-wrapper" data-subject={unit.data.subject}>
+          <UnitCard
+            id={unit.id}
+            title={unit.data.title}
+            subject={unit.data.subject}
+            concepts={unit.data.concepts}
+            bigQuestion={unit.data.bigQuestion}
+          />
+        </div>
       ))}
     </div>
+    <p class="empty-message" id="empty-message">この科目の単元はまだありません。</p>
   </div>
 </BaseLayout>
 
+<script>
+  const filterBtns = document.querySelectorAll<HTMLButtonElement>('.filter-btn');
+  const unitWrappers = document.querySelectorAll<HTMLElement>('.unit-wrapper');
+  const conceptChips = document.querySelectorAll<HTMLElement>('.concept-chip');
+  const emptyMsg = document.getElementById('empty-message')!;
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.dataset.subject!;
+
+      // アクティブ状態を切り替え
+      filterBtns.forEach(b => b.classList.toggle('active', b === btn));
+
+      // 単元カードを絞り込む
+      let visibleCount = 0;
+      unitWrappers.forEach(wrapper => {
+        const show = subject === 'all' || wrapper.dataset.subject === subject;
+        wrapper.hidden = !show;
+        if (show) visibleCount++;
+      });
+
+      // 概念タグを絞り込む
+      conceptChips.forEach(chip => {
+        const chipSubjects = chip.dataset.subjects?.split(',') ?? [];
+        chip.hidden = !(subject === 'all' || chipSubjects.includes(subject));
+      });
+
+      // 空状態メッセージ
+      emptyMsg.hidden = visibleCount > 0;
+    });
+  });
+
+  // 初期状態：空メッセージは非表示
+  emptyMsg.hidden = true;
+</script>
+
 <style>
+  /* ── ページヘッダー ── */
   .page-header {
     padding: 3rem 0 2.5rem;
     background: var(--bg-surface);
@@ -46,11 +125,122 @@ const units = await getCollection('units');
   .page-desc {
     font-size: 1rem;
     color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ── フィルターバー ── */
+  .filter-bar {
+    background: var(--bg-surface);
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 60px;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .filter-btn {
+    padding: 0.75rem 1.75rem;
+    font-size: 1rem;
+    font-family: "Noto Sans JP", sans-serif;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
+    min-height: 48px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .filter-btn:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(146, 64, 14, 0.05);
+  }
+
+  .filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(146, 64, 14, 0.3);
+  }
+
+  /* ── 概念タグバー ── */
+  .concepts-bar {
+    background: var(--bg);
+    padding: 1.25rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .concepts-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+
+  .concepts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .concept-chip {
+    display: inline-block;
+    padding: 0.35em 1em;
+    font-size: 0.875rem;
+    color: var(--primary);
+    border: 1px solid rgba(146, 64, 14, 0.3);
+    border-radius: 100px;
+    background: rgba(146, 64, 14, 0.06);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .concept-chip:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* ── 単元グリッド ── */
+  .units-container {
+    padding: 3rem 1.5rem 5rem;
   }
 
   .units-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
     gap: 1.25rem;
+  }
+
+  .empty-message {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 4rem 0;
+    font-size: 1rem;
+  }
+
+  /* ── レスポンシブ ── */
+  @media (max-width: 600px) {
+    .filter-buttons {
+      gap: 0.5rem;
+    }
+    .filter-btn {
+      padding: 0.65rem 1.2rem;
+      font-size: 0.95rem;
+    }
   }
 </style>
