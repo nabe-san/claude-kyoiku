@@ -6,8 +6,10 @@ const units = defineCollection({
   schema: z.object({
     title: z.string(),
     subject: z.enum(['history-general', 'japanese-history', 'civics']),
+    visual: z.enum(['imperialism', 'industrial', 'insei', 'default']).default('default'),
     concepts: z.array(z.string()),
     bigQuestion: z.string(),
+    subQuestion: z.string().optional(),
     relatedBooks: z.array(z.string()),
     relatedNotes: z.array(z.string()),
     materials: z.array(z.object({

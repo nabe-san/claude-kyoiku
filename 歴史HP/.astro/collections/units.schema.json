@@ -15,6 +15,16 @@
             "civics"
           ]
         },
+        "visual": {
+          "type": "string",
+          "enum": [
+            "imperialism",
+            "industrial",
+            "insei",
+            "default"
+          ],
+          "default": "default"
+        },
         "concepts": {
           "type": "array",
           "items": {
@@ -22,6 +32,9 @@
           }
         },
         "bigQuestion": {
+          "type": "string"
+        },
+        "subQuestion": {
           "type": "string"
         },
         "relatedBooks": {

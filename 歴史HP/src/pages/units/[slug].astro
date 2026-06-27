@@ -14,7 +14,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { title, subject, concepts, bigQuestion, relatedBooks, relatedNotes, materials } = entry.data;
+const { title, subject, concepts, bigQuestion, subQuestion, relatedBooks, relatedNotes, materials } = entry.data;
 
 // ダミーの関連書籍・思考ノートデータ（本番では各コレクションから取得）
 const dummyBooks: Record<string, { title: string; summary: string }> = {
@@ -58,6 +58,9 @@ const dummyNotes: Record<string, { title: string }> = {
       <div class="big-question-band">
         <span class="big-question-label">大きな問い</span>
         <p class="big-question-text">{bigQuestion}</p>
+        {subQuestion && (
+          <p class="sub-question-text">{subQuestion}</p>
+        )}
       </div>
     </div>
   </section>
@@ -208,6 +211,15 @@ const dummyNotes: Record<string, { title: string }> = {
     color: var(--text);
     line-height: 1.6;
     margin: 0;
+  }
+
+  .sub-question-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin: 0.9rem 0 0;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
   }
 
   /* ── 本文 ── */

@@ -1,7 +1,7 @@
 ---
 import ConceptBadge from './ConceptBadge.astro';
 import SubjectBadge from './SubjectBadge.astro';
-import LineIcon from './LineIcon.astro';
+import UnitVisual from './UnitVisual.astro';
 
 interface Props {
   id: string;
@@ -9,25 +9,16 @@ interface Props {
   subject: 'history-general' | 'japanese-history' | 'civics';
   concepts: string[];
   bigQuestion: string;
+  visual?: 'imperialism' | 'industrial' | 'insei' | 'default';
 }
-const { id, title, subject, concepts, bigQuestion } = Astro.props;
+const { id, title, subject, concepts, bigQuestion, visual = 'default' } = Astro.props;
 ---
 
 <article class="unit-card card">
   <!-- カード全体のクリック領域（透明オーバーレイ） -->
   <a href={`/units/${id}/`} class="card-overlay" aria-label={title}></a>
 
-  <div class="source-strip" aria-hidden="true">
-    <div class="source-map">
-      <span class="map-line line-a"></span>
-      <span class="map-line line-b"></span>
-      <span class="map-line line-c"></span>
-      <span class="map-dot dot-a"></span>
-      <span class="map-dot dot-b"></span>
-      <span class="map-dot dot-c"></span>
-    </div>
-    <div class="source-mark"><LineIcon name="map" size={18} /></div>
-  </div>
+  <UnitVisual visual={visual} />
 
   <div class="unit-card-header">
     <SubjectBadge subject={subject} />
@@ -58,85 +49,14 @@ const { id, title, subject, concepts, bigQuestion } = Astro.props;
   .card-overlay {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: 2;
     border-radius: inherit;
   }
 
   /* 概念タグはオーバーレイより前面に（クリック可能にする） */
   .unit-card-concepts {
     position: relative;
-    z-index: 1;
-  }
-
-  .source-strip {
-    position: relative;
-    height: 78px;
-    margin: -1.5rem -1.5rem 0.25rem;
-    border-bottom: 1px solid var(--border);
-    background:
-      linear-gradient(115deg, rgba(146, 64, 14, 0.08), transparent 55%),
-      repeating-linear-gradient(
-        0deg,
-        rgba(146, 64, 14, 0.06) 0 1px,
-        transparent 1px 14px
-      ),
-      var(--bg-surface);
-  }
-
-  .source-map {
-    position: absolute;
-    inset: 0;
-    opacity: 0.7;
-  }
-
-  .map-line {
-    position: absolute;
-    height: 1px;
-    background: color-mix(in srgb, var(--primary) 52%, transparent);
-    transform-origin: left center;
-  }
-
-  .line-a {
-    width: 68%;
-    left: 12%;
-    top: 60%;
-    transform: rotate(-12deg);
-  }
-
-  .line-b {
-    width: 52%;
-    left: 38%;
-    top: 27%;
-    transform: rotate(18deg);
-  }
-
-  .line-c {
-    width: 38%;
-    left: 6%;
-    top: 28%;
-    transform: rotate(27deg);
-    opacity: 0.42;
-  }
-
-  .map-dot {
-    position: absolute;
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: var(--primary);
-    opacity: 0.55;
-  }
-
-  .dot-a { left: 22%; top: 46%; }
-  .dot-b { left: 57%; top: 35%; }
-  .dot-c { left: 80%; top: 57%; }
-
-  .source-mark {
-    position: absolute;
-    right: 1rem;
-    bottom: 0.85rem;
-    color: var(--primary);
-    opacity: 0.72;
+    z-index: 3;
   }
 
   .unit-card-header {
