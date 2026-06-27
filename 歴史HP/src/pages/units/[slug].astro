@@ -14,7 +14,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { title, subject, concepts, bigQuestion, subQuestion, relatedBooks, relatedNotes, materials } = entry.data;
+const { title, subject, concepts, bigQuestion, subQuestion, overview, keywords, answer, relatedBooks, relatedNotes, materials } = entry.data;
 
 // ダミーの関連書籍・思考ノートデータ（本番では各コレクションから取得）
 const dummyBooks: Record<string, { title: string; summary: string }> = {
@@ -65,7 +65,29 @@ const dummyNotes: Record<string, { title: string }> = {
     </div>
   </section>
 
-  <!-- ── ③ 本文（先行オーガナイザー + まとめ）── -->
+  <!-- ── ③ 授業の全体像 ── -->
+  {overview && (
+    <section class="unit-overview">
+      <div class="container">
+        <span class="section-micro-label">授業の全体像</span>
+        <p class="overview-text">{overview}</p>
+      </div>
+    </section>
+  )}
+
+  <!-- ── ④ キーワード ── -->
+  {keywords && keywords.length > 0 && (
+    <div class="unit-keywords">
+      <div class="container">
+        <span class="section-micro-label">キーワード</span>
+        <div class="keywords-list">
+          {keywords.map(k => <span class="keyword-chip">{k}</span>)}
+        </div>
+      </div>
+    </div>
+  )}
+
+  <!-- ── ⑤ 本文（授業で話したこと）── -->
   <article class="unit-body">
     <div class="container">
       <div class="prose">
@@ -135,6 +157,19 @@ const dummyNotes: Record<string, { title: string }> = {
               </a>
             );
           })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── ⑦ 大きな問いへの答え ── -->
+  {answer && (
+    <section class="unit-answer">
+      <div class="container">
+        <div class="answer-band">
+          <span class="answer-label">この問いへの答え</span>
+          <p class="answer-question-echo">{bigQuestion}</p>
+          <p class="answer-text">{answer}</p>
         </div>
       </div>
     </section>
@@ -220,6 +255,89 @@ const dummyNotes: Record<string, { title: string }> = {
     margin: 0.9rem 0 0;
     padding-top: 0.9rem;
     border-top: 1px solid var(--border);
+  }
+
+  /* ── 授業の全体像 ── */
+  .unit-overview {
+    padding: 2.5rem 0;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .section-micro-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+  .overview-text {
+    max-width: 72ch;
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ── キーワード ── */
+  .unit-keywords {
+    background: var(--bg);
+    padding: 1.5rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .keywords-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .keyword-chip {
+    display: inline-block;
+    font-size: 0.82rem;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25em 0.75em;
+    background: var(--bg-elevated);
+    font-family: "Noto Serif JP", serif;
+  }
+
+  /* ── 大きな問いへの答え ── */
+  .unit-answer {
+    padding: 3rem 0 4rem;
+    background: var(--bg-surface);
+    border-top: 2px solid var(--primary);
+  }
+  .answer-band {
+    border-left: 4px solid var(--primary);
+    border-radius: 0 12px 12px 0;
+    padding: 1.75rem 2rem;
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-glow);
+  }
+  .answer-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+  }
+  .answer-question-echo {
+    font-size: 1rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
+    line-height: 1.6;
+  }
+  .answer-text {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--text);
+    margin: 0;
   }
 
   /* ── 本文 ── */

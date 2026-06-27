@@ -10,6 +10,9 @@ const units = defineCollection({
     concepts: z.array(z.string()),
     bigQuestion: z.string(),
     subQuestion: z.string().optional(),
+    overview: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
+    answer: z.string().optional(),
     relatedBooks: z.array(z.string()),
     relatedNotes: z.array(z.string()),
     materials: z.array(z.object({
