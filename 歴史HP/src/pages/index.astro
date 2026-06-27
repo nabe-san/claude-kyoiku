@@ -11,22 +11,22 @@ const units = await getCollection('units');
 const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
 ---
 
-<BaseLayout title="歴史ノート" description="地理歴史・公民科教師による授業ノート。概念タグで単元・読書・思考を横断する。">
+<BaseLayout title="歴史教師の探究ノート" description="歴史総合・日本史探究・公共の授業設計と思考の記録。概念タグで単元・読書・思考を横断する。">
 
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hero">
     <NetworkHero />
+    <div class="hero-overlay"></div>
     <div class="hero-content">
       <div class="container">
         <div class="hero-inner">
-          <p class="hero-eyebrow">歴史・公民の授業ノート</p>
+          <p class="hero-eyebrow">歴史総合・日本史探究・公共</p>
           <h1 class="hero-title">
             概念でつながる、<br />知識の地図。
           </h1>
           <p class="hero-desc">
-            単元の設計、読んだ本、生まれた問い——
-            「帝国主義」「国民国家」といった概念タグが、
-            それらをひとつの網の目として編み上げる。
+            授業の設計、読書の記録、授業で生まれた問い——<br />
+            概念タグが、それらをひとつの知識の網として編み上げる。
           </p>
           <div class="hero-actions">
             <a href="/concepts/" class="btn btn-primary">概念タグを探す</a>
@@ -166,6 +166,20 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     overflow: hidden;
   }
 
+  /* テキスト領域を保護するグラデーションオーバーレイ */
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: linear-gradient(
+      to right,
+      var(--bg) 0%,
+      var(--bg) 28%,
+      transparent 62%
+    );
+    pointer-events: none;
+  }
+
   .hero-content {
     position: relative;
     z-index: 10;
@@ -174,34 +188,36 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
   }
 
   .hero-inner {
-    max-width: 640px;
+    max-width: 560px;
   }
 
   .hero-eyebrow {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
+    letter-spacing: 0.12em;
     color: var(--primary);
     margin-bottom: 1.25rem;
+    opacity: 0.85;
   }
 
   .hero-title {
-    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
     font-family: "Noto Serif JP", serif;
     font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
     color: var(--text);
     margin-bottom: 1.5rem;
+    word-break: keep-all;
   }
 
   .hero-desc {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--text-muted);
-    line-height: 1.85;
+    line-height: 1.9;
     margin-bottom: 2.5rem;
-    max-width: 520px;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   .hero-actions {
