@@ -1,21 +1,34 @@
 ---
+import LineIcon from './LineIcon.astro';
+
 interface Props {
   concept: string;
   size?: 'sm' | 'md';
 }
 const { concept, size = 'md' } = Astro.props;
+
+const conceptIconMap: Record<string, 'landmark' | 'users' | 'pin' | 'spark' | 'tag'> = {
+  '帝国主義': 'landmark',
+  '国民国家': 'users',
+  '植民地': 'pin',
+  '近代化': 'spark',
+};
+const iconName = conceptIconMap[concept] ?? 'tag';
 ---
 
 <a
   href={`/concepts/${encodeURIComponent(concept)}/`}
   class:list={['concept-badge', `concept-badge--${size}`]}
 >
+  <LineIcon name={iconName} size={size === 'sm' ? 13 : 15} />
   {concept}
 </a>
 
 <style>
   .concept-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
     padding: 0.3em 0.85em;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border);

@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import NetworkHero from '../components/NetworkHero.astro';
 import UnitCard from '../components/UnitCard.astro';
 import ConceptBadge from '../components/ConceptBadge.astro';
+import LineIcon from '../components/LineIcon.astro';
 import { getCollection } from 'astro:content';
 
 const units = await getCollection('units');
@@ -16,6 +17,19 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hero">
     <NetworkHero />
+    <div class="archive-layer" aria-hidden="true">
+      <div class="archive-sheet sheet-map">
+        <span class="coast coast-a"></span>
+        <span class="coast coast-b"></span>
+        <span class="route route-a"></span>
+        <span class="route route-b"></span>
+        <span class="port port-a"></span>
+        <span class="port port-b"></span>
+      </div>
+      <div class="archive-sheet sheet-note">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <div class="container">
@@ -46,15 +60,15 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon unit-icon">単</div>
+          <div class="feature-icon unit-icon"><LineIcon name="map" size={24} /></div>
           <h3>授業単元</h3>
           <p>
-            先行オーガナイザーと「大きな問い」を軸にした授業設計ノート。
+            「大きな問い」と授業の全体像を軸にした授業設計ノート。
             なぜこの問いを立てたかという設計の裏側まで記録する。
           </p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon book-icon">読</div>
+          <div class="feature-icon book-icon"><LineIcon name="book" size={24} /></div>
           <h3>読書ノート</h3>
           <p>
             授業設計に影響を与えた本の記録。
@@ -63,7 +77,7 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
           <span class="coming-soon">近日追加</span>
         </div>
         <div class="feature-card">
-          <div class="feature-icon note-icon">思</div>
+          <div class="feature-icon note-icon"><LineIcon name="thought" size={24} /></div>
           <h3>思考ノート</h3>
           <p>
             授業を設計しながら浮かんだ問い、うまくいかなかった実践の記録。
@@ -134,18 +148,22 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
         </div>
         <div class="about-stat-grid">
           <div class="about-stat">
+            <LineIcon name="map" size={20} />
             <span class="stat-num">{units.length}</span>
             <span class="stat-label">授業単元</span>
           </div>
           <div class="about-stat">
+            <LineIcon name="tag" size={20} />
             <span class="stat-num">{allConcepts.length}</span>
             <span class="stat-label">概念タグ</span>
           </div>
           <div class="about-stat">
+            <LineIcon name="book" size={20} />
             <span class="stat-num">0</span>
             <span class="stat-label">読書ノート</span>
           </div>
           <div class="about-stat">
+            <LineIcon name="notebook" size={20} />
             <span class="stat-num">0</span>
             <span class="stat-label">思考ノート</span>
           </div>
@@ -179,6 +197,115 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     );
     pointer-events: none;
   }
+
+  .archive-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.72;
+  }
+
+  .archive-sheet {
+    position: absolute;
+    border: 1px solid rgba(146, 64, 14, 0.13);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(146, 64, 14, 0.05)),
+      repeating-linear-gradient(
+        0deg,
+        rgba(146, 64, 14, 0.07) 0 1px,
+        transparent 1px 18px
+      );
+    box-shadow: 0 18px 50px rgba(146, 64, 14, 0.08);
+  }
+
+  .sheet-map {
+    width: min(36vw, 460px);
+    height: min(28vw, 330px);
+    right: 7vw;
+    top: 16vh;
+    transform: rotate(-4deg);
+    opacity: 0.32;
+    overflow: hidden;
+  }
+
+  .sheet-note {
+    width: min(22vw, 280px);
+    height: min(16vw, 210px);
+    right: 23vw;
+    bottom: 10vh;
+    transform: rotate(6deg);
+    opacity: 0.18;
+    padding: 2.2rem 1.8rem;
+  }
+
+  .sheet-note span {
+    display: block;
+    height: 1px;
+    margin-bottom: 1.15rem;
+    background: rgba(146, 64, 14, 0.32);
+  }
+
+  .coast,
+  .route {
+    position: absolute;
+    display: block;
+    border-color: rgba(146, 64, 14, 0.35);
+  }
+
+  .coast {
+    border: 1px solid;
+    border-radius: 44% 56% 52% 48%;
+  }
+
+  .coast-a {
+    width: 58%;
+    height: 70%;
+    left: -12%;
+    top: 20%;
+    transform: rotate(18deg);
+  }
+
+  .coast-b {
+    width: 42%;
+    height: 52%;
+    right: -10%;
+    top: -4%;
+    transform: rotate(-20deg);
+    opacity: 0.62;
+  }
+
+  .route {
+    height: 1px;
+    border-top: 1px dashed rgba(146, 64, 14, 0.45);
+    transform-origin: left center;
+  }
+
+  .route-a {
+    width: 78%;
+    left: 12%;
+    top: 42%;
+    transform: rotate(-16deg);
+  }
+
+  .route-b {
+    width: 62%;
+    left: 22%;
+    top: 66%;
+    transform: rotate(14deg);
+  }
+
+  .port {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--primary);
+    opacity: 0.75;
+  }
+
+  .port-a { left: 35%; top: 35%; }
+  .port-b { left: 68%; top: 58%; }
 
   .hero-content {
     position: relative;
@@ -243,6 +370,23 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     border-radius: 14px;
     padding: 2rem;
     position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 1.2rem 1.2rem auto;
+    width: 90px;
+    height: 90px;
+    opacity: 0.08;
+    background:
+      linear-gradient(var(--primary), var(--primary)) 18px 20px / 54px 1px no-repeat,
+      linear-gradient(var(--primary), var(--primary)) 18px 36px / 42px 1px no-repeat,
+      linear-gradient(var(--primary), var(--primary)) 18px 52px / 58px 1px no-repeat,
+      linear-gradient(var(--primary), var(--primary)) 18px 68px / 35px 1px no-repeat;
+    border: 1px solid var(--primary);
+    transform: rotate(-5deg);
   }
 
   .feature-icon {
@@ -339,6 +483,7 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 12px;
+    color: var(--primary);
   }
 
   .stat-num {
@@ -347,6 +492,7 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     font-family: "Inter", sans-serif;
     color: var(--primary);
     line-height: 1;
+    margin-top: 0.7rem;
   }
 
   .stat-label {
@@ -362,6 +508,18 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     }
     .hero-inner {
       max-width: 100%;
+    }
+    .archive-layer {
+      opacity: 0.32;
+    }
+    .sheet-map {
+      width: 80vw;
+      height: 52vw;
+      right: -34vw;
+      top: 18vh;
+    }
+    .sheet-note {
+      display: none;
     }
   }
 </style>

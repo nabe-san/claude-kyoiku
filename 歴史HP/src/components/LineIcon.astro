@@ -1,0 +1,95 @@
+---
+interface Props {
+  name: 'map' | 'book' | 'thought' | 'tag' | 'landmark' | 'users' | 'pin' | 'spark' | 'notebook';
+  size?: number;
+}
+
+const { name, size = 20 } = Astro.props;
+---
+
+<svg
+  class="line-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  {name === 'map' && (
+    <>
+      <path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z" />
+      <path d="M9 3v15" />
+      <path d="M15 6v15" />
+    </>
+  )}
+  {name === 'book' && (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22V5.5z" />
+      <path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H20" />
+      <path d="M8 7h7" />
+    </>
+  )}
+  {name === 'thought' && (
+    <>
+      <path d="M9 18h6" />
+      <path d="M10 22h4" />
+      <path d="M8.2 14.5A6 6 0 1 1 15.8 14.5c-.9.6-1.3 1.4-1.3 2.5h-5c0-1.1-.4-1.9-1.3-2.5z" />
+    </>
+  )}
+  {name === 'tag' && (
+    <>
+      <path d="M20 13l-7 7L4 11V4h7l9 9z" />
+      <path d="M7.5 7.5h.01" />
+    </>
+  )}
+  {name === 'landmark' && (
+    <>
+      <path d="M3 21h18" />
+      <path d="M5 21V10" />
+      <path d="M9 21V10" />
+      <path d="M15 21V10" />
+      <path d="M19 21V10" />
+      <path d="M3 10h18" />
+      <path d="M12 3l9 5H3l9-5z" />
+    </>
+  )}
+  {name === 'users' && (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
+      <circle cx="12" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  )}
+  {name === 'pin' && (
+    <>
+      <path d="M12 21s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </>
+  )}
+  {name === 'spark' && (
+    <>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z" />
+      <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />
+    </>
+  )}
+  {name === 'notebook' && (
+    <>
+      <path d="M6 3h12a2 2 0 0 1 2 2v16H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <path d="M8 3v18" />
+      <path d="M11 8h5" />
+      <path d="M11 12h5" />
+    </>
+  )}
+</svg>
+
+<style>
+  .line-icon {
+    display: block;
+    flex: 0 0 auto;
+  }
+</style>
