@@ -331,10 +331,19 @@ a:hover { color: var(--accent); }
   line-height: 1.85;
 }
 .prose h2 {
-  font-size: 1.4rem;
-  margin: 2.5rem 0 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  font-size: 1.25rem;
+  margin: 3rem 0 1.25rem;
+  padding: 0.15rem 0 0.15rem 0.9rem;
+  border-left: 3px solid var(--primary);
+  color: var(--text);
+}
+.prose h2:first-child {
+  margin-top: 0;
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
 }
 .prose p {
   color: var(--text-muted);
