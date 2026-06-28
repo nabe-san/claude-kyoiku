@@ -4,11 +4,17 @@ import ConceptBadge from '../../components/ConceptBadge.astro';
 import { getCollection } from 'astro:content';
 
 const units = await getCollection('units');
+const books = await getCollection('books');
 
-// 概念タグごとのコンテンツ件数を集計
+// 概念タグごとのコンテンツ件数を集計（単元＋読書ノート）
 const conceptMap = new Map<string, number>();
 for (const unit of units) {
   for (const c of unit.data.concepts) {
+    conceptMap.set(c, (conceptMap.get(c) ?? 0) + 1);
+  }
+}
+for (const book of books) {
+  for (const c of book.data.concepts) {
     conceptMap.set(c, (conceptMap.get(c) ?? 0) + 1);
   }
 }

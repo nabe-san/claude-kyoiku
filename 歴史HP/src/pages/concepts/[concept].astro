@@ -5,24 +5,24 @@ import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
   const units = await getCollection('units');
+  const books = await getCollection('books');
 
-  // 将来：books と notes も同様に getCollection して概念タグで紐付ける
-  // const books = await getCollection('books');
-  // const notes = await getCollection('notes');
-
-  const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
+  const allConcepts = [...new Set([
+    ...units.flatMap(u => u.data.concepts),
+    ...books.flatMap(b => b.data.concepts),
+  ])];
 
   return allConcepts.map(concept => ({
     params: { concept },
     props: {
       concept,
       matchedUnits: units.filter(u => u.data.concepts.includes(concept)),
-      // 将来ここに matchedBooks, matchedNotes を追加
+      matchedBooks: books.filter(b => b.data.concepts.includes(concept)),
     },
   }));
 }
 
-const { concept, matchedUnits } = Astro.props;
+const { concept, matchedUnits, matchedBooks } = Astro.props;
 ---
 
 <BaseLayout title={`概念タグ: ${concept}`}>
@@ -51,12 +51,8 @@ const { concept, matchedUnits } = Astro.props;
           <span class="count-label">授業単元</span>
         </span>
         <span class="count-item">
-          <span class="count-num">0</span>
+          <span class="count-num">{matchedBooks.length}</span>
           <span class="count-label">読書ノート</span>
-        </span>
-        <span class="count-item">
-          <span class="count-num">0</span>
-          <span class="count-label">思考ノート</span>
         </span>
       </div>
     </div>
@@ -85,22 +81,23 @@ const { concept, matchedUnits } = Astro.props;
         </section>
       )}
 
-      <!-- 将来：読書ノート・思考ノートのセクションをここに追加 -->
-      <section class="result-section coming">
-        <h2 class="result-title">
-          <span class="result-icon book-icon-sm">読</span>
-          読書ノート
-          <span class="soon-tag">近日追加</span>
-        </h2>
-      </section>
-
-      <section class="result-section coming">
-        <h2 class="result-title">
-          <span class="result-icon note-icon-sm">思</span>
-          思考ノート
-          <span class="soon-tag">近日追加</span>
-        </h2>
-      </section>
+      {matchedBooks.length > 0 && (
+        <section class="result-section">
+          <h2 class="result-title">
+            <span class="result-icon book-icon-sm">読</span>
+            読書ノート
+          </h2>
+          <div class="books-list">
+            {matchedBooks.map(book => (
+              <a href={`/books/${book.id}/`} class="book-row">
+                <span class="book-row-title">{book.data.title}</span>
+                <span class="book-row-meta">{book.data.author}{book.data.year ? ` · ${book.data.year}年` : ''}</span>
+                <span class="book-row-arrow">→</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
     </div>
   </div>
@@ -177,10 +174,6 @@ const { concept, matchedUnits } = Astro.props;
   .result-section {
     margin-bottom: 3rem;
   }
-  .result-section.coming {
-    opacity: 0.5;
-  }
-
   .result-title {
     display: flex;
     align-items: center;
@@ -209,15 +202,49 @@ const { concept, matchedUnits } = Astro.props;
   .book-icon-sm { background: rgba(252, 211, 77, 0.12);  color: var(--node-book); }
   .note-icon-sm { background: rgba(249, 168, 212, 0.12); color: var(--node-note); }
 
-  .soon-tag {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: var(--text-dim);
-    background: var(--bg-elevated);
+  .books-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .book-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.25rem;
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    padding: 0.15em 0.6em;
-    border-radius: 100px;
-    font-family: "Noto Sans JP", sans-serif;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .book-row:hover {
+    border-color: var(--border-hover);
+    transform: translateX(3px);
+  }
+
+  .book-row-title {
+    flex: 1;
+    font-size: 0.95rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .book-row-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .book-row-arrow {
+    color: var(--text-dim);
+    transition: transform 0.15s, color 0.15s;
+  }
+  .book-row:hover .book-row-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
   }
 
   .units-grid {
