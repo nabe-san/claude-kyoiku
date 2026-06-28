@@ -13,17 +13,26 @@ const units = defineCollection({
     overview: z.string().optional(),
     keywords: z.array(z.string()).optional(),
     answer: z.string().optional(),
-    relatedBooks: z.array(z.string()),
-    relatedNotes: z.array(z.string()),
+    relatedBooks: z.array(z.string()).default([]),
+    relatedNotes: z.array(z.string()).default([]),
     materials: z.array(z.object({
       label: z.string(),
       file: z.string(),
-    })),
+    })).default([]),
   }),
 });
 
-// 将来追加予定（読書ノート・思考ノート）
-// const books = defineCollection({ ... });
-// const notes = defineCollection({ ... });
+const books = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/books' }),
+  schema: z.object({
+    title: z.string(),
+    author: z.string(),
+    year: z.number().optional(),
+    publisher: z.string().optional(),
+    summary: z.string().optional(),
+    concepts: z.array(z.string()).default([]),
+    relatedUnits: z.array(z.string()).default([]),
+  }),
+});
 
-export const collections = { units };
+export const collections = { units, books };

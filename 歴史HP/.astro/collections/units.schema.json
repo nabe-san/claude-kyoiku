@@ -53,13 +53,15 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": []
         },
         "relatedNotes": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": []
         },
         "materials": {
           "type": "array",
@@ -78,7 +80,8 @@
               "file"
             ],
             "additionalProperties": false
-          }
+          },
+          "default": []
         },
         "$schema": {
           "type": "string"
@@ -88,10 +91,7 @@
         "title",
         "subject",
         "concepts",
-        "bigQuestion",
-        "relatedBooks",
-        "relatedNotes",
-        "materials"
+        "bigQuestion"
       ],
       "additionalProperties": false
     }

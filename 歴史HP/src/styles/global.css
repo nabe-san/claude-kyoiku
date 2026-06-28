@@ -363,6 +363,26 @@ a:hover { color: var(--accent); }
 .prose li strong {
   color: var(--text);
 }
+.prose blockquote {
+  border-left: 3px solid var(--primary);
+  padding: 0.6rem 0 0.6rem 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-style: normal;
+}
+.prose blockquote p {
+  margin: 0;
+}
+.prose h3 {
+  font-size: 1.05rem;
+  font-family: "Noto Serif JP", serif;
+  font-weight: 700;
+  color: var(--text);
+  margin: 2.5rem 0 0.75rem;
+}
+.prose h3:first-child {
+  margin-top: 0;
+}
 
 /* ── テーマスイッチャー ── */
 .theme-switcher {

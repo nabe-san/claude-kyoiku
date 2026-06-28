@@ -16,16 +16,8 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, subject, concepts, bigQuestion, subQuestion, overview, keywords, answer, relatedBooks, relatedNotes, materials } = entry.data;
 
-// ダミーの関連書籍・思考ノートデータ（本番では各コレクションから取得）
-const dummyBooks: Record<string, { title: string; summary: string }> = {
-  'hobson-imperialism': {
-    title: 'J.A. ホブソン『帝国主義論』',
-    summary: '帝国主義の経済的根拠を過剰貯蓄・過剰生産に求めた古典。レーニンの帝国主義論の出発点。',
-  },
-};
-const dummyNotes: Record<string, { title: string }> = {
-  'why-empires-fall': { title: '帝国はなぜ崩壊するのか——権力の自己侵食について' },
-};
+const allBooks = await getCollection('books');
+const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
 ---
 
 <BaseLayout title={title}>
@@ -117,50 +109,27 @@ const dummyNotes: Record<string, { title: string }> = {
   )}
 
   <!-- ── ⑤ 関連書籍 ── -->
-  {relatedBooks.length > 0 && (
+  {linkedBooks.length > 0 && (
     <section class="related-section">
       <div class="container">
         <h2 class="side-section-title">関連読書ノート</h2>
         <div class="book-cards">
-          {relatedBooks.map(slug => {
-            const book = dummyBooks[slug];
-            if (!book) return null;
-            return (
-              <div class="book-card card">
-                <h3 class="book-title">{book.title}</h3>
-                <p class="book-summary">{book.summary}</p>
-                <a href={`/books/${slug}/`} class="btn btn-ghost" style="margin-top:0.75rem; font-size:0.82rem;">
-                  読書ノートを読む →
-                </a>
-              </div>
-            );
-          })}
+          {linkedBooks.map(book => (
+            <a href={`/books/${book.id}/`} class="book-card card" style="text-decoration:none;color:inherit;">
+              <p class="book-card-author">{book.data.author}{book.data.year ? `（${book.data.year}）` : ''}</p>
+              <h3 class="book-title">{book.data.title}</h3>
+              {book.data.summary && <p class="book-summary">{book.data.summary}</p>}
+              <span class="btn btn-ghost" style="margin-top:0.75rem; font-size:0.82rem; display:inline-block;">
+                読書ノートを読む →
+              </span>
+            </a>
+          ))}
         </div>
       </div>
     </section>
   )}
 
-  <!-- ── ⑥ 関連思考ノート ── -->
-  {relatedNotes.length > 0 && (
-    <section class="related-section">
-      <div class="container">
-        <h2 class="side-section-title">関連思考ノート</h2>
-        <div class="note-links">
-          {relatedNotes.map(slug => {
-            const note = dummyNotes[slug];
-            if (!note) return null;
-            return (
-              <a href={`/notes/${slug}/`} class="note-link-card card">
-                <span class="note-link-label">思考ノート</span>
-                <span class="note-link-title">{note.title}</span>
-                <span class="note-link-arrow">→</span>
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  )}
+  <!-- ── ⑥ 関連思考ノート（未実装・スキップ） ── -->
 
   <!-- ── ⑦ 大きな問いへの答え ── -->
   {answer && (

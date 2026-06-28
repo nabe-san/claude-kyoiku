@@ -7,9 +7,20 @@ import LineIcon from '../components/LineIcon.astro';
 import { getCollection } from 'astro:content';
 
 const units = await getCollection('units');
+const books = await getCollection('books');
 
 // 全概念タグを収集・重複除去
 const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
+
+// 概念タグ → 科目のマッピング（ホームのフィルター用）
+const conceptSubjectsMap = new Map<string, Set<string>>();
+units.forEach(u => {
+  u.data.concepts.forEach(c => {
+    if (!conceptSubjectsMap.has(c)) conceptSubjectsMap.set(c, new Set());
+    conceptSubjectsMap.get(c)!.add(u.data.subject);
+  });
+});
+const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
 ---
 
 <BaseLayout title="歴史教師の探究ノート" description="歴史総合・日本史探究・公共の授業設計と思考の記録。概念タグで単元・読書・思考を横断する。">
@@ -89,22 +100,6 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     </div>
   </section>
 
-  <!-- ══════════════ CONCEPTS ══════════════ -->
-  <section class="section concepts-section">
-    <div class="container">
-      <div class="section-title">
-        <h2>概念タグ</h2>
-        <p>ひとつのタグが、単元・読書・思考を串刺しにする</p>
-      </div>
-      <div class="concepts-cloud">
-        {allConcepts.map(c => <ConceptBadge concept={c} />)}
-      </div>
-      <div style="text-align:center; margin-top:2rem;">
-        <a href="/concepts/" class="btn btn-ghost">すべての概念タグを見る →</a>
-      </div>
-    </div>
-  </section>
-
   <!-- ══════════════ RECENT UNITS ══════════════ -->
   {units.length > 0 && (
     <section class="section recent-section">
@@ -131,7 +126,34 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     </section>
   )}
 
+  <!-- ══════════════ CONCEPTS ══════════════ -->
+  <section class="section concepts-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>概念タグ</h2>
+        <p>ひとつのタグが、単元・読書・思考を串刺しにする</p>
+      </div>
+      <div class="concept-filter" role="group" aria-label="科目で絞り込む">
+        <button class="concept-filter-btn active" data-subject="all">全科目</button>
+        <button class="concept-filter-btn" data-subject="history-general">歴史総合</button>
+        <button class="concept-filter-btn" data-subject="japanese-history">日本史探究</button>
+        <button class="concept-filter-btn" data-subject="civics">公共</button>
+      </div>
+      <div class="concepts-cloud" id="concepts-cloud">
+        {conceptsWithSubjects.map(([concept, subjects]) => (
+          <span class="concept-tag-wrapper" data-subjects={[...subjects].join(',')}>
+            <ConceptBadge concept={concept} />
+          </span>
+        ))}
+      </div>
+      <div style="text-align:center; margin-top:2rem;">
+        <a href="/concepts/" class="btn btn-ghost">すべての概念タグを見る →</a>
+      </div>
+    </div>
+  </section>
+
   <!-- ══════════════ ABOUT ══════════════ -->
+
   <section class="section about-section">
     <div class="container">
       <div class="about-inner">
@@ -160,7 +182,7 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
           </div>
           <div class="about-stat">
             <LineIcon name="book" size={20} />
-            <span class="stat-num">0</span>
+            <span class="stat-num">{books.length}</span>
             <span class="stat-label">読書ノート</span>
           </div>
           <div class="about-stat">
@@ -172,6 +194,23 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
       </div>
     </div>
   </section>
+
+
+<script>
+  const filterBtns = document.querySelectorAll<HTMLButtonElement>('.concept-filter-btn');
+  const wrappers = document.querySelectorAll<HTMLElement>('.concept-tag-wrapper');
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const subject = btn.dataset.subject!;
+      filterBtns.forEach(b => b.classList.toggle('active', b === btn));
+      wrappers.forEach(w => {
+        const subjects = w.dataset.subjects?.split(',') ?? [];
+        w.hidden = !(subject === 'all' || subjects.includes(subject));
+      });
+    });
+  });
+</script>
 
 </BaseLayout>
 
@@ -430,7 +469,39 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
 
   /* ── Concepts ── */
   .concepts-section {
-    background: var(--bg);
+    background: var(--bg-surface);
+  }
+
+  .concept-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.75rem;
+  }
+
+  .concept-filter-btn {
+    padding: 0.4rem 1.1rem;
+    font-size: 0.875rem;
+    font-family: "Noto Sans JP", sans-serif;
+    font-weight: 500;
+    border-radius: 100px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+
+  .concept-filter-btn:hover:not(.active) {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .concept-filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
   }
 
   .concepts-cloud {
@@ -442,9 +513,13 @@ const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
     margin: 0 auto;
   }
 
+  .concept-tag-wrapper {
+    display: inline;
+  }
+
   /* ── Recent Units ── */
   .recent-section {
-    background: var(--bg-surface);
+    background: var(--bg);
   }
 
   .units-grid {
