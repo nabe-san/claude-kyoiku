@@ -1,0 +1,4 @@
+# Vault データは git 管理しない
+*.md
+input/
+.env
