@@ -299,14 +299,19 @@ a:hover { color: var(--accent); }
 }
 
 .nav-logo {
-  font-family: "Noto Serif JP", serif;
-  font-size: 1.05rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  width: min(430px, 56vw);
+  height: 48px;
   color: var(--text);
-  letter-spacing: 0.02em;
 }
-.nav-logo span {
-  color: var(--primary);
+.nav-logo img {
+  display: block;
+  width: 100%;
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .nav-links {
