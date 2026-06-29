@@ -1,0 +1,265 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ConceptBadge from '../../components/ConceptBadge.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+  return books.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, author, year, publisher, summary, concepts, relatedUnits } = entry.data;
+
+const allUnits = await getCollection('units');
+const linkedUnits = allUnits.filter(u => relatedUnits.includes(u.id));
+---
+
+<BaseLayout title={title}>
+
+  <!-- ── ヘッダー ── -->
+  <header class="book-header">
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="/">ホーム</a>
+        <span>›</span>
+        <a href="/books/">読書ノート</a>
+        <span>›</span>
+        <span>{title}</span>
+      </nav>
+
+      <div class="book-badge-row">
+        <span class="book-badge">読書ノート</span>
+        <span class="depth-badge">もっと知りたい人のための知識</span>
+      </div>
+
+      <h1 class="book-title">{title}</h1>
+      <p class="book-meta">
+        {author}
+        {year && <span class="meta-sep">·</span>}
+        {year && <span>{year}年</span>}
+        {publisher && <span class="meta-sep">·</span>}
+        {publisher && <span>{publisher}</span>}
+      </p>
+
+      {concepts.length > 0 && (
+        <div class="concept-tags">
+          {concepts.map(c => <ConceptBadge concept={c} size="sm" />)}
+        </div>
+      )}
+    </div>
+  </header>
+
+  <!-- ── 要旨 ── -->
+  {summary && (
+    <div class="summary-band">
+      <div class="container">
+        <p class="summary-text">{summary}</p>
+      </div>
+    </div>
+  )}
+
+  <!-- ── 本文 ── -->
+  <article class="book-body">
+    <div class="container">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  </article>
+
+  <!-- ── 関連授業単元 ── -->
+  {linkedUnits.length > 0 && (
+    <section class="related-units">
+      <div class="container">
+        <h2 class="related-title">この本を参照した授業単元</h2>
+        <div class="unit-links">
+          {linkedUnits.map(u => (
+            <a href={`/units/${u.id}/`} class="unit-link-card">
+              <span class="unit-link-label">授業単元</span>
+              <span class="unit-link-title">{u.data.title}</span>
+              <span class="unit-link-question">{u.data.bigQuestion}</span>
+              <span class="unit-link-arrow">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+</BaseLayout>
+
+<style>
+  /* ── ヘッダー ── */
+  .book-header {
+    padding: 3rem 0 2.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+  .breadcrumb a { color: var(--text-muted); }
+  .breadcrumb a:hover { color: var(--primary); }
+
+  .book-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .book-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--node-book);
+    background: rgba(252, 211, 77, 0.12);
+    border: 1px solid rgba(252, 211, 77, 0.3);
+    border-radius: 100px;
+    padding: 0.2em 0.8em;
+  }
+
+  .depth-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: "Noto Serif JP", serif;
+    font-style: italic;
+    padding: 0.1em 0;
+  }
+
+  .book-title {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.75rem;
+    line-height: 1.35;
+  }
+
+  .book-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+  .meta-sep {
+    margin: 0 0.4em;
+    color: var(--text-dim);
+  }
+
+  .concept-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  /* ── 要旨バンド ── */
+  .summary-band {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 0;
+  }
+  .summary-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    max-width: 72ch;
+    margin: 0;
+  }
+
+  /* ── 本文 ── */
+  .book-body {
+    padding: 3.5rem 0;
+    background: var(--bg);
+  }
+
+  /* ── 関連授業単元 ── */
+  .related-units {
+    padding: 2.5rem 0 3.5rem;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .related-title {
+    font-size: 1.1rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .unit-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .unit-link-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 1rem 1.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .unit-link-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 10px rgba(146, 64, 14, 0.1);
+  }
+
+  .unit-link-label {
+    font-size: 0.72rem;
+    color: var(--node-unit);
+    font-weight: 600;
+    padding: 0.2em 0.6em;
+    background: rgba(110, 231, 183, 0.1);
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .unit-link-title {
+    font-size: 0.95rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .unit-link-question {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    grid-column: 2;
+    margin-top: -0.5rem;
+  }
+
+  .unit-link-arrow {
+    color: var(--text-dim);
+    transition: transform 0.2s, color 0.2s;
+    grid-row: 1 / 3;
+    grid-column: 4;
+  }
+  .unit-link-card:hover .unit-link-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
+  }
+</style>
