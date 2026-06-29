@@ -2,37 +2,55 @@
 // Vault 読書ノート生成 GAS（手動実行版）
 // ==========================================
 //
+// このスクリプトは既存OCRパイプライン（mojika.js）の後段処理です。
+// OCR は行いません。既存パイプラインが生成した _MERGED Doc を読み取ります。
+//
+// 役割の分担:
+//   既存GAS (mojika.js) : 画像/PDF → OCR Doc → [bookname]_MERGED Doc
+//   このスクリプト      : _MERGED Doc + 元画像 → Gemini Vision → Vault Markdown
+//
 // セットアップ:
-//   1. GAS エディタ > プロジェクトの設定 > スクリプトプロパティ に設定:
-//      GEMINI_API_KEY        : Google AI Studio の API キー（AIzaSy... で始まる）
-//      BOOKS_VAULT_FOLDER_ID : Drive の books-vault フォルダ ID
-//   2. GAS エディタ > サービス > Drive API を追加する（OCR に使用）
+//   GAS エディタ > プロジェクトの設定 > スクリプトプロパティ に以下を設定:
+//     GEMINI_API_KEY        : Google AI Studio の API キー（AIzaSy... で始まる）
+//     BOOKS_VAULT_FOLDER_ID : Drive の books-vault フォルダ ID
+//     BOOK_MERGED_FOLDER_ID : 既存パイプラインの BOOK_MERGED フォルダ ID
+//                             （mojika.js の MERGE_CFG.BOOK_MERGED_FOLDER_ID と同じ値）
+//     TARGET_SLUG           : （任意）処理する本の slug
+//
+//   Drive API（Advanced Service）は不要です。
 //
 // Drive フォルダ構成:
-//   books-vault/               ← BOOKS_VAULT_FOLDER_ID が指すフォルダ
-//     [slug]/                  ← 本ごとのフォルダ（手動で作成）
-//       meta.json              ← 書誌情報（手動で作成）
-//       page_001.jpg           ← 書き込み済みページ画像（手動で配置）
-//       page_002.jpg
+//   books-vault/               ← BOOKS_VAULT_FOLDER_ID
+//     [slug]/
+//       meta.json              ← 書誌情報（手動作成）
+//       page_001.jpg           ← 書き込み済みページ画像（手動配置）
 //       processing.json        ← GAS が自動生成・更新
-//       [slug].md              ← 最終出力（全ページ完了後に生成）
+//       [slug].md              ← Vault 最終出力
+//
+//   BOOK_MERGED/               ← BOOK_MERGED_FOLDER_ID（既存パイプライン管理）
+//     [bookname]_MERGED        ← 既存GASが生成。このスクリプトは読み取るだけ
 //
 // meta.json の形式:
 //   {
 //     "title": "明日のための近代史",
 //     "author": "伊勢弘志",
 //     "year": 2022,
+//     "merged_doc_name": "明日のための近代史_MERGED",
 //     "concepts_hint": ["帝国主義", "国民国家", "近代化", "万国公法"]
 //   }
 //
+//   merged_doc_name: BOOK_MERGED フォルダ内の Google Doc 名。
+//                    未設定の場合は OCR テキストなしで続行します。
+//
 // 実行方法:
-//   1. 下の SLUG を処理する本の slug に変更する
+//   1. TARGET_SLUG を設定するか、下の SLUG 定数を書き換える
 //   2. processBook() を選択して「実行」ボタンを押す
 //   3. 未処理ページが残っていれば再度実行する
 // ==========================================
 
-const SLUG = 'ashita-no-kindaishi'; // ← 処理する本の slug に変更する
-const BATCH_SIZE = 5;                // ← 1回で処理するページ数
+const SLUG = PropertiesService.getScriptProperties().getProperty('TARGET_SLUG')
+             || 'ashita-no-kindaishi';
+const BATCH_SIZE = 5;
 
 // ==========================================
 // メイン実行関数
@@ -40,24 +58,36 @@ const BATCH_SIZE = 5;                // ← 1回で処理するページ数
 
 function processBook() {
   const props = PropertiesService.getScriptProperties();
-  const apiKey = props.getProperty('GEMINI_API_KEY');
+  const apiKey        = props.getProperty('GEMINI_API_KEY');
   const vaultFolderId = props.getProperty('BOOKS_VAULT_FOLDER_ID');
+  const mergedFolderId = props.getProperty('BOOK_MERGED_FOLDER_ID');
 
-  if (!apiKey) throw new Error('スクリプトプロパティに GEMINI_API_KEY を設定してください');
-  if (!vaultFolderId) throw new Error('スクリプトプロパティに BOOKS_VAULT_FOLDER_ID を設定してください');
+  if (!apiKey)         throw new Error('スクリプトプロパティに GEMINI_API_KEY を設定してください');
+  if (!vaultFolderId)  throw new Error('スクリプトプロパティに BOOKS_VAULT_FOLDER_ID を設定してください');
+  if (!mergedFolderId) throw new Error('スクリプトプロパティに BOOK_MERGED_FOLDER_ID を設定してください');
 
   const vaultFolder = DriveApp.getFolderById(vaultFolderId);
-  const bookFolder = getSubFolder(vaultFolder, SLUG);
+  const bookFolder  = getSubFolder(vaultFolder, SLUG);
   if (!bookFolder) throw new Error(`Drive に "${SLUG}" フォルダが見つかりません`);
 
   const meta = loadMeta(bookFolder);
   Logger.log(`書誌情報: 『${meta.title}』 ${meta.author}`);
 
+  // _MERGED Doc からページ別OCRテキストをまとめて取得（実行中に1回だけ）
+  let ocrMap = new Map();
+  if (meta.merged_doc_name) {
+    Logger.log(`_MERGED Doc 読み込み中: ${meta.merged_doc_name}`);
+    ocrMap = loadMergedOcr(mergedFolderId, meta.merged_doc_name);
+    Logger.log(`  OCRテキスト取得: ${ocrMap.size} セクション`);
+  } else {
+    Logger.log('⚠ meta.json に merged_doc_name が未設定。OCRテキストなしで続行します');
+  }
+
   let data = loadOrInitProcessingJson(bookFolder, meta);
   const imageFiles = getPageFiles(bookFolder);
   data = syncPages(data, imageFiles);
 
-  const total = data.pages.length;
+  const total   = data.pages.length;
   const pending = data.pages.filter(p => p.status === 'pending').length;
   Logger.log(`全 ${total} ページ / 未処理 ${pending} ページ`);
 
@@ -68,27 +98,25 @@ function processBook() {
     const page = data.pages[i];
     if (page.status !== 'pending') continue;
 
-    Logger.log(`処理中: ${page.page} ページ目`);
+    Logger.log(`処理中: ${page.page} ページ目（${page.image_name}）`);
 
     try {
-      // 当該ページの OCR（キャッシュ済みでなければ実行）
-      if (!page.ocr_text) {
-        Logger.log('  OCR 実行中...');
-        page.ocr_text = runOcr(page.image_file_id);
+      // OCRテキストをキャッシュ。未取得（null）なら ocrMap から補完する
+      if (page.ocr_text === null) {
+        page.ocr_text = ocrMap.get(imageBaseName(page.image_name)) || '';
+      }
+      const prevPage = i > 0 ? data.pages[i - 1] : null;
+      const nextPage = i < data.pages.length - 1 ? data.pages[i + 1] : null;
+      if (prevPage && prevPage.ocr_text === null) {
+        prevPage.ocr_text = ocrMap.get(imageBaseName(prevPage.image_name)) || '';
+      }
+      if (nextPage && nextPage.ocr_text === null) {
+        nextPage.ocr_text = ocrMap.get(imageBaseName(nextPage.image_name)) || '';
       }
 
-      // 前後ページの OCR（前後コンテキスト用。こちらもキャッシュ優先）
-      if (i > 0 && !data.pages[i - 1].ocr_text) {
-        data.pages[i - 1].ocr_text = runOcr(data.pages[i - 1].image_file_id);
-      }
-      if (i < data.pages.length - 1 && !data.pages[i + 1].ocr_text) {
-        data.pages[i + 1].ocr_text = runOcr(data.pages[i + 1].image_file_id);
-      }
+      const prevOcr = prevPage ? (prevPage.ocr_text || '') : '';
+      const nextOcr = nextPage ? (nextPage.ocr_text || '') : '';
 
-      const prevOcr = i > 0 ? (data.pages[i - 1].ocr_text || '') : '';
-      const nextOcr = i < data.pages.length - 1 ? (data.pages[i + 1].ocr_text || '') : '';
-
-      // Gemini Vision API 呼び出し
       Logger.log('  Gemini Vision API 送信中...');
       page.vault_fragment = callGemini(apiKey, page.image_file_id, page.ocr_text, prevOcr, nextOcr, meta);
       page.status = 'done';
@@ -101,14 +129,11 @@ function processBook() {
 
     page.processed_at = new Date().toISOString();
     processed++;
-
-    // 1ページごとに保存（タイムアウト時も進捗を保持するため）
     saveProcessingJson(bookFolder, data);
   }
 
   Logger.log(`${processed} ページを処理しました`);
 
-  // 全ページ完了したら Vault Markdown を生成
   const allDone = data.pages.every(p => p.status === 'done' || p.status === 'error');
   if (allDone) {
     data.status = 'complete';
@@ -116,12 +141,42 @@ function processBook() {
     const markdown = buildVaultMarkdown(data);
     saveOutput(bookFolder, markdown);
     Logger.log(`完了: ${SLUG}.md を生成しました`);
-    Logger.log('  ⚠ 引用は必ず原本と照合してください');
-    Logger.log('  ⚠ 公開する引用には <!-- featured --> を手動で追加してください');
+    Logger.log('  ⚠ 引用は必ず原本と照合してください（Gemini の誤読の可能性あり）');
   } else {
     const remaining = data.pages.filter(p => p.status === 'pending').length;
     Logger.log(`残り ${remaining} ページ。再度 processBook() を実行してください`);
   }
+}
+
+// ==========================================
+// エラーページをリセットして再試行可能にする
+// ==========================================
+
+function resetErrors() {
+  const vaultFolderId = PropertiesService.getScriptProperties().getProperty('BOOKS_VAULT_FOLDER_ID');
+  if (!vaultFolderId) throw new Error('スクリプトプロパティに BOOKS_VAULT_FOLDER_ID を設定してください');
+
+  const vaultFolder = DriveApp.getFolderById(vaultFolderId);
+  const bookFolder  = getSubFolder(vaultFolder, SLUG);
+  if (!bookFolder) throw new Error(`Drive に "${SLUG}" フォルダが見つかりません`);
+
+  const content = getFileContent(bookFolder, 'processing.json');
+  if (!content) { Logger.log('processing.json が見つかりません'); return; }
+
+  const data = JSON.parse(content);
+  let count = 0;
+  for (const page of data.pages) {
+    if (page.status === 'error') {
+      page.status         = 'pending';
+      page.vault_fragment = null;
+      page.processed_at   = null;
+      count++;
+    }
+  }
+  if (data.status === 'complete') data.status = 'in_progress';
+
+  saveProcessingJson(bookFolder, data);
+  Logger.log(`${count} ページを pending にリセットしました。processBook() を実行してください`);
 }
 
 // ==========================================
@@ -131,7 +186,10 @@ function processBook() {
 function loadMeta(bookFolder) {
   const content = getFileContent(bookFolder, 'meta.json');
   if (!content) throw new Error(`"${bookFolder.getName()}" フォルダに meta.json が見つかりません`);
-  return JSON.parse(content);
+  const meta = JSON.parse(content);
+  if (!meta.title)  throw new Error('meta.json に title フィールドがありません');
+  if (!meta.author) throw new Error('meta.json に author フィールドがありません');
+  return meta;
 }
 
 // ==========================================
@@ -148,9 +206,60 @@ function getPageFiles(folder) {
       files.push({ name: f.getName(), id: f.getId() });
     }
   }
-  // ファイル名順にソートして処理順を固定する
   files.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
   return files;
+}
+
+// ==========================================
+// _MERGED Doc からページ別OCRテキストを取得
+// ==========================================
+
+function loadMergedOcr(mergedFolderId, mergedDocName) {
+  const folder = DriveApp.getFolderById(mergedFolderId);
+  const iter = folder.getFilesByName(mergedDocName);
+  if (!iter.hasNext()) {
+    Logger.log(`⚠ "${mergedDocName}" が BOOK_MERGED フォルダに見つかりません。OCRなしで続行します`);
+    return new Map();
+  }
+  const file = iter.next();
+  if (file.getMimeType() !== MimeType.GOOGLE_DOCS) {
+    Logger.log(`⚠ "${mergedDocName}" は Google Doc ではありません`);
+    return new Map();
+  }
+  const doc = DocumentApp.openById(file.getId());
+  return parseMergedDoc(doc.getBody().getText());
+}
+
+function parseMergedDoc(text) {
+  // 既存パイプライン（C_mergeDocsByBook）が生成する構造を解析する:
+  //   ▼ [basename]_OCR（date）  ← セクション区切り行（太字だが getText では区別不可）
+  //   [そのページのOCRテキスト]
+  //
+  // basename は画像ファイル名から拡張子を除いたものと一致する。
+  // 例: "▼ 明日のための近代史_10_OCR（2026/06/28...）" → key: "明日のための近代史_10"
+  const map = new Map();
+  const lines = text.split(/\r?\n/);
+  let currentKey   = null;
+  let currentLines = [];
+
+  for (const line of lines) {
+    if (line.startsWith('▼ ')) {
+      if (currentKey) map.set(currentKey, currentLines.join('\n').trim());
+      // "_OCR（" または "_OCR(" の直前までを basename として取り出す
+      const key = line.replace(/^▼\s+/, '').replace(/_OCR[（(].*$/, '').trim();
+      currentKey   = key || null;
+      currentLines = [];
+    } else if (currentKey) {
+      currentLines.push(line);
+    }
+  }
+  if (currentKey) map.set(currentKey, currentLines.join('\n').trim());
+
+  return map;
+}
+
+function imageBaseName(filename) {
+  return filename ? filename.replace(/\.[^.]+$/, '') : '';
 }
 
 // ==========================================
@@ -165,33 +274,33 @@ function loadOrInitProcessingJson(bookFolder, meta) {
   }
   Logger.log('processing.json を新規作成します');
   return {
-    slug: SLUG,
-    title: meta.title,
+    slug:   SLUG,
+    title:  meta.title,
     author: meta.author,
-    year: meta.year || null,
+    year:   meta.year || null,
     status: 'in_progress',
-    pages: []
+    pages:  []
   };
 }
 
 function syncPages(data, imageFiles) {
-  // 既存ページデータを image_file_id でインデックス化
   const existing = {};
-  for (const page of data.pages) {
-    existing[page.image_file_id] = page;
-  }
+  for (const page of data.pages) existing[page.image_file_id] = page;
 
-  // 画像ファイルリストをもとにページリストを再構築
-  // フォルダに新しい画像が追加されても自動的に取り込まれる
   data.pages = imageFiles.map((file, index) => {
-    if (existing[file.id]) return existing[file.id];
+    const existingPage = existing[file.id];
+    if (existingPage) {
+      if (!existingPage.image_name) existingPage.image_name = file.name; // 旧形式との互換
+      return existingPage;
+    }
     return {
-      page: index + 1,
-      image_file_id: file.id,
-      ocr_text: null,        // OCR キャッシュ（処理時に自動入力）
-      status: 'pending',
-      processed_at: null,
-      vault_fragment: null   // null=未処理 / ""=書き込みなし / "文字列"=引用あり
+      page:           index + 1,
+      image_name:     file.name,
+      image_file_id:  file.id,
+      ocr_text:       null,   // null=未取得 / ""=取得済みだがOCRなし / "文字列"=OCRあり
+      status:         'pending',
+      processed_at:   null,
+      vault_fragment: null    // null=未処理 / ""=書き込みなし / "文字列"=引用あり
     };
   });
 
@@ -203,51 +312,36 @@ function saveProcessingJson(bookFolder, data) {
 }
 
 // ==========================================
-// OCR（Drive API v2 を使用）
-// ==========================================
-
-function runOcr(fileId) {
-  const file = DriveApp.getFileById(fileId);
-  const blob = file.getBlob();
-
-  // 画像を Google ドキュメントに変換（OCR）
-  const inserted = Drive.Files.insert(
-    { title: '_ocr_temp_', mimeType: 'application/vnd.google-apps.document' },
-    blob,
-    { ocr: true, ocrLanguage: 'ja' }
-  );
-
-  // テキストを取得して一時ファイルを削除
-  const doc = DocumentApp.openById(inserted.id);
-  const text = doc.getBody().getText();
-  DriveApp.getFileById(inserted.id).setTrashed(true);
-
-  return text;
-}
-
-// ==========================================
 // Gemini Vision API
 // ==========================================
 
 function buildPrompt(meta, currOcr, prevOcr, nextOcr) {
   const conceptsHint = (meta.concepts_hint || []).join('・') || '（未設定）';
-  const citation = `*${meta.author}『${meta.title}』（${meta.year || ''}年）*`;
+  const citation     = `*${meta.author}『${meta.title}』（${meta.year || ''}年）*`;
 
-  return `これは書籍のページ画像です。読者が書き込んだ記号に従って引用箇所を特定し、抽出してください。
+  return `これは書籍のページ画像です。
+
+【あなたの役割】
+教師が読書中に付けた手書き記号（◎・縦線・横線）は、教師の思考の痕跡です。
+あなたの仕事は、その記号がどこにあるかを画像から読み取り、該当箇所の文章を正確に引用することです。
+「ここは重要そうだ」というAI自身の判断で引用対象を追加することは絶対に禁止します。
+記号のない箇所は、どれだけ重要に見えても引用しないでください。
 
 【書誌情報】
 タイトル：${meta.title}
 著者：${meta.author}
 出版年：${meta.year || ''}年
 
-【書き込み記号の意味】
-◎　　… 極めて重要。その行・段落を引用する
-縦線 … 余白に引いた縦の線。隣接するテキストブロック全体が重要
-横線 … 文字の下に引いた線。その行またはその段落が重要
+【書き込み記号の読み方】
+◎　　… 教師が「最重要」と判断してつけた印。その行または段落全体を引用する
+縦線 … 教師が余白に引いた縦の線。その線に隣接するテキストブロック全体を引用する
+横線 … 教師が文字の下に引いた線。その行またはその段落を引用する
 
-印刷の罫線や装飾と区別すること。読者の手書き記号のみを対象にしてください。
+手書き記号の見分け方：
+- 手書き → ペン・鉛筆のかすれ・にじみ・手ぶれが見られる
+- 印刷   → 均一できれいな線（対象外）
 
-【OCR 参照テキスト（引用の正確な文字起こしに活用すること）】
+【OCR 参照テキスト（文字列の正確な起こしに活用すること）】
 --- 前ページ ---
 ${prevOcr || '（なし）'}
 --- 当該ページ ---
@@ -255,21 +349,22 @@ ${currOcr || '（なし）'}
 --- 次ページ ---
 ${nextOcr || '（なし）'}
 
-※ どの箇所を引用するかは必ず画像の書き込み記号から判断してください。
-   OCR テキストは文字列の正確性確認にのみ使ってください。
+OCR テキストの使い方：
+- 記号箇所の特定には使わない（必ず画像を見て判断する）
+- 引用した文章の文字が画像から読みにくい場合に、正確な表記を確認するためだけに使う
 
 【引用ルール】
+- 記号の開始点がこのページ画像内にある箇所のみを対象とする（前後ページへの重複防止）
 - 記号のある箇所を起点に、文として意味が完結する範囲を抽出する
 - 引用は原文のまま。一字一句変えない。要約・言い換えは禁止
 - 複数行にわたる場合は各行の先頭に「> 」を付ける
-- 書き込み記号の開始点がこのページ画像内にある箇所のみを対象とする（重複防止）
 
 【概念タグ候補】
 ${conceptsHint}
-リストにない概念が必要な場合は末尾に「新規タグ候補: ○○」と別記する。
+リストにない概念が必要な場合は引用ブロックの外に「新規タグ候補: ○○」と別記する。
 
 【出力フォーマット】
-書き込みのある箇所のみ以下の形式で出力する。書き込みがない場合は何も出力しない。
+書き込み記号のある箇所のみ以下の形式で出力する。書き込みが一切ない場合は何も出力しない。
 
 <!-- concepts: タグ1, タグ2 -->
 ## テーマを端的に表す見出し（15字以内）
@@ -281,6 +376,7 @@ ${citation}
 ---
 
 【禁止事項（厳守）】
+- 書き込み記号のない箇所を引用しない（AIが重要だと思っても対象外）
 - <!-- featured --> は絶対に出力しない
 - 引用の後に解説・要約・コメントを書かない
 - 「以下に引用を提示します」などの前置き文を書かない
@@ -288,8 +384,8 @@ ${citation}
 }
 
 function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
-  const file = DriveApp.getFileById(fileId);
-  const blob = file.getBlob();
+  const file   = DriveApp.getFileById(fileId);
+  const blob   = file.getBlob();
   const base64 = Utilities.base64Encode(blob.getBytes());
 
   const payload = {
@@ -299,19 +395,19 @@ function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
         { inlineData: { mimeType: blob.getContentType(), data: base64 } }
       ]
     }],
-    generationConfig: { temperature: 0.1 }
+    generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
   };
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
   const res = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
+    method:          'post',
+    contentType:     'application/json',
+    payload:         JSON.stringify(payload),
     muteHttpExceptions: true
   });
 
   const result = JSON.parse(res.getContentText());
-  if (result.error) throw new Error(`Gemini API エラー: ${result.error.message}`);
+  if (result.error) throw new Error('Gemini API エラー: ' + result.error.message);
 
   return (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
 }
@@ -323,10 +419,10 @@ function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
 function buildVaultMarkdown(data) {
   const frontmatter = [
     '---',
-    `ref: ${data.slug}`,
-    `title: ${data.title}`,
-    `author: ${data.author}`,
-    `year: ${data.year || ''}`,
+    'ref: '    + (data.slug   || ''),
+    'title: '  + (data.title  || ''),
+    'author: ' + (data.author || ''),
+    'year: '   + (data.year   != null ? data.year : ''),
     '---',
     ''
   ].join('\n');
@@ -340,7 +436,7 @@ function buildVaultMarkdown(data) {
 }
 
 function saveOutput(bookFolder, markdown) {
-  upsertFile(bookFolder, `${SLUG}.md`, markdown);
+  upsertFile(bookFolder, SLUG + '.md', markdown);
 }
 
 // ==========================================
@@ -358,12 +454,9 @@ function getFileContent(folder, filename) {
 }
 
 function upsertFile(folder, filename, content) {
-  const iter = folder.getFilesByName(filename);
+  // Drive API Advanced Service 不要。既存ファイルを削除して新規作成する。
   const blob = Utilities.newBlob(content, MimeType.PLAIN_TEXT, filename);
-  if (iter.hasNext()) {
-    // Drive API v2 で内容を上書き更新
-    Drive.Files.update({}, iter.next().getId(), blob);
-  } else {
-    folder.createFile(blob);
-  }
+  const iter = folder.getFilesByName(filename);
+  while (iter.hasNext()) iter.next().setTrashed(true);
+  folder.createFile(blob);
 }

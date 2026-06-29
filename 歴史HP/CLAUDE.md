@@ -47,7 +47,7 @@
 
 **サイト公開の原則**
 
-公開サイト（`src/content/books/*.md`）には **featured 引用のみ** を入れる。掲載引用数は著作権上の観点から必要最小限にとどめる。
+公開サイト（`src/content/books/*.md`）には **publish スクリプトが AI 選択した引用のみ** を入れる。掲載引用数は著作権上の観点から必要最小限にとどめる。
 
 ```
 ## テーマ見出し
@@ -66,24 +66,42 @@
 
 **Vault 構造（`books-vault/`）**
 
-`books-vault/` は全引用を保管するマスターファイル置き場。`.gitignore` に入れ、GitHub にも Vercel にも送らない。
+`books-vault/` は全引用の蓄積庫（マスターデータ）。`.gitignore` に入れ、GitHub にも Vercel にも送らない。
 
-- 引用候補はすべて Vault に保管する（上限なし）
-- Vault にあること自体が「この箇所を重要と判断した」という記録になる
-- 教師が `<!-- featured -->` を手動で付与した引用のみ、サイト用 Markdown に反映する
-- `<!-- featured -->` は AI に付けさせない——「何を公開するか」は教師の判断
+3層構造で管理する：
+
+| 層 | ファイル | 役割 | 誰が作るか |
+|---|---|---|---|
+| Vault | `books-vault/[slug].md` | 全引用の蓄積 | gas_vault.js（AI が自動生成） |
+| 公開用 | `src/content/books/[slug].md` | 公開引用のみ | publish スクリプト（AI が選択） |
+| 修正 | — | 必要なときだけ手動修正 | 教師（最後の仕上げのみ） |
+
+- 教師は Vault を日常的に確認・選別しない
+- `<!-- featured -->` は通常運用では使わない（将来の手動指定に備えて設計上の余地だけ残す）
 - Vault は NotebookLM への入力元としても使う
 
-**generate.py の役割**
+**gas_vault.js の役割**
 
-書き込み済みページ画像（JPG/PNG）を入力とし、◎・縦線・横線 を視覚的に判断して Vault Markdown の**下書き**を生成する。
+ページ画像（Google Drive）を入力とし、◎・縦線・横線を画像から認識して Vault Markdown を自動生成する。
 
-- 入力：`books-vault/input/[slug]/` フォルダの書き込み済みページ画像
-- 出力：`books-vault/[slug].md`（引用候補・テーマ見出し・`<!-- concepts: ... -->`）
-- AI が担当するのは引用抽出・テーマ見出し・概念タグ提案のみ
+- 入力：Drive `books-vault/[slug]/` のページ画像 + 既存 OCR（`_MERGED` Doc）
+- 出力：`books-vault/[slug].md`（全引用・テーマ見出し・`<!-- concepts: ... -->`）
 - AI 要約・解説・授業活用メモは生成しない
-- `<!-- featured -->` は生成しない（教師が手動で付与）
-- 画像認識による引用は必ず原本と照合して確認する
+- `<!-- featured -->` は生成しない
+- 教師は通常この出力を確認しない
+
+**generate.py（publish スクリプト）の役割**
+
+公開したい本が決まったときだけ手動実行する。
+
+- 入力：`books-vault/[slug].md`（全引用）
+- 出力：`src/content/books/[slug].md`（公開引用のみ）
+- AI が以下の基準で引用を自律的に選択する：
+  - 概念理解に役立つ（知識ではなく思考の材料になる）
+  - 授業との接続性が高い
+  - 著者の視点・論点がよく表れている
+  - 引用だけで考える余白がある（解説なしで読める）
+- 生成後に教師が必要なら最後だけ修正する
 
 ### 思考ノート（`/notes/`）— 例外的コンテンツ
 
@@ -166,14 +184,14 @@
 
 ```
 src/content/units/      ← 授業単元 Markdown
-src/content/books/      ← 読書ノート公開用（featured 引用のみ）
+src/content/books/      ← 読書ノート公開用（publish 時に AI が選択した引用のみ）
 src/pages/              ← ルーティング（Astro ページ）
 src/components/         ← 再利用コンポーネント
 src/styles/global.css   ← 唯一のグローバル CSS
 
 books-vault/            ← 読書ノート全引用保管（.gitignore 必須）
                            GitHub にも Vercel にも送らない
-                           NotebookLM への入力元
+                           教師は通常確認しない。publish で公開用を生成する
 ```
 
 - コンポーネントは「複数ページで使う」ものだけ作る
@@ -234,18 +252,16 @@ books-vault/            ← 読書ノート全引用保管（.gitignore 必須�
 
 ### 読書ノートを追加するとき
 
-**Vault 側（`books-vault/`）**
-- [ ] 全引用候補を `books-vault/[slug].md` に保管した
-- [ ] 画像入力で generate.py を使った場合、引用原文を原本と照合した
-- [ ] `<!-- featured -->` を教師自身が手動で付与した
-- [ ] `<!-- concepts: ... -->` を確認し、既存タグを優先して調整した
+**Vault 生成（gas_vault.js を GAS で実行）**
+- [ ] Drive の `books-vault/[slug]/` にページ画像と `meta.json` を配置した
+- [ ] GAS で `processBook()` を実行した
+- [ ] 必要なら引用を原本と照合し修正した（通常は不要）
 
-**サイト公開側（`src/content/books/`）**
-- [ ] featured 引用のみを `src/content/books/[slug].md` に入れた
-- [ ] 引用は原文のまま（要約・改変していない）
-- [ ] 出典（著者・書名・年）を引用直後に添えた
-- [ ] AI 生成の解説・まとめ・コメントが混入していないことを確認した
-- [ ] `concepts:` に既存タグを優先して設定した（3〜5個を目安）
+**サイト公開（generate.py をローカルで実行）**
+- [ ] `python generate.py [slug]` を実行した
+- [ ] 公開用 `src/content/books/[slug].md` が生成された
+- [ ] 必要なら最後だけ手動修正した
+- [ ] `concepts:` に既存タグが設定されているか確認した（3〜5個を目安）
 - [ ] 関連する授業単元があれば `relatedUnits:` に追加した
 - [ ] `summary:` は任意。書く場合は2〜3行以内
 
