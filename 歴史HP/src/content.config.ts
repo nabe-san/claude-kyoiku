@@ -11,6 +11,8 @@ const units = defineCollection({
     bigQuestion: z.string(),
     subQuestion: z.string().optional(),
     overview: z.string().optional(),
+    keyTerms: z.array(z.string()).optional(),
+    // 旧フィールド。既存データや生成スクリプトとの互換用に残す。
     keywords: z.array(z.string()).optional(),
     answer: z.string().optional(),
     relatedBooks: z.array(z.string()).default([]),

@@ -14,7 +14,8 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { title, subject, concepts, bigQuestion, subQuestion, overview, keywords, answer, relatedBooks, relatedNotes, materials } = entry.data;
+const { title, subject, concepts, bigQuestion, subQuestion, overview, keyTerms, keywords, answer, relatedBooks, relatedNotes, materials } = entry.data;
+const displayedKeyTerms = keyTerms ?? keywords ?? [];
 
 const allBooks = await getCollection('books');
 const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
@@ -67,13 +68,13 @@ const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
     </section>
   )}
 
-  <!-- ── ④ キーワード ── -->
-  {keywords && keywords.length > 0 && (
-    <div class="unit-keywords">
+  <!-- ── ④ 重要語句 ── -->
+  {displayedKeyTerms.length > 0 && (
+    <div class="unit-key-terms">
       <div class="container">
-        <span class="section-micro-label">キーワード</span>
-        <div class="keywords-list">
-          {keywords.map(k => <span class="keyword-chip">{k}</span>)}
+        <span class="section-micro-label">重要語句</span>
+        <div class="key-terms-list">
+          {displayedKeyTerms.map(k => <span class="key-term-chip">{k}</span>)}
         </div>
       </div>
     </div>
@@ -249,19 +250,19 @@ const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
     margin: 0;
   }
 
-  /* ── キーワード ── */
-  .unit-keywords {
+  /* ── 重要語句 ── */
+  .unit-key-terms {
     background: var(--bg);
     padding: 1.5rem 0 2rem;
     border-bottom: 1px solid var(--border);
   }
-  .keywords-list {
+  .key-terms-list {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 0.75rem;
   }
-  .keyword-chip {
+  .key-term-chip {
     display: inline-block;
     font-size: 0.82rem;
     color: var(--text);
