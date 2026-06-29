@@ -68,14 +68,12 @@ const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
     </section>
   )}
 
-  <!-- ── ④ 重要語句 ── -->
+  <!-- ── ④ 関連語句 ── -->
   {displayedKeyTerms.length > 0 && (
     <div class="unit-key-terms">
       <div class="container">
-        <span class="section-micro-label">重要語句</span>
-        <div class="key-terms-list">
-          {displayedKeyTerms.map(k => <span class="key-term-chip">{k}</span>)}
-        </div>
+        <span class="section-micro-label">関連語句</span>
+        <p class="key-terms-flow">{displayedKeyTerms.join('　')}</p>
       </div>
     </div>
   )}
@@ -250,27 +248,19 @@ const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
     margin: 0;
   }
 
-  /* ── 重要語句 ── */
+  /* ── 関連語句 ── */
   .unit-key-terms {
-    background: var(--bg);
+    background: var(--bg-surface);
     padding: 1.5rem 0 2rem;
     border-bottom: 1px solid var(--border);
   }
-  .key-terms-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-  }
-  .key-term-chip {
-    display: inline-block;
-    font-size: 0.82rem;
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.25em 0.75em;
-    background: var(--bg-elevated);
+  .key-terms-flow {
+    font-size: 0.9rem;
     font-family: "Noto Serif JP", serif;
+    color: var(--text-muted);
+    line-height: 2;
+    margin: 0.5rem 0 0;
+    max-width: 72ch;
   }
 
   /* ── 大きな問いへの答え ── */
