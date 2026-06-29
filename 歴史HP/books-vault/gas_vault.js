@@ -358,6 +358,8 @@ OCR テキストの使い方：
 - 記号のある箇所を起点に、文として意味が完結する範囲を抽出する
 - 引用は原文のまま。一字一句変えない。要約・言い換えは禁止
 - 複数行にわたる場合は各行の先頭に「> 」を付ける
+- 1引用ブロックあたり400字を目安とする。ただし必ず文末（句点）まで引用を完結させること。文末が400字を超える場合は700字まで許容する
+- 縦線が複数文にわたる場合は、その中で最も論点が明確な文を中心に引用する
 
 【概念タグ候補】
 ${conceptsHint}
@@ -395,7 +397,7 @@ function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
         { inlineData: { mimeType: blob.getContentType(), data: base64 } }
       ]
     }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
+    generationConfig: { temperature: 0.5, maxOutputTokens: 8192 }
   };
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;

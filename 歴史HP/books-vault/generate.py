@@ -1,162 +1,168 @@
 #!/usr/bin/env python3
 """
-Vault 読書ノート生成スクリプト（画像入力版）
-
-書き込み済みページ画像から Vault Markdown 下書きを生成する。
+publish スクリプト: Vault → 公開用 src/content/books/[slug].md
 
 Usage:
   python generate.py <slug>
-
   例: python generate.py ashita-no-kindaishi
 
 事前準備:
-  1. books-vault/input/<slug>/ フォルダを作成する
-  2. books-vault/input/<slug>/meta.yaml に書誌情報を記述する（下記参照）
-  3. 書き込み済みページ画像（page_001.jpg など）を同フォルダに置く
-  4. books-vault/.env に Gemini API キーを設定する（Google AI Studio で発行）
-     書き方: GEMINI_API_KEY=AIzaSy...（OpenAI のキーではありません）
+  1. GAS で processBook() を実行し、Drive の books-vault/[slug]/[slug].md を生成する
+  2. そのファイルをローカルの books-vault/<slug>.md にダウンロードして置く
+  3. books-vault/.env に ANTHROPIC_API_KEY を設定する（sk-ant-... で始まる）
 
-meta.yaml の書き方:
-  title: 明日のための近代史
-  author: 伊勢弘志
-  year: 2022
-  concepts_hint:
-    - 帝国主義
-    - 国民国家
-    - 近代化
-    - 万国公法
-
-出力先: books-vault/<slug>.md
-
-注意:
-  - <!-- featured --> はAIが付けません。原本照合後に教師が手動で追加してください
-  - 生成後は必ず原本画像と引用テキストを照合してください（誤読の可能性があります）
+出力先: src/content/books/<slug>.md
 """
 
 import os
 import sys
-import yaml
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 
 VAULT_DIR = Path(__file__).parent
-INPUT_DIR = VAULT_DIR / "input"
-IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+SRC_BOOKS_DIR = VAULT_DIR.parent / "src" / "content" / "books"
 
 load_dotenv(VAULT_DIR / ".env")
 
-BODY_PROMPT = """\
-これらは書籍のページ画像です。読者が書き込んだ記号に従って引用箇所を特定し、抽出してください。
+PUBLISH_PROMPT = """\
+あなたは教師の読書ノートの編集者です。
+以下は Vault（全引用ストック）です。この中から公開サイトに掲載する引用を選んでください。
 
-【書誌情報】
-タイトル：{title}
-著者：{author}
-出版年：{year}年
+【Vault（全引用）】
+{vault_content}
 
-【書き込み記号の意味】
-◎　　… 極めて重要。その行・段落を引用する
-縦線 … 余白に引いた縦の線。隣接するテキストブロック全体が重要
-横線 … 文字の下に引いた線。その行またはその段落が重要
+【選択基準（重要な順）】
+1. 概念理解に役立つ——知識ではなく思考の材料になる引用
+2. 授業との接続性が高い——授業テーマ「{concepts}」に関連する
+3. 著者の視点・論点がよく表れている——著者の独自の主張が読み取れる
+4. 引用だけで考える余白がある——解説なしで読者が自分で考えられる
 
-印刷の罫線や装飾と区別すること。読者の手書き記号のみを対象にしてください。
+【除外すべきブロック】
+- 同じ文が繰り返されている（反復ループ）
+- 途中で文が切れている（末尾が「…」「求めたの」「五年」など中途半端）
+- 1行だけの極端に短い引用（30字未満）
 
-【引用ルール】
-- 記号のある箇所を起点に、文として意味が完結する範囲を抽出する
-- 途中から始まる文は文頭まで戻り、途中で終わる文は文末まで延ばす
-- 引用は原文のまま。一字一句変えない。要約・言い換えは禁止
-- 複数行にわたる場合は各行の先頭に「> 」を付ける
-- 書き込み記号がない箇所は引用しない
-
-【概念タグのルール】
-以下の候補リストから引用に関係するタグを2〜5個選ぶ。
-リストにない概念が必要な場合は末尾に「新規タグ候補: ○○」と別記する（引用ブロック外に）。
-候補: {concepts_hint}
+【選択数】
+6〜10 ブロックを選ぶ。重複・欠陥があれば躊躇なく除外してよい。
 
 【出力フォーマット】
-書き込みのある引用ブロックを以下の形式で出力する。
-前置き文・説明文は一切書かず、引用ブロックのみを並べる。
-
-<!-- concepts: タグ1, タグ2 -->
-## テーマを端的に表す見出し（15字以内）
-
-> 引用テキスト
-> 複数行の場合は各行の先頭に > を付ける
-
-*{author}『{title}』（{year}年）*
+フロントマターから始め、選んだ引用ブロックをそのまま並べる。
+<!-- concepts: ... --> タグは本文から除去する。
+## 見出し、> 引用、*出典* の形式はそのまま維持する。
+引用ブロックの間には --- を入れる。
 
 ---
+title: {title}
+author: {author}
+year: {year}
+summary: （この本の主題を2〜3文で。著者の独自の論点を中心に書く）
+concepts:
+{concepts_yaml}
+relatedUnits:
+{related_units_yaml}
+---
 
-（次の引用ブロックをそのまま続ける）
+（引用ブロックをここに並べる）
 
-【禁止事項（厳守）】
-- <!-- featured --> は絶対に出力しない
-- 引用の後に解説・要約・コメントを書かない
-- 「この引用のポイントは」などの説明を書かない
-- 「以下に引用を提示します」などの前置き文を書かない
-- 「授業での活用法」「教師メモ」などの教育的コメントを書かない
+【厳守事項】
+- AI による解説・要約・コメントを本文に追加しない
+- <!-- featured --> を出力しない
+- 引用テキストは一字一句変えない
+- 前置き文（「以下に引用を示します」等）を書かない
 """
 
 
-def load_images(input_dir: Path) -> list:
-    images = sorted(
-        f for f in input_dir.iterdir()
-        if f.suffix.lower() in IMAGE_EXTENSIONS
-    )
-    if not images:
-        print(f"エラー: 画像ファイルが見つかりません: {input_dir}")
-        print(f"  → {input_dir}/ に .jpg / .png 画像を置いてください")
+def read_vault(slug: str) -> str:
+    vault_path = VAULT_DIR / f"{slug}.md"
+    if not vault_path.exists():
+        print(f"エラー: Vault ファイルが見つかりません: {vault_path}")
+        print(f"  → Drive の books-vault/{slug}/{slug}.md をローカルにダウンロードして")
+        print(f"     books-vault/{slug}.md として置いてください")
         sys.exit(1)
-    return images
+    content = vault_path.read_text(encoding="utf-8")
+    # Google Drive ダウンロード時に Markdown 記号がエスケープされる場合の前処理
+    content = re.sub(r'\\([#\-<>!*])', r'\1', content)  # バックスラッシュエスケープを除去
+    content = re.sub(r'[ \t]+\n', '\n', content)          # 行末スペースを除去
+    return content
 
 
-def build_frontmatter(meta: dict, slug: str) -> str:
-    lines = [
-        "---",
-        f"ref: {slug}",
-        f"title: {meta['title']}",
-        f"author: {meta['author']}",
-    ]
-    if year := meta.get("year"):
-        lines.append(f"year: {year}")
-    lines.append("---")
-    lines.append("")
-    return "\n".join(lines)
+def parse_vault_frontmatter(vault_content: str) -> dict:
+    match = re.match(r'^---\n(.*?)\n---\n', vault_content, re.DOTALL)
+    if not match:
+        return {}
+    meta = {}
+    for line in match.group(1).splitlines():
+        if ': ' in line:
+            key, val = line.split(': ', 1)
+            meta[key.strip()] = val.strip()
+    return meta
 
 
-def call_gemini(meta: dict, image_paths: list) -> str:
+def extract_concepts_from_vault(vault_content: str) -> list:
+    tags = re.findall(r'<!-- concepts:\s*([^-]+?)\s*-->', vault_content)
+    seen = set()
+    result = []
+    for tag_line in tags:
+        for t in tag_line.split(','):
+            t = t.strip()
+            # 「新規タグ候補:」は概念タグではないので除外
+            if t and not t.startswith('新規タグ候補') and t not in seen:
+                seen.add(t)
+                result.append(t)
+    return result[:8]
+
+
+def read_existing_related_units(slug: str) -> list:
+    pub_file = SRC_BOOKS_DIR / f"{slug}.md"
+    if not pub_file.exists():
+        return []
+    content = pub_file.read_text(encoding="utf-8")
+    match = re.search(r'relatedUnits:\s*\n((?:[ \t]+-[^\n]+\n)*)', content)
+    if not match:
+        return []
+    return re.findall(r'-\s+(.+)', match.group(1))
+
+
+def call_gemini(vault_content: str, meta: dict, concepts: list, related_units: list) -> str:
     try:
         import google.generativeai as genai
-        from PIL import Image
     except ImportError:
-        print("エラー: 必要なパッケージがインストールされていません")
+        print("エラー: google-generativeai がインストールされていません")
         print("  pip install -r requirements.txt")
         sys.exit(1)
 
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("エラー: GEMINI_API_KEY が設定されていません")
-        print("  → books-vault/.env に以下を記述してください")
-        print("     GEMINI_API_KEY=AIzaSy...（Google AI Studio のキー）")
+        print("  → books-vault/.env に GEMINI_API_KEY=AIzaSy... を記述してください")
         sys.exit(1)
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    concepts_yaml = "\n".join(f"  - {c}" for c in concepts) if concepts else "  []"
+    related_units_yaml = "\n".join(f"  - {u}" for u in related_units) if related_units else "  []"
 
-    prompt = BODY_PROMPT.format(
-        title=meta["title"],
-        author=meta["author"],
+    prompt = PUBLISH_PROMPT.format(
+        vault_content=vault_content,
+        title=meta.get("title", ""),
+        author=meta.get("author", ""),
         year=meta.get("year", ""),
-        concepts_hint="・".join(meta.get("concepts_hint", [])) or "（未設定）",
+        concepts=", ".join(concepts[:5]),
+        concepts_yaml=concepts_yaml,
+        related_units_yaml=related_units_yaml,
     )
 
-    contents = [prompt]
-    for path in image_paths:
-        print(f"  読み込み: {path.name}")
-        contents.append(Image.open(path))
-
-    print(f"Gemini Vision API に送信中（{len(image_paths)} 枚）...")
-    response = model.generate_content(contents)
-    return response.text.strip()
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel(
+        "gemini-2.5-flash",
+        generation_config=genai.GenerationConfig(temperature=0.3, max_output_tokens=4096),
+    )
+    print("Gemini API に送信中...")
+    response = model.generate_content(prompt)
+    text = response.text.strip()
+    # Gemini がコードブロックで囲んだ場合の除去（```yaml ... ``` や ``` ... ```）
+    text = re.sub(r'^```(?:yaml|markdown)?\s*\n', '', text)
+    text = re.sub(r'\n```\s*$', '', text)
+    return text.strip()
 
 
 def main():
@@ -166,33 +172,23 @@ def main():
         sys.exit(1)
 
     slug = args[0]
-    input_dir = INPUT_DIR / slug
+    pub_path = SRC_BOOKS_DIR / f"{slug}.md"
 
-    if not input_dir.exists():
-        print(f"エラー: 入力フォルダが見つかりません: {input_dir}")
-        print(f"  → books-vault/input/{slug}/ を作成し meta.yaml と画像を置いてください")
-        sys.exit(1)
-
-    meta_file = input_dir / "meta.yaml"
-    if not meta_file.exists():
-        print(f"エラー: meta.yaml が見つかりません: {meta_file}")
-        sys.exit(1)
-
-    meta = yaml.safe_load(meta_file.read_text(encoding="utf-8"))
+    vault_content = read_vault(slug)
+    meta = parse_vault_frontmatter(vault_content)
     print(f"書誌情報: 『{meta.get('title')}』 {meta.get('author')}")
 
-    image_paths = load_images(input_dir)
-    print(f"画像: {len(image_paths)} 枚")
+    concepts = extract_concepts_from_vault(vault_content)
+    related_units = read_existing_related_units(slug)
+    print(f"概念タグ候補: {concepts}")
+    if related_units:
+        print(f"関連授業単元（既存から継承）: {related_units}")
 
-    body = call_gemini(meta, image_paths)
-    content = build_frontmatter(meta, slug) + body + "\n"
+    output = call_gemini(vault_content, meta, concepts, related_units)
 
-    output_file = VAULT_DIR / f"{slug}.md"
-    output_file.write_text(content, encoding="utf-8")
-
-    print(f"\n生成完了: {output_file}")
-    print("  ⚠ 引用は必ず原本と照合してください（Gemini の誤読の可能性あり）")
-    print("  ⚠ 公開する引用には <!-- featured --> を手動で追加してください")
+    pub_path.write_text(output, encoding="utf-8")
+    print(f"\n公開用ファイルを生成しました: {pub_path}")
+    print("  必要であれば最後だけ手動修正してください")
 
 
 if __name__ == "__main__":
