@@ -142,6 +142,7 @@ function processBook() {
     saveOutput(bookFolder, markdown);
     Logger.log(`完了: ${SLUG}.md を生成しました`);
     Logger.log('  ⚠ 引用は必ず原本と照合してください（Gemini の誤読の可能性あり）');
+    publishToGitHub(SLUG, meta, markdown);
   } else {
     const remaining = data.pages.filter(p => p.status === 'pending').length;
     Logger.log(`残り ${remaining} ページ。再度 processBook() を実行してください`);
@@ -461,4 +462,304 @@ function upsertFile(folder, filename, content) {
   const iter = folder.getFilesByName(filename);
   while (iter.hasNext()) iter.next().setTrashed(true);
   folder.createFile(blob);
+}
+
+// ==========================================
+// GitHub 自動 publish
+// ==========================================
+
+/**
+ * Vault MD から公開用 MD を生成し、GitHub に commit する。
+ * processBook() 完了時に自動呼び出しされる。
+ * GITHUB_TOKEN が未設定の場合はスキップする（後方互換）。
+ */
+function publishToGitHub(slug, meta, vaultMarkdown) {
+  const props  = PropertiesService.getScriptProperties();
+  const apiKey = props.getProperty('GEMINI_API_KEY');
+  const token  = props.getProperty('GITHUB_TOKEN');
+  const owner  = props.getProperty('GITHUB_OWNER') || 'nabe-san';
+  const repo   = props.getProperty('GITHUB_REPO')  || 'claude-kyoiku';
+
+  if (!token) {
+    Logger.log('⚠ GITHUB_TOKEN 未設定 — GitHub への自動 push をスキップします');
+    Logger.log('  設定後は manualPublish() を実行してください');
+    return;
+  }
+
+  Logger.log('── GitHub 自動 publish 開始 ──');
+
+  try {
+    // 1. 概念タグを抽出
+    const concepts = extractConceptsFromVault(vaultMarkdown);
+    Logger.log(`概念タグ: ${concepts.join(', ')}`);
+
+    // 2. 既存公開ファイルの relatedUnits を取得（上書きを防ぐ）
+    const filePath = `歴史HP/src/content/books/${slug}.md`;
+    const existing = getGitHubFile(token, owner, repo, filePath);
+    const relatedUnits = existing ? extractRelatedUnits(existing.content) : [];
+    if (relatedUnits.length > 0) {
+      Logger.log(`relatedUnits を引き継ぎます: ${relatedUnits.join(', ')}`);
+    }
+
+    // 3. Gemini に引用選択を依頼
+    Logger.log(`Vault 文字数: ${vaultMarkdown.length}`);
+    if (vaultMarkdown.length < 500) {
+      Logger.log(`⚠ Vault が短すぎます。内容: ${vaultMarkdown.substring(0, 300)}`);
+    }
+    Logger.log('Gemini に引用選択を依頼中...');
+    const publicMd = callGeminiForSelection(apiKey, vaultMarkdown, meta, concepts, relatedUnits);
+    Logger.log(`Gemini 応答文字数: ${publicMd.length}`);
+    if (publicMd.length < 500) Logger.log(`Gemini 応答内容: ${publicMd}`);
+
+    // 4. バリデーション
+    validatePublicMd(publicMd, slug);
+
+    // 5. GitHub に commit
+    commitToGitHub(token, owner, repo, filePath, publicMd, slug, existing ? existing.sha : null);
+
+    Logger.log(`✅ GitHub push 完了: ${filePath}`);
+    Logger.log('  Vercel が自動デプロイします（数分後にサイトに反映）');
+
+  } catch (e) {
+    Logger.log(`❌ publish エラー: ${e.message}`);
+    notifyAdminOnFailure(slug, e.message);
+  }
+}
+
+/**
+ * Vault が生成済みの状態から手動で publish をやり直す。
+ * processBook() を実行せず、既存の Vault MD から再 publish できる。
+ */
+function manualPublish() {
+  const props = PropertiesService.getScriptProperties();
+  const vaultFolderId = props.getProperty('BOOKS_VAULT_FOLDER_ID');
+  if (!vaultFolderId) throw new Error('BOOKS_VAULT_FOLDER_ID を設定してください');
+
+  const vaultFolder   = DriveApp.getFolderById(vaultFolderId);
+  const bookFolder    = getSubFolder(vaultFolder, SLUG);
+  if (!bookFolder)    throw new Error(`Drive に "${SLUG}" フォルダが見つかりません`);
+
+  const meta = loadMeta(bookFolder);
+  const vaultMarkdown = getFileContent(bookFolder, SLUG + '.md');
+  if (!vaultMarkdown) {
+    throw new Error(`${SLUG}.md が Drive に見つかりません。先に processBook() を実行してください`);
+  }
+
+  publishToGitHub(SLUG, meta, vaultMarkdown);
+}
+
+// ==========================================
+// 引用選択（Gemini テキスト API）
+// ==========================================
+
+function extractConceptsFromVault(vaultContent) {
+  const seen   = new Set();
+  const result = [];
+  const regex  = /<!-- concepts:\s*([^-\n]+?)\s*-->/g;
+  let match;
+  while ((match = regex.exec(vaultContent)) !== null) {
+    for (const tag of match[1].split(',')) {
+      const t = tag.trim();
+      if (t && !t.startsWith('新規タグ候補') && !seen.has(t)) {
+        seen.add(t);
+        result.push(t);
+      }
+    }
+  }
+  return result.slice(0, 8);
+}
+
+function extractRelatedUnits(content) {
+  const match = content.match(/relatedUnits:\s*\n((?:[ \t]+-[^\n]+\n)*)/);
+  if (!match) return [];
+  return (match[1].match(/-\s+(\S+)/g) || []).map(s => s.replace(/^-\s+/, '').trim());
+}
+
+function buildPublishPrompt(vaultContent, meta, concepts, relatedUnits) {
+  const conceptsStr      = concepts.slice(0, 5).join(', ') || '（未設定）';
+  const conceptsYaml     = concepts.length     > 0 ? concepts.map(c     => `  - ${c}`).join('\n') : '  []';
+  const relatedUnitsYaml = relatedUnits.length > 0 ? relatedUnits.map(u => `  - ${u}`).join('\n') : '  []';
+
+  return `あなたは教師の読書ノートの編集者です。
+以下は Vault（全引用ストック）です。この中から公開サイトに掲載する引用を選んでください。
+
+【Vault（全引用）】
+${vaultContent}
+
+【選択基準（重要な順）】
+1. 概念理解に役立つ——知識ではなく思考の材料になる引用
+2. 授業との接続性が高い——授業テーマ「${conceptsStr}」に関連する
+3. 著者の視点・論点がよく表れている——著者の独自の主張が読み取れる
+4. 引用だけで考える余白がある——解説なしで読者が自分で考えられる
+
+【除外すべきブロック】
+- 同じ文が繰り返されている（反復ループ）
+- 途中で文が切れている（末尾が「…」「求めたの」「五年」など中途半端）
+- 1行だけの極端に短い引用（30字未満）
+
+【選択数】
+6〜10 ブロックを選ぶ。重複・欠陥があれば躊躇なく除外してよい。
+
+【出力フォーマット】
+フロントマターから始め、選んだ引用ブロックをそのまま並べる。
+<!-- concepts: ... --> タグは本文から除去する。
+## 見出し、> 引用、*出典* の形式はそのまま維持する。
+引用ブロックの間には --- を入れる。
+
+---
+title: ${meta.title}
+author: ${meta.author}
+year: ${meta.year || ''}
+summary: （この本の主題を2〜3文で。著者の独自の論点を中心に書く）
+concepts:
+${conceptsYaml}
+relatedUnits:
+${relatedUnitsYaml}
+---
+
+（引用ブロックをここに並べる）
+
+【厳守事項】
+- AI による解説・要約・コメントを本文に追加しない
+- <!-- featured --> を出力しない
+- 引用テキストは一字一句変えない
+- 前置き文（「以下に引用を示します」等）を書かない`;
+}
+
+function callGeminiForSelection(apiKey, vaultContent, meta, concepts, relatedUnits) {
+  const prompt  = buildPublishPrompt(vaultContent, meta, concepts, relatedUnits);
+  const payload = {
+    contents:         [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.3, maxOutputTokens: 4096 }
+  };
+
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+  const res = UrlFetchApp.fetch(url, {
+    method:             'post',
+    contentType:        'application/json',
+    payload:            JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+
+  const result = JSON.parse(res.getContentText());
+  if (result.error) throw new Error('Gemini API エラー: ' + result.error.message);
+
+  let text = (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+  text = text.replace(/^```(?:yaml|markdown)?\s*\n/, '');
+  text = text.replace(/\n```\s*$/, '');
+  return text.trim();
+}
+
+// ==========================================
+// バリデーション
+// ==========================================
+
+function validatePublicMd(content, slug) {
+  if (!content.startsWith('---')) {
+    throw new Error('フロントマターがありません（--- で始まっていない）');
+  }
+
+  const required = { title: /^title:\s*(.+)/m, author: /^author:\s*(.+)/m, year: /^year:\s*(.+)/m };
+  for (const [field, re] of Object.entries(required)) {
+    const m = content.match(re);
+    if (!m || !m[1].trim()) {
+      throw new Error(`フロントマターの ${field} がないか空です`);
+    }
+  }
+
+  if (content.length < 200) {
+    throw new Error(`出力が短すぎます（${content.length} 文字）。生成失敗の可能性があります`);
+  }
+
+  Logger.log(`✓ バリデーション OK（${content.length} 文字）`);
+}
+
+// ==========================================
+// GitHub API
+// ==========================================
+
+function encodeGitHubPath(path) {
+  return path.split('/').map(s => encodeURIComponent(s)).join('/');
+}
+
+/**
+ * GitHub からファイルの内容と SHA を取得する。
+ * ファイルが存在しない場合は null を返す。
+ */
+function getGitHubFile(token, owner, repo, path) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(path)}`;
+  const res = UrlFetchApp.fetch(url, {
+    method:             'get',
+    headers: {
+      'Authorization':        `Bearer ${token}`,
+      'Accept':               'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    muteHttpExceptions: true
+  });
+
+  if (res.getResponseCode() === 404) return null;
+
+  const data = JSON.parse(res.getContentText());
+  if (data.message) throw new Error(`GitHub API エラー: ${data.message}`);
+
+  const decoded = Utilities.newBlob(
+    Utilities.base64Decode(data.content.replace(/\n/g, ''))
+  ).getDataAsString('UTF-8');
+
+  return { sha: data.sha, content: decoded };
+}
+
+/**
+ * GitHub にファイルを作成または更新する（sha が null なら新規作成）。
+ */
+function commitToGitHub(token, owner, repo, path, content, slug, sha) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeGitHubPath(path)}`;
+  const now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm');
+
+  const body = {
+    message: `books: ${slug} を Vault から自動生成 (${now})`,
+    content: Utilities.base64Encode(Utilities.newBlob(content, 'UTF-8').getBytes()),
+    branch:  'main'
+  };
+  if (sha) body.sha = sha;
+
+  const res = UrlFetchApp.fetch(url, {
+    method:             'put',
+    contentType:        'application/json',
+    headers: {
+      'Authorization':        `Bearer ${token}`,
+      'Accept':               'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    payload:            JSON.stringify(body),
+    muteHttpExceptions: true
+  });
+
+  const code = res.getResponseCode();
+  if (code !== 200 && code !== 201) {
+    const data = JSON.parse(res.getContentText());
+    throw new Error(`GitHub commit エラー (${code}): ${data.message}`);
+  }
+}
+
+// ==========================================
+// 失敗通知
+// ==========================================
+
+function notifyAdminOnFailure(slug, errorMessage) {
+  const adminEmail = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL')
+                     || 'kengo1983@gmail.com';
+  const now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
+
+  try {
+    GmailApp.sendEmail(
+      adminEmail,
+      `[歴史HP] ${slug} の自動 publish に失敗しました`,
+      `処理日時: ${now}\nSlug: ${slug}\n\nエラー内容:\n${errorMessage}\n\nGAS ログを確認してください（実行 > ログ > 最近の実行）`
+    );
+    Logger.log(`通知メールを ${adminEmail} に送信しました`);
+  } catch (e) {
+    Logger.log(`メール送信エラー: ${e.message}`);
+  }
 }
