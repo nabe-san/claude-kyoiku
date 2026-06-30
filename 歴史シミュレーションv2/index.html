@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>歴史シミュレーション — シナリオ選択</title>
+<title>歴史劇場 — シナリオ選択</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet" />
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: #ede4cc;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(150,110,40,.032) 38px, rgba(150,110,40,.032) 39px),
-    radial-gradient(ellipse 120% 50% at 50% -5%, rgba(200,168,75,.12) 0%, transparent 100%);
-  color: #1e1208;
-  font-family: '游明朝','YuMincho','Hiragino Mincho ProN','Georgia',serif;
+  background: #faf7f2;
+  color: #1c1007;
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -25,22 +25,26 @@ body {
   padding: 50px 0 30px;
   width: 100%;
   max-width: 900px;
-  border-bottom: 1px solid #c8a84b44;
+  border-bottom: 1px solid rgba(146, 64, 14, 0.15);
   margin-bottom: 40px;
 }
 .site-deco { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 18px; }
 .site-deco-line { flex: 1; max-width: 100px; height: 1px; }
-.site-deco-line:first-child { background: linear-gradient(90deg, transparent, #c8a84b); }
-.site-deco-line:last-child  { background: linear-gradient(90deg, #c8a84b, transparent); }
-.site-kamon { font-size: 22px; color: #8b2020; opacity: .8; }
-.site-title { font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #1e1208; margin-bottom: 8px; }
-.site-subtitle { font-size: 12px; color: #907850; letter-spacing: 5px; }
+.site-deco-line:first-child { background: linear-gradient(90deg, transparent, #92400e66); }
+.site-deco-line:last-child  { background: linear-gradient(90deg, #92400e66, transparent); }
+.site-kamon { font-size: 22px; color: #92400e; opacity: .7; }
+.site-title {
+  font-size: 28px; font-weight: 700; letter-spacing: 0.12em;
+  color: #1c1007; margin-bottom: 8px;
+  font-family: 'Noto Serif JP', serif;
+}
+.site-subtitle { font-size: 12px; color: #78573a; letter-spacing: 5px; }
 
 .section-label {
   width: 100%; max-width: 900px;
-  font-size: 11px; color: #907850; letter-spacing: 4px;
+  font-size: 11px; color: #78573a; letter-spacing: 4px;
   padding-bottom: 10px; margin-bottom: 20px;
-  border-bottom: 1px solid #c8a84b33;
+  border-bottom: 1px solid rgba(146, 64, 14, 0.12);
 }
 
 .scenarios-grid {
@@ -52,20 +56,20 @@ body {
 }
 
 .scenario-card {
-  background: #faf6ec;
-  border: 1px solid #c8a84b55;
-  border-radius: 4px;
+  background: #f8f4ee;
+  border: 1px solid rgba(146, 64, 14, 0.15);
+  border-radius: 10px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 3px 14px rgba(42,26,10,.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform .2s, box-shadow .2s, border-color .2s;
   display: block;
 }
 .scenario-card[href]:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(42,26,10,.18);
-  border-color: #c8a84b;
+  box-shadow: 0 8px 28px rgba(146, 64, 14, 0.12);
+  border-color: rgba(146, 64, 14, 0.35);
 }
 .scenario-card.coming-soon {
   opacity: .55;
@@ -104,55 +108,60 @@ body {
   flex-wrap: wrap;
 }
 .card-tag {
-  font-size: 10px; letter-spacing: 1px; padding: 3px 10px;
-  background: #8b2020; color: #faf6ec; border-radius: 2px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; padding: 3px 10px;
+  background: #92400e; color: #faf7f2; border-radius: 100px;
 }
-.card-era { font-size: 11px; color: #907850; display: flex; align-items: center; }
+.card-era { font-size: 11px; color: #78573a; display: flex; align-items: center; }
 
 .card-body { padding: 12px 16px 20px; }
-.card-title { font-size: 18px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; color: #1e1208; line-height: 1.5; }
+.card-title {
+  font-size: 18px; font-weight: 700; letter-spacing: 0.03em;
+  margin-bottom: 8px; color: #1c1007; line-height: 1.5;
+  font-family: 'Noto Serif JP', serif;
+}
 .card-concept {
-  font-size: 11px; color: #6a4828; letter-spacing: 1px; margin-bottom: 8px;
-  padding: 6px 10px; background: #f5e8c8; border-radius: 2px; border-left: 2px solid #c8a84b;
+  font-size: 11px; color: #78573a; letter-spacing: 0.05em; margin-bottom: 8px;
+  padding: 6px 10px; background: #f0e8d8; border-radius: 4px; border-left: 2px solid #b45309;
   line-height: 1.6;
 }
 .card-question {
-  font-size: 12px; color: #8b2020; line-height: 1.75;
-  padding: 0 0 8px; margin-bottom: 8px; border-bottom: 1px solid #c8a84b33;
+  font-size: 12px; color: #92400e; line-height: 1.75;
+  padding: 0 0 8px; margin-bottom: 8px;
+  border-bottom: 1px solid rgba(146, 64, 14, 0.15);
 }
-.card-desc { font-size: 12px; color: #5a3a18; line-height: 1.8; }
+.card-desc { font-size: 12px; color: #78573a; line-height: 1.8; }
 
 .card-coming {
   display: flex; align-items: center; justify-content: center;
-  height: 42px; font-size: 13px; color: #c8a84b88; letter-spacing: 3px;
-  border-top: 1px solid #c8a84b33;
+  height: 42px; font-size: 13px; color: rgba(146, 64, 14, 0.35); letter-spacing: 3px;
+  border-top: 1px solid rgba(146, 64, 14, 0.12);
 }
 
 .loading, .error {
   width: 100%;
   max-width: 900px;
-  background: #faf6ec;
-  border: 1px solid #c8a84b55;
-  border-radius: 4px;
+  background: #f8f4ee;
+  border: 1px solid rgba(146, 64, 14, 0.15);
+  border-radius: 10px;
   padding: 22px 24px;
-  color: #5a3a18;
+  color: #78573a;
   font-size: 14px;
   line-height: 1.9;
 }
-.error strong { color: #8b2020; }
+.error strong { color: #92400e; }
 .error code {
-  background: #f5e8c8;
+  background: #f0e8d8;
   padding: 2px 6px;
-  border-radius: 2px;
+  border-radius: 4px;
   font-family: Consolas, monospace;
   font-size: 13px;
 }
 
 .site-footer {
   text-align: center; padding: 40px 0 0;
-  font-size: 10px; color: #a09070; letter-spacing: 2px;
+  font-size: 10px; color: #a8856a; letter-spacing: 2px;
   width: 100%; max-width: 900px;
-  border-top: 1px solid #c8a84b22;
+  border-top: 1px solid rgba(146, 64, 14, 0.12);
   margin-top: 40px;
 }
 </style>
@@ -165,7 +174,7 @@ body {
     <div class="site-kamon">✦</div>
     <div class="site-deco-line"></div>
   </div>
-  <h1 class="site-title">歴史シミュレーション</h1>
+  <h1 class="site-title">歴史劇場</h1>
   <div class="site-subtitle">歴史の分岐点を追体験する</div>
 </header>
 
@@ -175,7 +184,7 @@ body {
 </div>
 
 <footer class="site-footer">
-  歴史シミュレーション v2 — 授業用ビジュアルノベル型学習ツール
+  歴史劇場 — 歴史の分岐点を追体験する
 </footer>
 
 <script>
