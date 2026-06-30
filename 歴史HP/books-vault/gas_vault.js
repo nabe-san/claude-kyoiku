@@ -50,13 +50,15 @@
 
 const SLUG = PropertiesService.getScriptProperties().getProperty('TARGET_SLUG')
              || 'ashita-no-kindaishi';
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 15;
 
 // ==========================================
 // メイン実行関数
 // ==========================================
 
-function processBook() {
+function processBook(slugOverride) {
+  const slug = slugOverride || SLUG;
+
   const props = PropertiesService.getScriptProperties();
   const apiKey        = props.getProperty('GEMINI_API_KEY');
   const vaultFolderId = props.getProperty('BOOKS_VAULT_FOLDER_ID');
@@ -67,8 +69,15 @@ function processBook() {
   if (!mergedFolderId) throw new Error('スクリプトプロパティに BOOK_MERGED_FOLDER_ID を設定してください');
 
   const vaultFolder = DriveApp.getFolderById(vaultFolderId);
-  const bookFolder  = getSubFolder(vaultFolder, SLUG);
-  if (!bookFolder) throw new Error(`Drive に "${SLUG}" フォルダが見つかりません`);
+  const bookFolder  = getSubFolder(vaultFolder, slug);
+  if (!bookFolder) throw new Error(`Drive に "${slug}" フォルダが見つかりません`);
+
+  // meta.json がなければ最初の画像から自動生成する
+  if (!getFileContent(bookFolder, 'meta.json')) {
+    Logger.log('meta.json が見つかりません。画像から自動生成を試みます...');
+    const autoMeta = autoGenerateMeta(bookFolder);
+    if (!autoMeta) throw new Error('meta.json の自動生成に失敗しました。手動で作成してください');
+  }
 
   const meta = loadMeta(bookFolder);
   Logger.log(`書誌情報: 『${meta.title}』 ${meta.author}`);
@@ -139,13 +148,235 @@ function processBook() {
     data.status = 'complete';
     saveProcessingJson(bookFolder, data);
     const markdown = buildVaultMarkdown(data);
-    saveOutput(bookFolder, markdown);
-    Logger.log(`完了: ${SLUG}.md を生成しました`);
+    saveOutput(bookFolder, markdown, slug);
+    Logger.log(`完了: ${slug}.md を生成しました`);
     Logger.log('  ⚠ 引用は必ず原本と照合してください（Gemini の誤読の可能性あり）');
-    publishToGitHub(SLUG, meta, markdown);
+    publishToGitHub(slug, meta, markdown);
   } else {
     const remaining = data.pages.filter(p => p.status === 'pending').length;
     Logger.log(`残り ${remaining} ページ。再度 processBook() を実行してください`);
+  }
+}
+
+// ==========================================
+// 未処理の本をまとめて処理（TARGET_SLUG 不要）
+// ==========================================
+
+/**
+ * books-vault 内の未処理フォルダを自動検出し、1冊分のバッチを処理する。
+ * books-vault 直下に画像があれば先にサブフォルダへ整理する。
+ * TARGET_SLUG の変更は不要。繰り返し実行すると順番に処理が進む。
+ */
+function processAllBooks() {
+  const props = PropertiesService.getScriptProperties();
+  const apiKey        = props.getProperty('GEMINI_API_KEY');
+  const vaultFolderId = props.getProperty('BOOKS_VAULT_FOLDER_ID');
+  if (!vaultFolderId) throw new Error('BOOKS_VAULT_FOLDER_ID を設定してください');
+  if (!apiKey)        throw new Error('GEMINI_API_KEY を設定してください');
+
+  const vaultFolder = DriveApp.getFolderById(vaultFolderId);
+
+  // Step 1: 直下のファイル（zip または画像）をサブフォルダへ整理する
+  if (organizeRootFiles(vaultFolder, apiKey)) return;
+
+  // Step 2: サブフォルダを順番に処理する
+  const iter = vaultFolder.getFolders();
+
+  while (iter.hasNext()) {
+    let folder = iter.next();
+    let slug   = folder.getName();
+
+    // 画像がなければスキップ
+    if (getPageFiles(folder).length === 0) continue;
+
+    // meta.json がなければ画像ファイル名から自動生成
+    if (!getFileContent(folder, 'meta.json')) {
+      const autoMeta = autoGenerateMeta(folder);
+      if (!autoMeta) {
+        Logger.log(`${slug}: meta.json の自動生成に失敗。スキップします`);
+        continue;
+      }
+    }
+
+    // 処理済みはスキップ
+    const procContent = getFileContent(folder, 'processing.json');
+    if (procContent) {
+      const data = JSON.parse(procContent);
+      if (data.status === 'complete') {
+        Logger.log(`${slug}: 処理済み（スキップ）`);
+        continue;
+      }
+      const hasPending = data.pages.some(p => p.status === 'pending');
+      if (!hasPending) {
+        Logger.log(`${slug}: pending ページなし（エラーがあれば resetErrors() を実行）`);
+        continue;
+      }
+    }
+
+    // 最初に見つかった未処理の本を1バッチ処理して終了
+    Logger.log(`処理対象: ${slug}`);
+    processBook(slug);
+    return;
+  }
+
+  Logger.log('✅ 未処理の本はありません（すべて完了）');
+}
+
+/**
+ * books-vault 直下の zip または画像ファイルを検出し、サブフォルダへ整理する。
+ * zip 優先。zip がなければ個別画像を処理する。
+ * 整理できた場合は true を返し、processAllBooks() がそのまま processBook() に進む。
+ */
+function organizeRootFiles(vaultFolder, apiKey) {
+  // zip ファイルを優先して探す
+  const fileIter = vaultFolder.getFiles();
+  let zipFile = null;
+  while (fileIter.hasNext()) {
+    const f = fileIter.next();
+    const mime = f.getMimeType();
+    if (f.getName().toLowerCase().endsWith('.zip') ||
+        mime === 'application/zip' ||
+        mime === 'application/x-zip-compressed') {
+      zipFile = f;
+      break;
+    }
+  }
+
+  if (zipFile) return organizeZipFile(zipFile, vaultFolder, apiKey);
+
+  // zip がなければ直下の画像ファイルを処理
+  const rootImages = getPageFiles(vaultFolder);
+  if (rootImages.length === 0) return false;
+
+  Logger.log(`books-vault 直下に ${rootImages.length} 枚の画像を検出しました`);
+
+  const meta = parseMetaFromFileList(rootImages);
+  if (!meta) {
+    Logger.log('⚠ 「書名_著者_出版年.jpg」形式のファイルが見つかりません');
+    Logger.log('  → 1枚だけ「書名_著者_出版年.jpg」の形式でリネームしてください');
+    return false;
+  }
+
+  return createFolderAndProcess(vaultFolder, meta, apiKey, (bookFolder) => {
+    for (const img of rootImages) DriveApp.getFileById(img.id).moveTo(bookFolder);
+    Logger.log(`${rootImages.length} 枚の画像を移動しました`);
+  });
+}
+
+/**
+ * 「書名_著者_出版年.zip」を展開し、サブフォルダを作成して処理する。
+ * zip 内の画像のみを対象とし、展開後に zip をゴミ箱へ移動する。
+ * ※ 約50MB 超の zip は GAS の制限で失敗する場合がある。
+ */
+function organizeZipFile(zipFile, vaultFolder, apiKey) {
+  const zipName = zipFile.getName().replace(/\.zip$/i, '');
+  Logger.log(`zip ファイルを検出: ${zipName}.zip`);
+
+  const meta = parseMetaFromName(zipName);
+  if (!meta) {
+    Logger.log('⚠ zip ファイル名が「書名_著者_出版年.zip」の形式ではありません');
+    return false;
+  }
+
+  return createFolderAndProcess(vaultFolder, meta, apiKey, (bookFolder) => {
+    Logger.log('zip を展開中...');
+    try {
+      const blobs = Utilities.unzip(zipFile.getBlob());
+      const supported = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+      let count = 0;
+      for (const blob of blobs) {
+        const filename = blob.getName().split('/').pop().split('\\').pop();
+        const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+        if (!supported.has(ext)) continue;
+        blob.setName(filename);
+        bookFolder.createFile(blob);
+        count++;
+      }
+      if (count === 0) throw new Error('zip に画像ファイルが含まれていません');
+      Logger.log(`${count} 枚の画像を展開しました`);
+      zipFile.setTrashed(true);
+    } catch (e) {
+      Logger.log(`⚠ zip 展開エラー: ${e.message}`);
+      Logger.log('  → ファイルが大きすぎる場合は、画像を個別にアップロードしてください');
+      throw e;
+    }
+  });
+}
+
+/** slug 生成・フォルダ作成・meta.json 作成・processBook() を共通化したヘルパー */
+function createFolderAndProcess(vaultFolder, meta, apiKey, setupFn) {
+  Logger.log(`書誌情報: 『${meta.title}』 ${meta.author}（${meta.year}）`);
+
+  const slug = generateSlug(meta.title, apiKey);
+  if (!slug) { Logger.log('⚠ slug の生成に失敗しました'); return false; }
+
+  let bookFolder = getSubFolder(vaultFolder, slug);
+  if (!bookFolder) {
+    bookFolder = vaultFolder.createFolder(slug);
+    Logger.log(`フォルダを作成しました: ${slug}/`);
+  }
+
+  try {
+    setupFn(bookFolder);
+  } catch (e) {
+    return false;
+  }
+
+  upsertFile(bookFolder, 'meta.json', JSON.stringify(meta, null, 2));
+  Logger.log('meta.json を作成しました');
+  Logger.log(`処理対象: ${slug}`);
+  processBook(slug);
+  return true;
+}
+
+/** ファイル名リストから「書名_著者_出版年」パターンを探して meta を返す */
+function parseMetaFromFileList(files) {
+  for (const f of files) {
+    const meta = parseMetaFromName(f.name.replace(/\.[^.]+$/, ''));
+    if (meta) return meta;
+  }
+  return null;
+}
+
+/** 「書名_著者_出版年」形式の文字列を解析して meta オブジェクトを返す */
+function parseMetaFromName(nameWithoutExt) {
+  const parts = nameWithoutExt.split('_');
+  if (parts.length < 3) return null;
+  const year   = parseInt(parts[parts.length - 1], 10);
+  const author = parts[parts.length - 2];
+  const title  = parts.slice(0, parts.length - 2).join('_');
+  if (!title || !author || isNaN(year) || year < 1800 || year > 2100) return null;
+  return { title, author, year, concepts_hint: [] };
+}
+
+function isValidSlug(name) {
+  return /^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(name);
+}
+
+function generateSlug(title, apiKey) {
+  const prompt = `次の書名を英語の kebab-case スラグ（小文字・ハイフン区切り・ASCII のみ）に変換してください。
+ローマ字読みまたは英訳をベースに、20文字以内で生成してください。
+スラグのみ出力してください（前置き・説明・記号不要）。
+
+書名: ${title}`;
+
+  try {
+    const payload = {
+      contents:         [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 64 }
+    };
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+    const res = UrlFetchApp.fetch(url, {
+      method: 'post', contentType: 'application/json',
+      payload: JSON.stringify(payload), muteHttpExceptions: true
+    });
+    const result = JSON.parse(res.getContentText());
+    const raw = (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return slug || null;
+  } catch (e) {
+    Logger.log(`slug 生成エラー: ${e.message}`);
+    return null;
   }
 }
 
@@ -190,6 +421,22 @@ function loadMeta(bookFolder) {
   const meta = JSON.parse(content);
   if (!meta.title)  throw new Error('meta.json に title フィールドがありません');
   if (!meta.author) throw new Error('meta.json に author フィールドがありません');
+  return meta;
+}
+
+/**
+ * meta.json が存在しない場合、ファイル名から書誌情報を解析して自動生成する。
+ * ファイル名の形式: 「タイトル_著者_出版年.jpg」
+ * アンダースコアは右から読み取るため、タイトルに _ が含まれていても正しく解析される。
+ */
+function autoGenerateMeta(bookFolder) {
+  const meta = parseMetaFromFileList(getPageFiles(bookFolder));
+  if (!meta) {
+    Logger.log('⚠ 「書名_著者_出版年.jpg」形式のファイルが見つかりません');
+    return null;
+  }
+  upsertFile(bookFolder, 'meta.json', JSON.stringify(meta, null, 2));
+  Logger.log(`meta.json を自動生成しました: 『${meta.title}』 ${meta.author}（${meta.year}）`);
   return meta;
 }
 
@@ -275,7 +522,7 @@ function loadOrInitProcessingJson(bookFolder, meta) {
   }
   Logger.log('processing.json を新規作成します');
   return {
-    slug:   SLUG,
+    slug:   bookFolder.getName(),
     title:  meta.title,
     author: meta.author,
     year:   meta.year || null,
@@ -438,8 +685,8 @@ function buildVaultMarkdown(data) {
   return frontmatter + body + '\n';
 }
 
-function saveOutput(bookFolder, markdown) {
-  upsertFile(bookFolder, SLUG + '.md', markdown);
+function saveOutput(bookFolder, markdown, slug) {
+  upsertFile(bookFolder, slug + '.md', markdown);
 }
 
 // ==========================================
