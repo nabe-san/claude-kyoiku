@@ -78,7 +78,7 @@
 
 - 教師は Vault を日常的に確認・選別しない
 - `<!-- featured -->` は通常運用では使わない（将来の手動指定に備えて設計上の余地だけ残す）
-- Vault は NotebookLM への入力元としても使う
+- NotebookLM には Vault ではなく _MERGED Doc（全文OCR）を渡す。Vault は印のある箇所のみの抜粋なので本全体への問いに答えられない
 
 **gas_vault.js の役割**
 

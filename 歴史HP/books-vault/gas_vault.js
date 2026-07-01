@@ -177,7 +177,7 @@ function processAllBooks() {
   const vaultFolder = DriveApp.getFolderById(vaultFolderId);
 
   // Step 1: 直下のファイル（zip または画像）をサブフォルダへ整理する
-  if (organizeRootFiles(vaultFolder, apiKey)) return;
+  if (organizeRootFiles(vaultFolder, apiKey)) return true;
 
   // Step 2: サブフォルダを順番に処理する
   const iter = vaultFolder.getFolders();
@@ -216,10 +216,39 @@ function processAllBooks() {
     // 最初に見つかった未処理の本を1バッチ処理して終了
     Logger.log(`処理対象: ${slug}`);
     processBook(slug);
-    return;
+    return true;
   }
 
   Logger.log('✅ 未処理の本はありません（すべて完了）');
+  return false;
+}
+
+/**
+ * processAllBooks() を自動繰り返し実行する。
+ * 最初に手動で1回 autoRunAllBooks() を実行すると、
+ * 未処理ページがなくなるまで5分ごとに自動再実行される。
+ * 完了後はトリガーが自動削除されるので手動削除は不要。
+ */
+function autoRunAllBooks() {
+  deleteSelfTriggers_();
+
+  const hasMore = processAllBooks();
+
+  if (hasMore) {
+    ScriptApp.newTrigger('autoRunAllBooks')
+      .timeBased()
+      .after(5 * 60 * 1000)
+      .create();
+    Logger.log('⏱ 5分後に自動再実行します');
+  } else {
+    Logger.log('✅ 自動処理が完了しました。トリガーは削除されました。');
+  }
+}
+
+function deleteSelfTriggers_() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'autoRunAllBooks')
+    .forEach(t => ScriptApp.deleteTrigger(t));
 }
 
 /**
@@ -307,8 +336,13 @@ function organizeZipFile(zipFile, vaultFolder, apiKey) {
 function createFolderAndProcess(vaultFolder, meta, apiKey, setupFn) {
   Logger.log(`書誌情報: 『${meta.title}』 ${meta.author}（${meta.year}）`);
 
-  const slug = generateSlug(meta.title, apiKey);
-  if (!slug) { Logger.log('⚠ slug の生成に失敗しました'); return false; }
+  let slug = generateSlug(meta.title, apiKey);
+  if (!slug) {
+    // フォールバック: 著者名+年から生成
+    slug = (meta.author + '-' + meta.year)
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    Logger.log(`⚠ slug の自動生成に失敗。フォールバック slug を使用: ${slug}`);
+  }
 
   let bookFolder = getSubFolder(vaultFolder, slug);
   if (!bookFolder) {
@@ -363,7 +397,11 @@ function generateSlug(title, apiKey) {
   try {
     const payload = {
       contents:         [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 64 }
+      generationConfig: {
+        temperature:    0.1,
+        maxOutputTokens: 64,
+        thinkingConfig: { thinkingBudget: 0 }
+      }
     };
     const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
     const res = UrlFetchApp.fetch(url, {
@@ -877,7 +915,11 @@ function callGeminiForSelection(apiKey, vaultContent, meta, concepts, relatedUni
   const prompt  = buildPublishPrompt(vaultContent, meta, concepts, relatedUnits);
   const payload = {
     contents:         [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.3, maxOutputTokens: 4096 }
+    generationConfig: {
+      temperature:    0.3,
+      maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 0 }
+    }
   };
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
@@ -890,6 +932,12 @@ function callGeminiForSelection(apiKey, vaultContent, meta, concepts, relatedUni
 
   const result = JSON.parse(res.getContentText());
   if (result.error) throw new Error('Gemini API エラー: ' + result.error.message);
+
+  const finishReason = result.candidates?.[0]?.finishReason || 'UNKNOWN';
+  Logger.log(`Gemini finishReason: ${finishReason}`);
+  if (finishReason !== 'STOP') {
+    Logger.log(`⚠ 応答が途中で終了しました（${finishReason}）`);
+  }
 
   let text = (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
   text = text.replace(/^```(?:yaml|markdown)?\s*\n/, '');
