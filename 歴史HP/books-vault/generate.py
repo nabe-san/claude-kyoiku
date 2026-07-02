@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 VAULT_DIR = Path(__file__).parent
 SRC_BOOKS_DIR = VAULT_DIR.parent / "src" / "content" / "books"
-CONCEPT_VOCABULARY_PATH = VAULT_DIR.parent / "src" / "data" / "concepts" / "history-general.json"
+CONCEPT_VOCABULARY_DIR = VAULT_DIR.parent / "src" / "data" / "concepts"
 
 load_dotenv(VAULT_DIR / ".env")
 
@@ -103,11 +103,16 @@ def parse_vault_frontmatter(vault_content: str) -> dict:
 
 
 def load_concept_vocabulary() -> set:
-    """マスター語彙（歴史総合）の概念名の集合を読み込む。ファイルがなければ空集合を返す。"""
-    if not CONCEPT_VOCABULARY_PATH.exists():
+    """マスター語彙（歴史総合・公共など全科目）の概念名の集合を読み込む。
+    src/data/concepts/ 配下の *.json をすべて走査するため、科目を追加しても変更不要。
+    """
+    if not CONCEPT_VOCABULARY_DIR.exists():
         return set()
-    data = json.loads(CONCEPT_VOCABULARY_PATH.read_text(encoding="utf-8"))
-    return {item["name"] for item in data}
+    names = set()
+    for path in CONCEPT_VOCABULARY_DIR.glob("*.json"):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        names.update(item["name"] for item in data)
+    return names
 
 
 def extract_concepts_from_vault(vault_content: str, vocabulary: set) -> list:
