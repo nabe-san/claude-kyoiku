@@ -13,7 +13,7 @@ const { title, description = '歴史教師の探究ノート — 歴史総合・
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content={description} />
-  <title>{title} | 歴史教師の探究ノート</title>
+  <title>{title === 'CONCEPT PRINCIPAL' ? title : `${title} | CONCEPT PRINCIPAL`}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- Google Fonts -->
