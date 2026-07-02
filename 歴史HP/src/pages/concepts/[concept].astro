@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import UnitCard from '../../components/UnitCard.astro';
 import { getCollection } from 'astro:content';
+import { SUBJECT_LABELS, buildConceptCategoryMap } from '../../lib/concepts';
 
 export async function getStaticPaths() {
   const units = await getCollection('units');
@@ -23,6 +24,9 @@ export async function getStaticPaths() {
 }
 
 const { concept, matchedUnits, matchedBooks } = Astro.props;
+
+// この概念タグが科目別マスター語彙のどのカテゴリに属するか
+const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?? [])];
 ---
 
 <BaseLayout title={`概念タグ: ${concept}`}>
@@ -44,6 +48,14 @@ const { concept, matchedUnits, matchedBooks } = Astro.props;
       <p class="concept-desc">
         このタグを持つコンテンツをすべて表示しています。
       </p>
+
+      {classifications.length > 0 && (
+        <div class="concept-classifications">
+          {classifications.map(([subject, category]) => (
+            <span class="classification-badge">{SUBJECT_LABELS[subject]} › {category}</span>
+          ))}
+        </div>
+      )}
 
       <div class="concept-counts">
         <span class="count-item">
@@ -141,6 +153,21 @@ const { concept, matchedUnits, matchedBooks } = Astro.props;
     color: var(--text-muted);
     font-size: 0.95rem;
     margin-bottom: 1.75rem;
+  }
+
+  .concept-classifications {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+  }
+  .classification-badge {
+    font-size: 0.78rem;
+    color: var(--primary);
+    border: 1px solid rgba(146, 64, 14, 0.3);
+    border-radius: 100px;
+    padding: 0.3em 0.9em;
+    background: rgba(146, 64, 14, 0.06);
   }
 
   .concept-counts {
