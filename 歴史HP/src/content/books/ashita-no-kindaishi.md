@@ -7,7 +7,7 @@ concepts:
   - 帝国主義
   - 国民国家
   - 近代化
-  - 華夷秩序
+  - 国際秩序
 relatedUnits:
   - teikoku-shugi
 ---

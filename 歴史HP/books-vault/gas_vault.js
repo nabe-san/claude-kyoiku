@@ -16,8 +16,14 @@
 //     BOOK_MERGED_FOLDER_ID : 既存パイプラインの BOOK_MERGED フォルダ ID
 //                             （mojika.js の MERGE_CFG.BOOK_MERGED_FOLDER_ID と同じ値）
 //     TARGET_SLUG           : （任意）処理する本の slug
+//     ADMIN_EMAIL           : （任意）publish失敗通知・概念タグ月次レポートの送信先。
+//                             未設定時は wa-kengo@pen-kanagawa.ed.jp にフォールバックする
 //
 //   Drive API（Advanced Service）は不要です。
+//
+//   概念タグ 月次レポートを有効にする場合、初回だけ GAS エディタで
+//   setupMonthlyConceptReportTrigger() を一度手動実行してトリガーを登録すること
+//   （コードを push しただけではトリガーは有効化されない）。
 //
 // Drive フォルダ構成:
 //   books-vault/               ← BOOKS_VAULT_FOLDER_ID
@@ -36,11 +42,14 @@
 //     "author": "伊勢弘志",
 //     "year": 2022,
 //     "merged_doc_name": "明日のための近代史_MERGED",
-//     "concepts_hint": ["帝国主義", "国民国家", "近代化", "万国公法"]
+//     "concepts_hint": ["帝国主義", "国民国家"]
 //   }
 //
 //   merged_doc_name: BOOK_MERGED フォルダ内の Google Doc 名。
 //                    未設定の場合は OCR テキストなしで続行します。
+//   concepts_hint  : 任意。この本で特に想定される語（下記 CONCEPT_VOCABULARY 内の語を推奨）。
+//                    概念タグの主な選択元は CONCEPT_VOCABULARY（本ファイル内の定数）であり、
+//                    concepts_hint は必須ではない。
 //
 // 実行方法:
 //   1. TARGET_SLUG を設定するか、下の SLUG 定数を書き換える
@@ -51,6 +60,33 @@
 const SLUG = PropertiesService.getScriptProperties().getProperty('TARGET_SLUG')
              || 'ashita-no-kindaishi';
 const BATCH_SIZE = 15;
+
+// ==========================================
+// 概念タグ マスター語彙（歴史総合）
+// ==========================================
+// 正本は 歴史HP/src/data/concepts/history-general.json。
+// GAS はリポジトリのファイルを直接読めないため、内容をここに定数として埋め込んでいる。
+// マスターJSONの語彙を変更したら、このオブジェクトも手動で同期すること。
+
+const CONCEPT_VOCABULARY = {
+  '歴史総合の大観テーマ': ['近代化', '国際秩序', '大衆化', 'グローバル化'],
+  '学習指導要領由来の対概念': ['自由', '制限', '平等', '格差', '対立', '協調', '統合', '分化', '開発', '保全', '持続可能性'],
+  '実質的なマクロ概念': ['国民国家', '産業革命', '資本主義', '帝国主義', '総力戦', '冷戦', 'ナショナリズム', '民主主義', '安全保障', '相互依存', '戦争の違法化', 'アイデンティティ', '周辺化', '人権'],
+  '政治・統治': ['主権', '議会', '政党', '選挙', '内閣', '独裁', '身分', '秩序', '危機', '改革', '制度', '政策', '支配', '抵抗', '自治', '統治', '反乱', '併合', '立憲主義', '普通選挙'],
+  '経済・産業': ['市場経済', '工業化', '貿易', '恐慌', '財政', '労働問題', '交通革命', '通信革命', '賃金', '失業', '景気', '通貨', '金融', '投資', '資源', '高度経済成長', '新自由主義', '規制緩和', '多国籍企業', '南北問題'],
+  '社会・文化': ['民衆', '農民', '世論', '宗教', '解放', '権利', '差別', '移民', '難民', 'ジェンダー', '都市化', '大衆文化', '情報化', '多文化共生', '貧困', '教育'],
+  '対外関係・戦争': ['条約', '同盟', '占領', '内戦', '植民地', '独立運動', '民族自決', '脱植民地化', '代理戦争', '軍備', '兵器', '核兵器', '原子力', '検閲', '国際法', '国連憲章', '地域統合', '中立'],
+  '現代的課題・歴史学の方法': ['環境問題', '感染症', '技術革新', '史料批判', '歴史的思考', '歴史認識', 'ジェノサイド', '戦争犯罪', '少数民族', '先住民族'],
+  '日本史固有の制度・地域': ['幕藩体制', '中央集権', '殖産興業', '富国強兵', '徴兵制', '大日本帝国憲法', '学校教育', '地租改正', '琉球', 'アイヌ', '日本国憲法', '平和主義', '日米関係', '沖縄'],
+};
+
+const CONCEPT_VOCABULARY_SET = new Set(Object.values(CONCEPT_VOCABULARY).flat());
+
+function buildConceptVocabularyText() {
+  return Object.entries(CONCEPT_VOCABULARY)
+    .map(([category, tags]) => `${category}：${tags.join('・')}`)
+    .join('\n');
+}
 
 // ==========================================
 // メイン実行関数
@@ -602,8 +638,9 @@ function saveProcessingJson(bookFolder, data) {
 // ==========================================
 
 function buildPrompt(meta, currOcr, prevOcr, nextOcr) {
-  const conceptsHint = (meta.concepts_hint || []).join('・') || '（未設定）';
-  const citation     = `*${meta.author}『${meta.title}』（${meta.year || ''}年）*`;
+  const vocabularyText = buildConceptVocabularyText();
+  const bookHint       = (meta.concepts_hint || []).join('・');
+  const citation        = `*${meta.author}『${meta.title}』（${meta.year || ''}年）*`;
 
   return `これは書籍のページ画像です。
 
@@ -647,9 +684,13 @@ OCR テキストの使い方：
 - 1引用ブロックあたり400字を目安とする。ただし必ず文末（句点）まで引用を完結させること。文末が400字を超える場合は700字まで許容する
 - 縦線が複数文にわたる場合は、その中で最も論点が明確な文を中心に引用する
 
-【概念タグ候補】
-${conceptsHint}
-リストにない概念が必要な場合は引用ブロックの外に「新規タグ候補: ○○」と別記する。
+【概念タグ 中核語彙（歴史総合）】
+${vocabularyText}
+${bookHint ? `この本で特に想定される語：${bookHint}` : ''}
+
+上記の語彙から選ぶことを最優先とする。個別の事件・地名・固有名詞（例：「ガザ地区の飢餓」）をそのままタグにせず、
+語彙内の抽象度の高い概念（例：「周辺化」「戦争犯罪」）に言い換えて使う。
+どうしても語彙内に当てはまる語がない場合のみ、引用ブロックの外に「新規タグ候補: ○○」と別記する（<!-- concepts: --> には含めない）。
 
 【出力フォーマット】
 書き込み記号のある箇所のみ以下の形式で出力する。書き込みが一切ない場合は何も出力しない。
@@ -775,8 +816,11 @@ function publishToGitHub(slug, meta, vaultMarkdown) {
 
   try {
     // 1. 概念タグを抽出
-    const concepts = extractConceptsFromVault(vaultMarkdown);
+    const { concepts, unmatched } = extractConceptsFromVault(vaultMarkdown);
     Logger.log(`概念タグ: ${concepts.join(', ')}`);
+    if (unmatched.length > 0) {
+      appendConceptReviewLog(slug, unmatched);
+    }
 
     // 2. 既存公開ファイルの relatedUnits を取得（上書きを防ぐ）
     const filePath = `歴史HP/src/content/books/${slug}.md`;
@@ -838,20 +882,129 @@ function manualPublish() {
 // ==========================================
 
 function extractConceptsFromVault(vaultContent) {
-  const seen   = new Set();
-  const result = [];
-  const regex  = /<!-- concepts:\s*([^-\n]+?)\s*-->/g;
+  const seen      = new Set();
+  const concepts  = [];
+  const unmatched = new Set();
+  const regex     = /<!-- concepts:\s*([^-\n]+?)\s*-->/g;
   let match;
   while ((match = regex.exec(vaultContent)) !== null) {
     for (const tag of match[1].split(',')) {
       const t = tag.trim();
-      if (t && !t.startsWith('新規タグ候補') && !seen.has(t)) {
-        seen.add(t);
-        result.push(t);
+      if (!t || t.startsWith('新規タグ候補') || seen.has(t)) continue;
+      seen.add(t);
+      // マスター語彙にない語は公開タグに含めず、月次レビューログにのみ残す（教師が後で棚卸しする）
+      if (CONCEPT_VOCABULARY_SET.has(t)) {
+        concepts.push(t);
+      } else {
+        unmatched.add(t);
       }
     }
   }
-  return result.slice(0, 8);
+  if (unmatched.size > 0) {
+    Logger.log(`⚠ 語彙外の概念タグ（公開からは除外）: ${[...unmatched].join(', ')}`);
+  }
+  return { concepts: concepts.slice(0, 8), unmatched: [...unmatched] };
+}
+
+// ==========================================
+// 概念タグ 月次レビューログ
+// ==========================================
+// マスター語彙にない概念タグ候補を Drive 上のログファイルに蓄積し、
+// 月1回 sendMonthlyConceptReport() でメール通知する。
+// トリガーの有効化は setupMonthlyConceptReportTrigger() を参照。
+
+const CONCEPT_REVIEW_LOG_FILE = 'concept-review-log.json';
+
+function appendConceptReviewLog(slug, unmatchedTags) {
+  const vaultFolderId = PropertiesService.getScriptProperties().getProperty('BOOKS_VAULT_FOLDER_ID');
+  if (!vaultFolderId) return;
+  const vaultFolder = DriveApp.getFolderById(vaultFolderId);
+
+  const existing = getFileContent(vaultFolder, CONCEPT_REVIEW_LOG_FILE);
+  const log = existing ? JSON.parse(existing) : [];
+  const today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd');
+
+  for (const tag of unmatchedTags) {
+    // 同じ本・同じタグの重複記録は避ける
+    if (!log.some(e => e.slug === slug && e.tag === tag)) {
+      log.push({ slug, tag, date: today });
+    }
+  }
+
+  upsertFile(vaultFolder, CONCEPT_REVIEW_LOG_FILE, JSON.stringify(log, null, 2));
+}
+
+/**
+ * 語彙外の概念タグ候補を月1回メールで報告する。
+ * 初回のみ setupMonthlyConceptReportTrigger() を GAS エディタで実行してトリガーを設定すること。
+ */
+function sendMonthlyConceptReport() {
+  const vaultFolderId = PropertiesService.getScriptProperties().getProperty('BOOKS_VAULT_FOLDER_ID');
+  if (!vaultFolderId) {
+    Logger.log('BOOKS_VAULT_FOLDER_ID が未設定のため、月次レポートをスキップします');
+    return;
+  }
+  const vaultFolder = DriveApp.getFolderById(vaultFolderId);
+  const existing = getFileContent(vaultFolder, CONCEPT_REVIEW_LOG_FILE);
+  const log = existing ? JSON.parse(existing) : [];
+
+  if (log.length === 0) {
+    Logger.log('語彙外の概念タグ候補はありません。メール送信をスキップします');
+    return;
+  }
+
+  // タグごとに集計（頻度・登場した本）
+  const byTag = new Map();
+  for (const entry of log) {
+    if (!byTag.has(entry.tag)) byTag.set(entry.tag, []);
+    byTag.get(entry.tag).push(entry.slug);
+  }
+  const sorted = [...byTag.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  const lines = sorted.map(([tag, slugs]) => {
+    const uniqueSlugs = [...new Set(slugs)];
+    return `・${tag}（${uniqueSlugs.length}冊: ${uniqueSlugs.join(', ')}）`;
+  });
+
+  const body = `歴史総合の概念タグ マスター語彙（127語）に含まれない候補が ${byTag.size} 件たまっています。
+必要なものがあれば src/data/concepts/history-general.json と gas_vault.js の CONCEPT_VOCABULARY に手動で追加してください。
+
+${lines.join('\n')}
+
+このメールは月1回自動送信されています。`;
+
+  const adminEmail = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL')
+                     || 'wa-kengo@pen-kanagawa.ed.jp';
+
+  try {
+    GmailApp.sendEmail(adminEmail, '[歴史HP] 概念タグ候補の月次レポート', body);
+    Logger.log(`月次レポートを ${adminEmail} に送信しました（${byTag.size} 件）`);
+
+    // 送信済みログはアーカイブして次回はゼロから集計する
+    const archiveName = `concept-review-log-archive-${Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM')}.json`;
+    upsertFile(vaultFolder, archiveName, JSON.stringify(log, null, 2));
+    upsertFile(vaultFolder, CONCEPT_REVIEW_LOG_FILE, '[]');
+  } catch (e) {
+    Logger.log(`月次レポートのメール送信エラー: ${e.message}`);
+  }
+}
+
+/**
+ * 初回のみ手動実行する。sendMonthlyConceptReport() を毎月1日の朝に実行するトリガーを設定する。
+ */
+function setupMonthlyConceptReportTrigger() {
+  // 既存の同名トリガーがあれば重複作成を防ぐため削除
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendMonthlyConceptReport')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('sendMonthlyConceptReport')
+    .timeBased()
+    .onMonthDay(1)
+    .atHour(8)
+    .create();
+
+  Logger.log('毎月1日 8時台に sendMonthlyConceptReport() を実行するトリガーを設定しました');
 }
 
 function extractRelatedUnits(content) {
@@ -908,7 +1061,8 @@ ${relatedUnitsYaml}
 - AI による解説・要約・コメントを本文に追加しない
 - <!-- featured --> を出力しない
 - 引用テキストは一字一句変えない
-- 前置き文（「以下に引用を示します」等）を書かない`;
+- 前置き文（「以下に引用を示します」等）を書かない
+- concepts: の値は上記フロントマターの通りに出力し、変更・追加しない`;
 }
 
 function callGeminiForSelection(apiKey, vaultContent, meta, concepts, relatedUnits) {
@@ -1044,7 +1198,7 @@ function commitToGitHub(token, owner, repo, path, content, slug, sha) {
 
 function notifyAdminOnFailure(slug, errorMessage) {
   const adminEmail = PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL')
-                     || 'kengo1983@gmail.com';
+                     || 'wa-kengo@pen-kanagawa.ed.jp';
   const now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm');
 
   try {

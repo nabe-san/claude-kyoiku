@@ -17,11 +17,13 @@ Usage:
 import os
 import sys
 import re
+import json
 from pathlib import Path
 from dotenv import load_dotenv
 
 VAULT_DIR = Path(__file__).parent
 SRC_BOOKS_DIR = VAULT_DIR.parent / "src" / "content" / "books"
+CONCEPT_VOCABULARY_PATH = VAULT_DIR.parent / "src" / "data" / "concepts" / "history-general.json"
 
 load_dotenv(VAULT_DIR / ".env")
 
@@ -70,6 +72,7 @@ relatedUnits:
 - <!-- featured --> を出力しない
 - 引用テキストは一字一句変えない
 - 前置き文（「以下に引用を示します」等）を書かない
+- concepts: の値は上記フロントマターの通りに出力し、変更・追加しない
 """
 
 
@@ -99,17 +102,33 @@ def parse_vault_frontmatter(vault_content: str) -> dict:
     return meta
 
 
-def extract_concepts_from_vault(vault_content: str) -> list:
+def load_concept_vocabulary() -> set:
+    """マスター語彙（歴史総合）の概念名の集合を読み込む。ファイルがなければ空集合を返す。"""
+    if not CONCEPT_VOCABULARY_PATH.exists():
+        return set()
+    data = json.loads(CONCEPT_VOCABULARY_PATH.read_text(encoding="utf-8"))
+    return {item["name"] for item in data}
+
+
+def extract_concepts_from_vault(vault_content: str, vocabulary: set) -> list:
     tags = re.findall(r'<!-- concepts:\s*([^-]+?)\s*-->', vault_content)
     seen = set()
     result = []
+    unmatched = set()
     for tag_line in tags:
         for t in tag_line.split(','):
             t = t.strip()
             # 「新規タグ候補:」は概念タグではないので除外
-            if t and not t.startswith('新規タグ候補') and t not in seen:
-                seen.add(t)
+            if not t or t.startswith('新規タグ候補') or t in seen:
+                continue
+            seen.add(t)
+            # マスター語彙にない語は公開タグに含めず、確認用にだけ表示する
+            if not vocabulary or t in vocabulary:
                 result.append(t)
+            else:
+                unmatched.add(t)
+    if unmatched:
+        print(f"⚠ 語彙外の概念タグ（公開からは除外）: {', '.join(sorted(unmatched))}")
     return result[:8]
 
 
@@ -178,7 +197,8 @@ def main():
     meta = parse_vault_frontmatter(vault_content)
     print(f"書誌情報: 『{meta.get('title')}』 {meta.get('author')}")
 
-    concepts = extract_concepts_from_vault(vault_content)
+    vocabulary = load_concept_vocabulary()
+    concepts = extract_concepts_from_vault(vault_content, vocabulary)
     related_units = read_existing_related_units(slug)
     print(f"概念タグ候補: {concepts}")
     if related_units:
