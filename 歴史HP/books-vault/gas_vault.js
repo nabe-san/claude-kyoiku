@@ -868,9 +868,12 @@ function publishToGitHub(slug, meta, vaultMarkdown) {
       Logger.log(`⚠ Vault が短すぎます。内容: ${vaultMarkdown.substring(0, 300)}`);
     }
     Logger.log('Gemini に引用選択を依頼中...');
-    const publicMd = callGeminiForSelection(apiKey, vaultMarkdown, meta, concepts, relatedUnits);
-    Logger.log(`Gemini 応答文字数: ${publicMd.length}`);
-    if (publicMd.length < 500) Logger.log(`Gemini 応答内容: ${publicMd}`);
+    const rawPublicMd = callGeminiForSelection(apiKey, vaultMarkdown, meta, concepts, relatedUnits);
+    Logger.log(`Gemini 応答文字数: ${rawPublicMd.length}`);
+    if (rawPublicMd.length < 500) Logger.log(`Gemini 応答内容: ${rawPublicMd}`);
+
+    // 3.5. 引用ごとの concepts を語彙で絞り込む（語彙外タグが本文に残らないようにする）
+    const publicMd = filterCitationConcepts(rawPublicMd);
 
     // 4. バリデーション
     validatePublicMd(publicMd, slug);
@@ -1095,6 +1098,19 @@ ${relatedUnitsYaml}
 - 引用テキストは一字一句変えない
 - 前置き文（「以下に引用を示します」等）を書かない
 - concepts: の値は上記フロントマターの通りに出力し、変更・追加しない`;
+}
+
+/**
+ * 公開Markdown本文中の引用ごとの <!-- concepts: --> を、マスター語彙にあるタグだけに絞り込む。
+ * 語彙外のタグ（自由記述・新規タグ候補など）はこの時点で落とし、タグが0件になった行は削除する。
+ */
+function filterCitationConcepts(text) {
+  return text.replace(/<!--\s*concepts:\s*([^-]+?)\s*-->/g, (match, tagsStr) => {
+    const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+    const kept = tags.filter(t => CONCEPT_VOCABULARY_SET.has(t));
+    if (kept.length === 0) return '';
+    return `<!-- concepts: ${kept.join(', ')} -->`;
+  });
 }
 
 function callGeminiForSelection(apiKey, vaultContent, meta, concepts, relatedUnits) {

@@ -137,6 +137,20 @@ def extract_concepts_from_vault(vault_content: str, vocabulary: set) -> list:
     return result[:8]
 
 
+def filter_citation_concepts(text: str, vocabulary: set) -> str:
+    """公開Markdown本文中の引用ごとの <!-- concepts: --> を、マスター語彙にあるタグだけに絞り込む。
+    語彙外のタグ（自由記述・新規タグ候補など）はこの時点で落とし、タグが0件になった行は削除する。
+    """
+    def replace(match: re.Match) -> str:
+        tags = [t.strip() for t in match.group(1).split(',') if t.strip()]
+        kept = [t for t in tags if not vocabulary or t in vocabulary]
+        if not kept:
+            return ''
+        return f'<!-- concepts: {", ".join(kept)} -->'
+
+    return re.sub(r'<!--\s*concepts:\s*([^-]+?)\s*-->', replace, text)
+
+
 def read_existing_related_units(slug: str) -> list:
     pub_file = SRC_BOOKS_DIR / f"{slug}.md"
     if not pub_file.exists():
@@ -210,6 +224,7 @@ def main():
         print(f"関連授業単元（既存から継承）: {related_units}")
 
     output = call_gemini(vault_content, meta, concepts, related_units)
+    output = filter_citation_concepts(output, vocabulary)
 
     pub_path.write_text(output, encoding="utf-8")
     print(f"\n公開用ファイルを生成しました: {pub_path}")
