@@ -28,6 +28,9 @@
         "chapter": {
           "type": "number"
         },
+        "group": {
+          "type": "number"
+        },
         "section": {
           "type": "number"
         },

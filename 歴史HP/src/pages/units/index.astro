@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import UnitCard from '../../components/UnitCard.astro';
-import { getCollection } from 'astro:content';
-import { historyGeneralCurriculum } from '../../lib/curriculum';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { historyGeneralCurriculum, civicsCurriculum, type CurriculumData } from '../../lib/curriculum';
 
 const units = await getCollection('units');
 
@@ -16,34 +16,69 @@ units.forEach(u => {
 });
 const allConcepts = [...conceptSubjectsMap.entries()];
 
-// 歴史総合：教科書目次（部→章→節）に沿って授業構成ページを割り当てる
-const historyUnits = units.filter(u => u.data.subject === 'history-general');
-const unitByPosition = new Map<string, (typeof historyUnits)[number]>();
-for (const u of historyUnits) {
-  if (u.data.chapter != null && u.data.section != null) {
-    unitByPosition.set(`${u.data.chapter}-${u.data.section}`, u);
-  }
-}
-
 const PART_ROMAN = ['', 'Ⅰ', 'Ⅱ', 'Ⅲ'];
 
-const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
-  ...part,
-  roman: PART_ROMAN[part.number] ?? String(part.number),
-  chapters: (historyGeneralCurriculum?.chapters ?? [])
-    .filter(c => c.part === part.number)
-    .map(chapter => ({
-      ...chapter,
-      sections: chapter.sections.map((title, idx) => {
-        const sectionNumber = idx + 1;
+// 教科書目次（部→章→節、または部→章→節グループ→節）に沿って授業構成ページを割り当てる
+function buildCurriculumParts(curriculum: CurriculumData | undefined, subjectUnits: CollectionEntry<'units'>[]) {
+  const unitByPosition = new Map<string, CollectionEntry<'units'>>();
+  for (const u of subjectUnits) {
+    if (u.data.chapter != null && u.data.section != null) {
+      unitByPosition.set(`${u.data.chapter}-${u.data.group ?? 0}-${u.data.section}`, u);
+    }
+  }
+
+  return (curriculum?.parts ?? []).map(part => ({
+    number: part.number,
+    title: part.title,
+    roman: PART_ROMAN[part.number] ?? String(part.number),
+    chapters: (curriculum?.chapters ?? [])
+      .filter(c => c.part === part.number)
+      .map(chapter => {
+        if (chapter.groups) {
+          return {
+            number: chapter.number,
+            title: chapter.title,
+            standalone: false,
+            kind: 'groups' as const,
+            groups: chapter.groups.map((group, gi) => ({
+              title: group.title,
+              sections: group.sections.map((title, si) => {
+                const sectionNumber = si + 1;
+                return {
+                  number: sectionNumber,
+                  title,
+                  unit: unitByPosition.get(`${chapter.number}-${gi + 1}-${sectionNumber}`),
+                };
+              }),
+            })),
+          };
+        }
         return {
-          number: sectionNumber,
-          title,
-          unit: unitByPosition.get(`${chapter.number}-${sectionNumber}`),
+          number: chapter.number,
+          title: chapter.title,
+          standalone: chapter.standalone ?? false,
+          kind: 'flat' as const,
+          sections: (chapter.sections ?? []).map((title, si) => {
+            const sectionNumber = si + 1;
+            return {
+              number: sectionNumber,
+              title,
+              unit: unitByPosition.get(`${chapter.number}-0-${sectionNumber}`),
+            };
+          }),
         };
       }),
-    })),
-}));
+  }));
+}
+
+const historyCurriculumParts = buildCurriculumParts(
+  historyGeneralCurriculum,
+  units.filter(u => u.data.subject === 'history-general')
+);
+const civicsCurriculumParts = buildCurriculumParts(
+  civicsCurriculum,
+  units.filter(u => u.data.subject === 'civics')
+);
 ---
 
 <BaseLayout title="授業一覧">
@@ -85,42 +120,138 @@ const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
   </div>
 
   <!-- ── 歴史総合：教科書目次に沿った構成表示 ── -->
-  <div class="container curriculum-container" id="curriculum-view" hidden>
-    {curriculumParts.map(part => (
+  <div class="container curriculum-container" id="curriculum-view-history-general" hidden>
+    {historyCurriculumParts.map(part => (
       <section class="curriculum-part">
         <h2 class="part-title">第{part.roman}部　{part.title}</h2>
         {part.chapters.map(chapter => (
           <div class="curriculum-chapter">
-            <h3 class="chapter-title">第{chapter.number}章　{chapter.title}</h3>
-            <ol class="section-list">
-              {chapter.sections.map(section => (
-                <li>
-                  {section.unit ? (
-                    <UnitCard
-                      id={section.unit.id}
-                      title={`${section.number}　${section.unit.data.title}`}
-                      subject={section.unit.data.subject}
-                      concepts={section.unit.data.concepts}
-                      bigQuestion={section.unit.data.bigQuestion}
-                      visual={section.unit.data.visual}
-                    />
-                  ) : (
-                    <div class="section-placeholder">
-                      <span class="section-num">{section.number}</span>
-                      <span class="section-title">{section.title}</span>
-                      <span class="section-status">準備中</span>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ol>
+            {!chapter.standalone && <h3 class="chapter-title">第{chapter.number}章　{chapter.title}</h3>}
+            {chapter.kind === 'flat' ? (
+              <ol class="section-list">
+                {chapter.sections.map(section => (
+                  <li>
+                    {section.unit ? (
+                      <UnitCard
+                        id={section.unit.id}
+                        title={`${section.number}　${section.unit.data.title}`}
+                        subject={section.unit.data.subject}
+                        concepts={section.unit.data.concepts}
+                        bigQuestion={section.unit.data.bigQuestion}
+                        visual={section.unit.data.visual}
+                      />
+                    ) : (
+                      <div class="section-placeholder">
+                        <span class="section-num">{section.number}</span>
+                        <span class="section-title">{section.title}</span>
+                        <span class="section-status">準備中</span>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              chapter.groups.map(group => (
+                <div class="curriculum-group">
+                  <h4 class="group-title">{group.title}</h4>
+                  <ol class="section-list">
+                    {group.sections.map(section => (
+                      <li>
+                        {section.unit ? (
+                          <UnitCard
+                            id={section.unit.id}
+                            title={`${section.number}　${section.unit.data.title}`}
+                            subject={section.unit.data.subject}
+                            concepts={section.unit.data.concepts}
+                            bigQuestion={section.unit.data.bigQuestion}
+                            visual={section.unit.data.visual}
+                          />
+                        ) : (
+                          <div class="section-placeholder">
+                            <span class="section-num">{section.number}</span>
+                            <span class="section-title">{section.title}</span>
+                            <span class="section-status">準備中</span>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))
+            )}
           </div>
         ))}
       </section>
     ))}
   </div>
 
-  <!-- ── フラット表示（すべて／日本史探究／公共） ── -->
+  <!-- ── 公共：教科書目次に沿った構成表示 ── -->
+  <div class="container curriculum-container" id="curriculum-view-civics" hidden>
+    {civicsCurriculumParts.map(part => (
+      <section class="curriculum-part">
+        <h2 class="part-title">第{part.roman}部　{part.title}</h2>
+        {part.chapters.map(chapter => (
+          <div class="curriculum-chapter">
+            {!chapter.standalone && <h3 class="chapter-title">第{chapter.number}章　{chapter.title}</h3>}
+            {chapter.kind === 'flat' ? (
+              <ol class="section-list">
+                {chapter.sections.map(section => (
+                  <li>
+                    {section.unit ? (
+                      <UnitCard
+                        id={section.unit.id}
+                        title={`${section.number}　${section.unit.data.title}`}
+                        subject={section.unit.data.subject}
+                        concepts={section.unit.data.concepts}
+                        bigQuestion={section.unit.data.bigQuestion}
+                        visual={section.unit.data.visual}
+                      />
+                    ) : (
+                      <div class="section-placeholder">
+                        <span class="section-num">{section.number}</span>
+                        <span class="section-title">{section.title}</span>
+                        <span class="section-status">準備中</span>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              chapter.groups.map(group => (
+                <div class="curriculum-group">
+                  <h4 class="group-title">{group.title}</h4>
+                  <ol class="section-list">
+                    {group.sections.map(section => (
+                      <li>
+                        {section.unit ? (
+                          <UnitCard
+                            id={section.unit.id}
+                            title={`${section.number}　${section.unit.data.title}`}
+                            subject={section.unit.data.subject}
+                            concepts={section.unit.data.concepts}
+                            bigQuestion={section.unit.data.bigQuestion}
+                            visual={section.unit.data.visual}
+                          />
+                        ) : (
+                          <div class="section-placeholder">
+                            <span class="section-num">{section.number}</span>
+                            <span class="section-title">{section.title}</span>
+                            <span class="section-status">準備中</span>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))
+            )}
+          </div>
+        ))}
+      </section>
+    ))}
+  </div>
+
+  <!-- ── フラット表示（すべて／日本史探究） ── -->
   <div class="container units-container" id="flat-view">
     <div class="units-grid" id="units-grid">
       {units.map(unit => (
@@ -146,7 +277,10 @@ const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
   const conceptChips = document.querySelectorAll<HTMLElement>('.concept-chip');
   const emptyMsg = document.getElementById('empty-message')!;
   const flatView = document.getElementById('flat-view')!;
-  const curriculumView = document.getElementById('curriculum-view')!;
+  const curriculumViews: Record<string, HTMLElement> = {
+    'history-general': document.getElementById('curriculum-view-history-general')!,
+    civics: document.getElementById('curriculum-view-civics')!,
+  };
 
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -155,12 +289,12 @@ const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
       // アクティブ状態を切り替え
       filterBtns.forEach(b => b.classList.toggle('active', b === btn));
 
-      // 歴史総合だけは教科書目次ビューに切り替える
-      const showCurriculum = subject === 'history-general';
-      curriculumView.hidden = !showCurriculum;
-      flatView.hidden = showCurriculum;
+      // 教科書目次ビューを持つ科目はそちらに切り替える
+      const curriculumView = curriculumViews[subject];
+      Object.values(curriculumViews).forEach(v => { v.hidden = v !== curriculumView; });
+      flatView.hidden = !!curriculumView;
 
-      if (!showCurriculum) {
+      if (!curriculumView) {
         // 単元カードを絞り込む
         let visibleCount = 0;
         unitWrappers.forEach(wrapper => {
@@ -342,6 +476,22 @@ const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
     font-weight: 700;
     color: var(--text);
     margin-bottom: 1rem;
+  }
+
+  .curriculum-group {
+    margin-bottom: 1.5rem;
+  }
+  .curriculum-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .group-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid var(--primary);
   }
 
   .section-list {

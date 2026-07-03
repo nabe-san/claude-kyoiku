@@ -7,8 +7,10 @@ const units = defineCollection({
     title: z.string(),
     subject: z.enum(['history-general', 'japanese-history', 'civics']),
     visual: z.enum(['imperialism', 'industrial', 'insei', 'default']).default('default'),
-    // 教科書目次上の位置（src/data/curriculum/ の章・節に対応）。歴史総合のみ現在使用。
+    // 教科書目次上の位置（src/data/curriculum/ の章・節に対応）。
     chapter: z.number().optional(),
+    // 節を挟む教科書（公共など）でのみ使用。章直下の節の何番目か（1始まり）。
+    group: z.number().optional(),
     section: z.number().optional(),
     concepts: z.array(z.string()),
     bigQuestion: z.string(),
