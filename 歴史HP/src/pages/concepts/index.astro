@@ -10,8 +10,9 @@ import {
 
 const units = await getCollection('units');
 const books = await getCollection('books');
+const notes = await getCollection('notes');
 
-// 概念タグごとのコンテンツ件数を集計（単元＋読書ノート）
+// 概念タグごとのコンテンツ件数を集計（授業構成＋読書ノート＋思考ノート）
 const conceptCountMap = new Map<string, number>();
 for (const unit of units) {
   for (const c of unit.data.concepts) {
@@ -20,6 +21,11 @@ for (const unit of units) {
 }
 for (const book of books) {
   for (const c of book.data.concepts) {
+    conceptCountMap.set(c, (conceptCountMap.get(c) ?? 0) + 1);
+  }
+}
+for (const note of notes) {
+  for (const c of note.data.concepts) {
     conceptCountMap.set(c, (conceptCountMap.get(c) ?? 0) + 1);
   }
 }

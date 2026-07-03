@@ -19,6 +19,8 @@ const displayedKeyTerms = keyTerms ?? keywords ?? [];
 
 const allBooks = await getCollection('books');
 const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
+const allNotes = await getCollection('notes');
+const linkedNotes = allNotes.filter(n => relatedNotes.includes(n.id));
 ---
 
 <BaseLayout title={title}>
@@ -128,7 +130,23 @@ const linkedBooks = allBooks.filter(b => relatedBooks.includes(b.id));
     </section>
   )}
 
-  <!-- ── ⑥ 関連思考ノート（未実装・スキップ） ── -->
+  <!-- ── ⑥ 関連思考ノート ── -->
+  {linkedNotes.length > 0 && (
+    <section class="related-section">
+      <div class="container">
+        <h2 class="side-section-title">関連思考ノート</h2>
+        <div class="note-links">
+          {linkedNotes.map(note => (
+            <a href={`/notes/${note.id}/`} class="note-link-card">
+              <span class="note-link-label">思考ノート</span>
+              <span class="note-link-title">{note.data.title}</span>
+              <span class="note-link-arrow">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
 
   <!-- ── ⑦ 大きな問いへの答え ── -->
   {answer && (

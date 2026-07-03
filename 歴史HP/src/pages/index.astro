@@ -8,6 +8,7 @@ import { getCollection } from 'astro:content';
 
 const units = await getCollection('units');
 const books = await getCollection('books');
+const notes = await getCollection('notes');
 
 // 全概念タグを収集・重複除去
 const allConcepts = [...new Set(units.flatMap(u => u.data.concepts))];
@@ -85,16 +86,16 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
             授業設計に影響を与えた本の記録。
             要約ではなく「この本から何を授業に持ち込んだか」の視点で書く。
           </p>
-          <span class="coming-soon">近日追加</span>
+          {books.length === 0 && <span class="coming-soon">近日追加</span>}
         </div>
         <div class="feature-card">
           <div class="feature-icon note-icon"><LineIcon name="thought" size={24} /></div>
           <h3>思考ノート</h3>
           <p>
-            授業を設計しながら浮かんだ問い、うまくいかなかった実践の記録。
-            失敗も含めた思考の痕跡。
+            複数の本を読み、授業でも繰り返し扱い、それでもまだ考え続けている問いの記録。
+            数は多くない。
           </p>
-          <span class="coming-soon">近日追加</span>
+          {notes.length === 0 && <span class="coming-soon">近日追加</span>}
         </div>
       </div>
     </div>
@@ -187,7 +188,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           </div>
           <div class="about-stat">
             <LineIcon name="notebook" size={20} />
-            <span class="stat-num">0</span>
+            <span class="stat-num">{notes.length}</span>
             <span class="stat-label">思考ノート</span>
           </div>
         </div>

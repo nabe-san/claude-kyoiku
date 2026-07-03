@@ -40,4 +40,16 @@ const books = defineCollection({
   }),
 });
 
-export const collections = { units, books };
+const notes = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
+  schema: z.object({
+    title: z.string(),
+    // まだ考え続けている問い。本文の軸になる。
+    question: z.string(),
+    concepts: z.array(z.string()).default([]),
+    relatedBooks: z.array(z.string()).default([]),
+    relatedUnits: z.array(z.string()).default([]),
+  }),
+});
+
+export const collections = { units, books, notes };

@@ -7,10 +7,12 @@ import { SUBJECT_LABELS, buildConceptCategoryMap } from '../../lib/concepts';
 export async function getStaticPaths() {
   const units = await getCollection('units');
   const books = await getCollection('books');
+  const notes = await getCollection('notes');
 
   const allConcepts = [...new Set([
     ...units.flatMap(u => u.data.concepts),
     ...books.flatMap(b => b.data.concepts),
+    ...notes.flatMap(n => n.data.concepts),
   ])];
 
   return allConcepts.map(concept => ({
@@ -19,11 +21,12 @@ export async function getStaticPaths() {
       concept,
       matchedUnits: units.filter(u => u.data.concepts.includes(concept)),
       matchedBooks: books.filter(b => b.data.concepts.includes(concept)),
+      matchedNotes: notes.filter(n => n.data.concepts.includes(concept)),
     },
   }));
 }
 
-const { concept, matchedUnits, matchedBooks } = Astro.props;
+const { concept, matchedUnits, matchedBooks, matchedNotes } = Astro.props;
 
 // この概念タグが科目別マスター語彙のどのカテゴリに属するか
 const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?? [])];
@@ -66,6 +69,10 @@ const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?
           <span class="count-num">{matchedBooks.length}</span>
           <span class="count-label">読書ノート</span>
         </span>
+        <span class="count-item">
+          <span class="count-num">{matchedNotes.length}</span>
+          <span class="count-label">思考ノート</span>
+        </span>
       </div>
     </div>
   </header>
@@ -104,6 +111,23 @@ const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?
               <a href={`/books/${book.id}/`} class="book-row">
                 <span class="book-row-title">{book.data.title}</span>
                 <span class="book-row-meta">{book.data.author}{book.data.year ? ` · ${book.data.year}年` : ''}</span>
+                <span class="book-row-arrow">→</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {matchedNotes.length > 0 && (
+        <section class="result-section">
+          <h2 class="result-title">
+            <span class="result-icon note-icon-sm">思</span>
+            思考ノート
+          </h2>
+          <div class="books-list">
+            {matchedNotes.map(note => (
+              <a href={`/notes/${note.id}/`} class="book-row">
+                <span class="book-row-title">{note.data.title}</span>
                 <span class="book-row-arrow">→</span>
               </a>
             ))}
