@@ -25,6 +25,12 @@
           ],
           "default": "default"
         },
+        "chapter": {
+          "type": "number"
+        },
+        "section": {
+          "type": "number"
+        },
         "concepts": {
           "type": "array",
           "items": {

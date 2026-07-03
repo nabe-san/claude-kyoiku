@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import UnitCard from '../../components/UnitCard.astro';
 import { getCollection } from 'astro:content';
+import { historyGeneralCurriculum } from '../../lib/curriculum';
 
 const units = await getCollection('units');
 
@@ -14,12 +15,41 @@ units.forEach(u => {
   });
 });
 const allConcepts = [...conceptSubjectsMap.entries()];
+
+// 歴史総合：教科書目次（部→章→節）に沿って授業構成ページを割り当てる
+const historyUnits = units.filter(u => u.data.subject === 'history-general');
+const unitByPosition = new Map<string, (typeof historyUnits)[number]>();
+for (const u of historyUnits) {
+  if (u.data.chapter != null && u.data.section != null) {
+    unitByPosition.set(`${u.data.chapter}-${u.data.section}`, u);
+  }
+}
+
+const PART_ROMAN = ['', 'Ⅰ', 'Ⅱ', 'Ⅲ'];
+
+const curriculumParts = (historyGeneralCurriculum?.parts ?? []).map(part => ({
+  ...part,
+  roman: PART_ROMAN[part.number] ?? String(part.number),
+  chapters: (historyGeneralCurriculum?.chapters ?? [])
+    .filter(c => c.part === part.number)
+    .map(chapter => ({
+      ...chapter,
+      sections: chapter.sections.map((title, idx) => {
+        const sectionNumber = idx + 1;
+        return {
+          number: sectionNumber,
+          title,
+          unit: unitByPosition.get(`${chapter.number}-${sectionNumber}`),
+        };
+      }),
+    })),
+}));
 ---
 
-<BaseLayout title="授業単元一覧">
+<BaseLayout title="授業一覧">
   <header class="page-header">
     <div class="container">
-      <h1 class="page-title">授業単元</h1>
+      <h1 class="page-title">授業構成</h1>
       <p class="page-desc">「大きな問い」と授業の全体像を軸にした授業設計ノート。</p>
     </div>
   </header>
@@ -37,7 +67,7 @@ const allConcepts = [...conceptSubjectsMap.entries()];
   </div>
 
   <!-- ── 概念タグ（科目連動） ── -->
-  <div class="concepts-bar">
+  <div class="concepts-bar" id="concepts-bar">
     <div class="container">
       <p class="concepts-label">この科目の概念タグ</p>
       <div class="concepts-row" id="concepts-row">
@@ -54,8 +84,44 @@ const allConcepts = [...conceptSubjectsMap.entries()];
     </div>
   </div>
 
-  <!-- ── 単元グリッド ── -->
-  <div class="container units-container">
+  <!-- ── 歴史総合：教科書目次に沿った構成表示 ── -->
+  <div class="container curriculum-container" id="curriculum-view" hidden>
+    {curriculumParts.map(part => (
+      <section class="curriculum-part">
+        <h2 class="part-title">第{part.roman}部　{part.title}</h2>
+        {part.chapters.map(chapter => (
+          <div class="curriculum-chapter">
+            <h3 class="chapter-title">第{chapter.number}章　{chapter.title}</h3>
+            <ol class="section-list">
+              {chapter.sections.map(section => (
+                <li>
+                  {section.unit ? (
+                    <UnitCard
+                      id={section.unit.id}
+                      title={`${section.number}　${section.unit.data.title}`}
+                      subject={section.unit.data.subject}
+                      concepts={section.unit.data.concepts}
+                      bigQuestion={section.unit.data.bigQuestion}
+                      visual={section.unit.data.visual}
+                    />
+                  ) : (
+                    <div class="section-placeholder">
+                      <span class="section-num">{section.number}</span>
+                      <span class="section-title">{section.title}</span>
+                      <span class="section-status">準備中</span>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </section>
+    ))}
+  </div>
+
+  <!-- ── フラット表示（すべて／日本史探究／公共） ── -->
+  <div class="container units-container" id="flat-view">
     <div class="units-grid" id="units-grid">
       {units.map(unit => (
         <div class="unit-wrapper" data-subject={unit.data.subject}>
@@ -70,7 +136,7 @@ const allConcepts = [...conceptSubjectsMap.entries()];
         </div>
       ))}
     </div>
-    <p class="empty-message" id="empty-message">この科目の単元はまだありません。</p>
+    <p class="empty-message" id="empty-message">この科目の授業構成はまだありません。</p>
   </div>
 </BaseLayout>
 
@@ -79,6 +145,8 @@ const allConcepts = [...conceptSubjectsMap.entries()];
   const unitWrappers = document.querySelectorAll<HTMLElement>('.unit-wrapper');
   const conceptChips = document.querySelectorAll<HTMLElement>('.concept-chip');
   const emptyMsg = document.getElementById('empty-message')!;
+  const flatView = document.getElementById('flat-view')!;
+  const curriculumView = document.getElementById('curriculum-view')!;
 
   filterBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -87,22 +155,27 @@ const allConcepts = [...conceptSubjectsMap.entries()];
       // アクティブ状態を切り替え
       filterBtns.forEach(b => b.classList.toggle('active', b === btn));
 
-      // 単元カードを絞り込む
-      let visibleCount = 0;
-      unitWrappers.forEach(wrapper => {
-        const show = subject === 'all' || wrapper.dataset.subject === subject;
-        wrapper.hidden = !show;
-        if (show) visibleCount++;
-      });
+      // 歴史総合だけは教科書目次ビューに切り替える
+      const showCurriculum = subject === 'history-general';
+      curriculumView.hidden = !showCurriculum;
+      flatView.hidden = showCurriculum;
+
+      if (!showCurriculum) {
+        // 単元カードを絞り込む
+        let visibleCount = 0;
+        unitWrappers.forEach(wrapper => {
+          const show = subject === 'all' || wrapper.dataset.subject === subject;
+          wrapper.hidden = !show;
+          if (show) visibleCount++;
+        });
+        emptyMsg.hidden = visibleCount > 0;
+      }
 
       // 概念タグを絞り込む
       conceptChips.forEach(chip => {
         const chipSubjects = chip.dataset.subjects?.split(',') ?? [];
         chip.hidden = !(subject === 'all' || chipSubjects.includes(subject));
       });
-
-      // 空状態メッセージ
-      emptyMsg.hidden = visibleCount > 0;
     });
   });
 
@@ -232,6 +305,81 @@ const allConcepts = [...conceptSubjectsMap.entries()];
     color: var(--text-dim);
     padding: 4rem 0;
     font-size: 1rem;
+  }
+
+  /* ── 教科書目次ビュー ── */
+  .curriculum-container {
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  .curriculum-part {
+    margin-bottom: 3.5rem;
+  }
+  .curriculum-part:last-child {
+    margin-bottom: 0;
+  }
+
+  .part-title {
+    font-size: 1.4rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  .curriculum-chapter {
+    margin-bottom: 2.25rem;
+  }
+  .curriculum-chapter:last-child {
+    margin-bottom: 0;
+  }
+
+  .chapter-title {
+    font-size: 1.05rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .section-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.9rem 1.25rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .section-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-width: 1.4em;
+  }
+
+  .section-title {
+    flex: 1;
+    font-size: 0.92rem;
+  }
+
+  .section-status {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
   }
 
   /* ── レスポンシブ ── */

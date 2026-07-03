@@ -2,6 +2,8 @@
 title: 帝国主義と列強の世界分割
 subject: history-general
 visual: imperialism
+chapter: 2
+section: 5
 concepts:
   - 帝国主義
   - 国民国家

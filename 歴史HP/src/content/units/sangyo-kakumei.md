@@ -2,6 +2,8 @@
 title: 産業革命と近代社会の形成
 subject: history-general
 visual: industrial
+chapter: 1
+section: 3
 concepts:
   - 資本主義
   - 工業化
