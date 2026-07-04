@@ -36,6 +36,9 @@
 # 歴史HPの読書ノート書影
 !歴史HP/src/assets/covers/**
 
+# 歴史HPの授業構成サムネイル画像
+!歴史HP/src/assets/unit-visuals/**
+
 # スライドテンプレート（大容量バイナリ）
 スライド作成/templates/
 

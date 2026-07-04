@@ -2,6 +2,8 @@
 import ConceptBadge from './ConceptBadge.astro';
 import SubjectBadge from './SubjectBadge.astro';
 import UnitVisual from './UnitVisual.astro';
+import { Image } from 'astro:assets';
+import { unitVisualsBySlug, unitVisualFocus } from '../lib/unit-visuals';
 
 interface Props {
   id: string;
@@ -12,13 +14,24 @@ interface Props {
   visual?: 'imperialism' | 'industrial' | 'insei' | 'default';
 }
 const { id, title, subject, concepts, bigQuestion, visual = 'default' } = Astro.props;
+const customVisual = unitVisualsBySlug[id];
 ---
 
 <article class="unit-card card">
   <!-- カード全体のクリック領域（透明オーバーレイ） -->
   <a href={`/units/${id}/`} class="card-overlay" aria-label={title}></a>
 
-  <UnitVisual visual={visual} />
+  {customVisual ? (
+    <Image
+      src={customVisual}
+      alt=""
+      class="unit-visual-img"
+      width={480}
+      style={`object-position: ${unitVisualFocus[id] ?? 'center'}`}
+    />
+  ) : (
+    <UnitVisual visual={visual} />
+  )}
 
   <div class="unit-card-header">
     <SubjectBadge subject={subject} />
@@ -74,6 +87,15 @@ const { id, title, subject, concepts, bigQuestion, visual = 'default' } = Astro.
   .unit-card:hover .unit-card-arrow {
     transform: translateX(3px);
     color: var(--primary);
+  }
+
+  .unit-visual-img {
+    display: block;
+    width: calc(100% + 3rem);
+    height: 108px;
+    object-fit: cover;
+    margin: -1.5rem -1.5rem 0.25rem;
+    border-bottom: 1px solid var(--border);
   }
 
   .unit-card-title {
