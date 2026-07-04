@@ -163,6 +163,11 @@ const citationTags = [...citationTagCounts.entries()].sort((a, b) => b[1] - a[1]
               </blockquote>
             )}
             {c.citation && <p><em>{c.citation}</em></p>}
+            {c.concepts.length > 0 && (
+              <div class="citation-tags">
+                {c.concepts.map(tag => <ConceptBadge concept={tag} size="sm" />)}
+              </div>
+            )}
           </div>
         ))}
         <p class="citation-empty-message" id="citation-empty-message">このタグを持つ引用はありません。</p>
@@ -354,6 +359,15 @@ const citationTags = [...citationTagCounts.entries()].sort((a, b) => b[1] - a[1]
     text-align: center;
     color: var(--text-dim);
     padding: 3rem 0;
+  }
+
+  .citation-tags {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: -1.5rem;
+    margin-bottom: 2.25rem;
   }
 
   /* ── 関連授業単元 ── */
