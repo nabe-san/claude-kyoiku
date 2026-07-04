@@ -23,12 +23,10 @@ const books = await getCollection('books');
       <div class="books-grid">
         {books.map(book => (
           <a href={`/books/${book.id}/`} class="book-card">
-            {coversBySlug[book.id] ? (
-              <Image src={coversBySlug[book.id]} alt="" class="book-cover" width={160} />
-            ) : (
-              <div class="book-spine"></div>
-            )}
             <div class="book-body">
+              {coversBySlug[book.id] && (
+                <Image src={coversBySlug[book.id]} alt="" class="book-cover" width={140} />
+              )}
               <p class="book-author">{book.data.author}{book.data.year ? `（${book.data.year}）` : ''}</p>
               <h2 class="book-title">{book.data.title}</h2>
               {book.data.summary && (
@@ -76,9 +74,10 @@ const books = await getCollection('books');
   }
 
   .book-card {
-    display: flex;
+    display: block;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
+    border-left: 10px solid var(--primary);
     border-radius: 12px;
     overflow: hidden;
     text-decoration: none;
@@ -90,26 +89,17 @@ const books = await getCollection('books');
     transform: translateY(-2px);
   }
 
-  .book-spine {
-    width: 10px;
-    background: var(--primary);
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-
   .book-cover {
-    width: 80px;
+    float: right;
+    width: 72px;
     height: auto;
-    flex-shrink: 0;
-    align-self: flex-start;
-    margin: 1.25rem 0 1.25rem 1.25rem;
+    margin: 0 0 0.75rem 1rem;
     border-radius: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
   .book-body {
     padding: 1.5rem;
-    flex: 1;
   }
 
   .book-author {
