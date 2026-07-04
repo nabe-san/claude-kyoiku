@@ -33,6 +33,9 @@
 !歴史シミュレーション/scenarios/**/*.png
 !歴史シミュレーション/scenarios/**/*.gif
 
+# 歴史HPの読書ノート書影
+!歴史HP/src/assets/covers/**
+
 # スライドテンプレート（大容量バイナリ）
 スライド作成/templates/
 
