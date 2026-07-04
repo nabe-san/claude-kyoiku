@@ -2,6 +2,8 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ConceptBadge from '../../components/ConceptBadge.astro';
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import { coversBySlug } from '../../lib/covers';
 
 const books = await getCollection('books');
 ---
@@ -21,7 +23,11 @@ const books = await getCollection('books');
       <div class="books-grid">
         {books.map(book => (
           <a href={`/books/${book.id}/`} class="book-card">
-            <div class="book-spine"></div>
+            {coversBySlug[book.id] ? (
+              <Image src={coversBySlug[book.id]} alt="" class="book-cover" width={80} height={240} />
+            ) : (
+              <div class="book-spine"></div>
+            )}
             <div class="book-body">
               <p class="book-author">{book.data.author}{book.data.year ? `（${book.data.year}）` : ''}</p>
               <h2 class="book-title">{book.data.title}</h2>
@@ -89,6 +95,14 @@ const books = await getCollection('books');
     background: var(--primary);
     flex-shrink: 0;
     opacity: 0.7;
+  }
+
+  .book-cover {
+    width: 80px;
+    flex-shrink: 0;
+    object-fit: cover;
+    align-self: stretch;
+    height: auto;
   }
 
   .book-body {

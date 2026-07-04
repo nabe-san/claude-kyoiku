@@ -200,6 +200,7 @@
 src/content/units/      ← 授業単元 Markdown
 src/content/books/      ← 読書ノート公開用（publish 時に AI が選択した引用のみ）
 src/data/concepts/      ← 概念タグ マスター語彙（科目別 JSON。history-general.json など）
+src/assets/covers/      ← 読書ノートの書影（[slug].jpg 等。ファイルを置くだけで自動表示、frontmatter編集は不要）
 src/pages/              ← ルーティング（Astro ページ）
 src/components/         ← 再利用コンポーネント
 src/styles/global.css   ← 唯一のグローバル CSS
@@ -279,6 +280,7 @@ books-vault/            ← 読書ノート全引用保管（.gitignore 必須�
 - [ ] `concepts:` に既存タグが設定されているか確認した（3〜5個を目安）
 - [ ] 関連する授業単元があれば `relatedUnits:` に追加した
 - [ ] `summary:` は任意。書く場合は2〜3行以内
+- [ ] 書影があれば `src/assets/covers/[slug].jpg`（または .png/.webp）を置いた（frontmatter編集は不要）
 
 ### 新しいコンポーネントを追加するとき
 
