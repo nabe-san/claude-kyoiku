@@ -1,5 +1,5 @@
 ---
-title: 産業革命と近代社会の形成
+title: 産業革命
 subject: history-general
 visual: industrial
 chapter: 1

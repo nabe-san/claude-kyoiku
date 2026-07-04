@@ -1,5 +1,5 @@
 ---
-title: 帝国主義と列強の世界分割
+title: 帝国主義
 subject: history-general
 visual: imperialism
 chapter: 2
