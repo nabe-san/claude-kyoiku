@@ -24,7 +24,7 @@ const books = await getCollection('books');
         {books.map(book => (
           <a href={`/books/${book.id}/`} class="book-card">
             {coversBySlug[book.id] ? (
-              <Image src={coversBySlug[book.id]} alt="" class="book-cover" width={80} height={240} />
+              <Image src={coversBySlug[book.id]} alt="" class="book-cover" width={160} />
             ) : (
               <div class="book-spine"></div>
             )}
@@ -99,10 +99,12 @@ const books = await getCollection('books');
 
   .book-cover {
     width: 80px;
-    flex-shrink: 0;
-    object-fit: cover;
-    align-self: stretch;
     height: auto;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin: 1.25rem 0 1.25rem 1.25rem;
+    border-radius: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
   .book-body {

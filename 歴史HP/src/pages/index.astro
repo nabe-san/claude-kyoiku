@@ -75,8 +75,8 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           <div class="feature-icon unit-icon"><LineIcon name="map" size={24} /></div>
           <h3>授業構成</h3>
           <p>
-            「大きな問い」と授業の全体像を軸にした授業設計ノート。
-            なぜこの問いを立てたかという設計の裏側まで記録する。
+            「大きな問い」を出発点に、授業全体の流れを整理したノート。
+            授業のねらいや授業展開を見通すことができます。
           </p>
         </div>
         <div class="feature-card">
@@ -84,7 +84,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           <h3>読書ノート</h3>
           <p>
             授業設計に影響を与えた本の記録。
-            要約ではなく「この本から何を授業に持ち込んだか」の視点で書く。
+            概念タグから、必要な引用や授業づくりのヒントを探せます。
           </p>
           {books.length === 0 && <span class="coming-soon">近日追加</span>}
         </div>
@@ -92,8 +92,8 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           <div class="feature-icon note-icon"><LineIcon name="thought" size={24} /></div>
           <h3>思考ノート</h3>
           <p>
-            複数の本を読み、授業でも繰り返し扱い、それでもまだ考え続けている問いの記録。
-            数は多くない。
+            授業者が考え続けている問いの記録。
+            授業で扱いながら残ってきた問いを少しずつ蓄積しています。
           </p>
           {notes.length === 0 && <span class="coming-soon">近日追加</span>}
         </div>
