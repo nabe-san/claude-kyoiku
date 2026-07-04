@@ -76,6 +76,7 @@
   { "slug": "shousenkyokusei", "name": "小選挙区制", "category": "政治制度（国内）" },
   { "slug": "hireidaihyousei", "name": "比例代表制", "category": "政治制度（国内）" },
   { "slug": "seitouseiji", "name": "政党政治", "category": "政治制度（国内）" },
+  { "slug": "atsuryokudantai", "name": "利益団体（圧力団体）", "category": "政治制度（国内）" },
 
   { "slug": "shuken", "name": "主権", "category": "横断重要概念" },
   { "slug": "kenri", "name": "権利", "category": "横断重要概念" },
