@@ -1,5 +1,5 @@
 // 教科書目次の読み込みユーティリティ。
-// 正本は src/data/curriculum/*.json（history-general.json / civics.json）。
+// 正本は src/data/curriculum/*.json（history-general.json / japanese-history.json / civics.json）。
 //
 // 教科書によって階層の深さが異なるため、章は次の2パターンのどちらかを取る：
 //   - sections だけを持つ（節を挟まない。歴史総合の各章、公共 第1部の各章）
@@ -33,6 +33,9 @@ const curriculumFiles = import.meta.glob('/src/data/curriculum/*.json', { eager:
 
 export const historyGeneralCurriculum: CurriculumData | undefined =
   curriculumFiles['/src/data/curriculum/history-general.json']?.default;
+
+export const japaneseHistoryCurriculum: CurriculumData | undefined =
+  curriculumFiles['/src/data/curriculum/japanese-history.json']?.default;
 
 export const civicsCurriculum: CurriculumData | undefined =
   curriculumFiles['/src/data/curriculum/civics.json']?.default;

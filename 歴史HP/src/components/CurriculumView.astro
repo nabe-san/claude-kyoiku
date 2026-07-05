@@ -1,0 +1,198 @@
+---
+// 教科書目次（部→章→節、または部→章→節グループ→節）に沿った授業構成の表示。
+// units/index.astro の buildCurriculumParts() が組み立てたデータを描画する。
+import UnitCard from './UnitCard.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface SectionView {
+  number: number;
+  title: string;
+  unit?: CollectionEntry<'units'>;
+}
+interface ChapterView {
+  number: number;
+  title: string;
+  standalone: boolean;
+  kind: 'flat' | 'groups';
+  sections?: SectionView[];
+  groups?: { title: string; sections: SectionView[] }[];
+}
+interface PartView {
+  number: number;
+  title: string;
+  roman: string;
+  chapters: ChapterView[];
+}
+
+interface Props {
+  id: string;
+  parts: PartView[];
+}
+
+const { id, parts } = Astro.props;
+---
+
+<div class="container curriculum-container" id={id} hidden>
+  {parts.map(part => (
+    <section class="curriculum-part">
+      <h2 class="part-title">第{part.roman}部　{part.title}</h2>
+      {part.chapters.map(chapter => (
+        <div class="curriculum-chapter">
+          {!chapter.standalone && <h3 class="chapter-title">第{chapter.number}章　{chapter.title}</h3>}
+          {chapter.kind === 'flat' ? (
+            <ol class="section-list">
+              {chapter.sections!.map(section => (
+                <li>
+                  {section.unit ? (
+                    <UnitCard
+                      id={section.unit.id}
+                      title={`${section.number}　${section.unit.data.title}`}
+                      subject={section.unit.data.subject}
+                      concepts={section.unit.data.concepts}
+                      bigQuestion={section.unit.data.bigQuestion}
+                      visual={section.unit.data.visual}
+                    />
+                  ) : (
+                    <div class="section-placeholder">
+                      <span class="section-num">{section.number}</span>
+                      <span class="section-title">{section.title}</span>
+                      <span class="section-status">準備中</span>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            chapter.groups!.map(group => (
+              <div class="curriculum-group">
+                <h4 class="group-title">{group.title}</h4>
+                <ol class="section-list">
+                  {group.sections.map(section => (
+                    <li>
+                      {section.unit ? (
+                        <UnitCard
+                          id={section.unit.id}
+                          title={`${section.number}　${section.unit.data.title}`}
+                          subject={section.unit.data.subject}
+                          concepts={section.unit.data.concepts}
+                          bigQuestion={section.unit.data.bigQuestion}
+                          visual={section.unit.data.visual}
+                        />
+                      ) : (
+                        <div class="section-placeholder">
+                          <span class="section-num">{section.number}</span>
+                          <span class="section-title">{section.title}</span>
+                          <span class="section-status">準備中</span>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))
+          )}
+        </div>
+      ))}
+    </section>
+  ))}
+</div>
+
+<style>
+  .curriculum-container {
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  .curriculum-part {
+    margin-bottom: 3.5rem;
+  }
+  .curriculum-part:last-child {
+    margin-bottom: 0;
+  }
+
+  .part-title {
+    font-size: 1.4rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  .curriculum-chapter {
+    margin-bottom: 2.25rem;
+  }
+  .curriculum-chapter:last-child {
+    margin-bottom: 0;
+  }
+
+  .chapter-title {
+    font-size: 1.05rem;
+    font-family: "Noto Serif JP", serif;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .curriculum-group {
+    margin-bottom: 1.5rem;
+  }
+  .curriculum-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .group-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 3px solid var(--primary);
+  }
+
+  .section-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .section-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 180px;
+    padding: 1.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    opacity: 0.6;
+    text-align: center;
+  }
+
+  .section-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .section-title {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .section-status {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.2em 0.8em;
+    margin-top: 0.25rem;
+  }
+</style>

@@ -2,6 +2,8 @@
 title: 院政のはじまり
 subject: japanese-history
 visual: insei
+chapter: 5
+section: 1
 concepts:
   - イエ
   - 荘園公領制
