@@ -40,26 +40,17 @@
                           "image":  "assets/scenes/iran-constitutional-hero.png"
                       },
                       {
-                          "id":  "04_bismarck_nation_state",
-                          "title":  "ビスマルクと国民国家の建設",
-                          "tag":  "準備中",
-                          "era":  "1862〜1871年",
-                          "concept":  "国民国家とナショナリズム / 因果と帰結",
-                          "bigQuestion":  "国民国家は、合意によって作られるのか、権力によって作られるのか？",
-                          "description":  "「鉄血宰相」ビスマルクの視点でドイツ統一を追体験。武力と外交のバランスをどう取るか？",
-                          "bg":  "linear-gradient(180deg,#4a4a5a 0%,#1a1a2a 100%)",
-                          "status":  "coming-soon"
-                      },
-                      {
-                          "id":  "05_sun_yat_sen_revolution",
-                          "title":  "孫文と中国革命の岐路",
-                          "tag":  "準備中",
-                          "era":  "1905〜1912年",
-                          "concept":  "国民国家とナショナリズム / 因果と帰結",
-                          "bigQuestion":  "革命は、どのような条件がそろったときに社会を動かす力になるのか？",
-                          "description":  "日露戦後、孫文が中国革命を目指した時代。革命派の戦略をどう選択するか？",
-                          "bg":  "linear-gradient(180deg,#5a4a3a 0%,#2a1a0a 100%)",
-                          "status":  "coming-soon"
+                          "id":  "04_dongdu_phan_boi_chau",
+                          "title":  "希望と裏切り ── ファン・ボイ・チャウの選択",
+                          "tag":  "日露戦争の影響",
+                          "era":  "1905〜1912年 東遊（ドンズー）運動",
+                          "concept":  "帝国主義と植民地主義 / 因果と帰結",
+                          "bigQuestion":  "アジア解放のモデルだった日本は、なぜアジアの独立運動を裏切ることになったのか？",
+                          "description":  "日露戦争の勝利に希望を託し、日本留学に若者を送り込んだベトナムの独立運動家。日本自身が帝国主義国家として振る舞い始めたとき、彼はどんな選択を迫られたのか。",
+                          "data":  "scenarios/04_日露戦争影響_ドンズー運動/scenario.json",
+                          "bg":  "linear-gradient(180deg,#6a5a3a 0%,#3a2a18 100%)",
+                          "status":  "ready",
+                          "image":  "assets/scenes/dongdu-hero.jpg"
                       }
                   ]
 }
