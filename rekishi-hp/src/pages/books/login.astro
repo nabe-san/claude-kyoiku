@@ -1,0 +1,178 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BOOKS_ACCESS_PASSWORD, BOOKS_SESSION_SECRET } from 'astro:env/server';
+import {
+  BOOKS_SESSION_COOKIE,
+  BOOKS_SESSION_MAX_AGE,
+  BOOKS_SESSION_PATH,
+  createSessionToken,
+  sanitizeBooksRedirect,
+  verifySharedPassword,
+} from '../../lib/auth';
+
+if (!BOOKS_ACCESS_PASSWORD || !BOOKS_SESSION_SECRET) {
+  return new Response('読書ノートは現在設定の都合により利用できません。', {
+    status: 503,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
+}
+
+let errorMessage = '';
+let redirectTarget = sanitizeBooksRedirect(Astro.url.searchParams.get('redirect'));
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const password = String(form.get('password') ?? '');
+  redirectTarget = sanitizeBooksRedirect(String(form.get('redirect') ?? redirectTarget));
+
+  const ok = await verifySharedPassword(password, BOOKS_ACCESS_PASSWORD);
+
+  if (ok) {
+    const token = await createSessionToken(BOOKS_SESSION_SECRET);
+    const secure = Astro.url.protocol === 'https:';
+    Astro.cookies.set(BOOKS_SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure,
+      sameSite: 'lax',
+      path: BOOKS_SESSION_PATH,
+      maxAge: BOOKS_SESSION_MAX_AGE,
+    });
+    return Astro.redirect(redirectTarget);
+  }
+
+  errorMessage = 'パスワードが正しくありません。';
+}
+---
+
+<BaseLayout title="読書ノートへのアクセス" noindex>
+  <div class="login-container">
+    <div class="login-card">
+      <p class="login-badge">読書ノート</p>
+      <h1 class="login-title">読書ノートは限定公開です</h1>
+      <p class="login-desc">共有パスワードを入力すると閲覧できます。</p>
+
+      {errorMessage && <p class="login-error" role="alert">{errorMessage}</p>}
+
+      <form method="POST" class="login-form">
+        <input type="hidden" name="redirect" value={redirectTarget} />
+        <label for="password" class="login-label">パスワード</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+          class="login-input"
+        />
+        <button type="submit" class="login-submit">閲覧する</button>
+      </form>
+
+      <p class="login-back"><a href="/">トップページへ戻る</a></p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .login-container {
+    display: flex;
+    justify-content: center;
+    padding: 5rem 1.5rem;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-left: 10px solid var(--primary);
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+  }
+
+  .login-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--node-book);
+    background: rgba(252, 211, 77, 0.12);
+    border: 1px solid rgba(252, 211, 77, 0.3);
+    border-radius: 100px;
+    padding: 0.2em 0.8em;
+    margin: 0 0 1rem;
+  }
+
+  .login-title {
+    font-size: 1.4rem;
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+    margin: 0 0 0.5rem;
+  }
+
+  .login-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .login-error {
+    font-size: 0.85rem;
+    color: #b91c1c;
+    background: rgba(185, 28, 28, 0.08);
+    border: 1px solid rgba(185, 28, 28, 0.25);
+    border-radius: 8px;
+    padding: 0.6em 1em;
+    margin: 0 0 1.25rem;
+  }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .login-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .login-input {
+    font-size: 1rem;
+    padding: 0.6em 0.8em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+
+  .login-submit {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    padding: 0.7em 1em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .login-submit:hover {
+    opacity: 0.9;
+  }
+
+  .login-back {
+    text-align: center;
+    margin: 1.5rem 0 0;
+    font-size: 0.85rem;
+  }
+  .login-back a {
+    color: var(--text-muted);
+  }
+  .login-back a:hover {
+    color: var(--primary);
+  }
+</style>
