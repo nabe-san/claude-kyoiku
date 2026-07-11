@@ -859,7 +859,7 @@ function publishToGitHub(slug, meta, vaultMarkdown) {
     }
 
     // 2. 既存公開ファイルの relatedUnits を取得（上書きを防ぐ）
-    const filePath = `歴史HP/src/content/books/${slug}.md`;
+    const filePath = `rekishi-hp/src/content/books/${slug}.md`;
     const existing = getGitHubFile(token, owner, repo, filePath);
     const relatedUnits = existing ? extractRelatedUnits(existing.content) : [];
     if (relatedUnits.length > 0) {

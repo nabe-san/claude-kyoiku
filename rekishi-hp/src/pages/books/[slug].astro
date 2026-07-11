@@ -1,19 +1,19 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ConceptBadge from '../../components/ConceptBadge.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import { coversBySlug } from '../../lib/covers';
 
-export async function getStaticPaths() {
-  const books = await getCollection('books');
-  return books.map(entry => ({
-    params: { slug: entry.id },
-    props: { entry },
-  }));
+const { slug } = Astro.params;
+const entry = slug ? await getEntry('books', slug) : undefined;
+
+if (!entry) {
+  return new Response('Not Found', { status: 404 });
 }
 
-const { entry } = Astro.props;
 const { title, author, year, publisher, summary, concepts, relatedUnits } = entry.data;
 const cover = coversBySlug[entry.id];
 
