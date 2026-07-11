@@ -63,7 +63,7 @@ const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?
       <div class="concept-counts">
         <span class="count-item">
           <span class="count-num">{matchedUnits.length}</span>
-          <span class="count-label">授業構成</span>
+          <span class="count-label">授業一覧</span>
         </span>
         <span class="count-item">
           <span class="count-num">{matchedBooks.length}</span>
@@ -83,8 +83,8 @@ const classifications = [...(buildConceptCategoryMap().get(concept)?.entries() ?
       {matchedUnits.length > 0 && (
         <section class="result-section">
           <h2 class="result-title">
-            <span class="result-icon unit-icon-sm">構</span>
-            授業構成
+            <span class="result-icon unit-icon-sm">覧</span>
+            授業一覧
           </h2>
           <div class="units-grid">
             {matchedUnits.map(unit => (

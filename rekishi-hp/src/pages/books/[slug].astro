@@ -187,11 +187,11 @@ const citationTags = [...citationTagCounts.entries()].sort((a, b) => b[1] - a[1]
   {linkedUnits.length > 0 && (
     <section class="related-units">
       <div class="container">
-        <h2 class="related-title">この本を参照した授業構成</h2>
+        <h2 class="related-title">この本を参照した授業一覧</h2>
         <div class="unit-links">
           {linkedUnits.map(u => (
             <a href={`/units/${u.id}/`} class="unit-link-card">
-              <span class="unit-link-label">授業構成</span>
+              <span class="unit-link-label">授業一覧</span>
               <span class="unit-link-title">{u.data.title}</span>
               <span class="unit-link-question">{u.data.bigQuestion}</span>
               <span class="unit-link-arrow">→</span>

@@ -56,7 +56,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           </p>
           <div class="hero-actions">
             <a href="/concepts/" class="btn btn-primary">概念タグを探す</a>
-            <a href="/units/" class="btn btn-ghost">授業構成を見る</a>
+            <a href="/units/" class="btn btn-ghost">授業一覧を見る</a>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon unit-icon"><LineIcon name="map" size={24} /></div>
-          <h3>授業構成</h3>
+          <h3>授業一覧</h3>
           <p>
             「大きな問い」を出発点に、授業全体の流れを整理したノート。
             授業のねらいや授業展開を見通すことができます。
@@ -106,7 +106,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
     <section class="section recent-section">
       <div class="container">
         <div class="section-title">
-          <h2>最近の授業構成</h2>
+          <h2>最近の授業一覧</h2>
         </div>
         <div class="units-grid">
           {units.slice(0, 3).map(unit => (
@@ -121,7 +121,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           ))}
         </div>
         <div style="text-align:center; margin-top:2.5rem;">
-          <a href="/units/" class="btn btn-ghost">すべての授業構成を見る →</a>
+          <a href="/units/" class="btn btn-ghost">すべての授業一覧を見る →</a>
         </div>
       </div>
     </section>
@@ -174,7 +174,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
           <div class="about-stat">
             <LineIcon name="map" size={20} />
             <span class="stat-num">{units.length}</span>
-            <span class="stat-label">授業構成</span>
+            <span class="stat-label">授業一覧</span>
           </div>
           <div class="about-stat">
             <LineIcon name="tag" size={20} />

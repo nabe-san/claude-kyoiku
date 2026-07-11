@@ -88,7 +88,7 @@ const linkedUnits = allUnits.filter(u => relatedUnits.includes(u.id));
           <div class="unit-links">
             {linkedUnits.map(unit => (
               <a href={`/units/${unit.id}/`} class="unit-link-card">
-                <span class="unit-link-label">授業構成</span>
+                <span class="unit-link-label">授業一覧</span>
                 <span class="unit-link-title">{unit.data.title}</span>
                 <span class="unit-link-question">{unit.data.bigQuestion}</span>
                 <span class="unit-link-arrow">→</span>
