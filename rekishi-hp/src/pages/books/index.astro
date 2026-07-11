@@ -10,11 +10,14 @@ import { coversBySlug } from '../../lib/covers';
 const books = await getCollection('books');
 ---
 
-<BaseLayout title="読書ノート">
+<BaseLayout title="読書ノート" noindex>
   <header class="page-header">
     <div class="container">
       <h1 class="page-title">読書ノート</h1>
       <p class="page-desc">授業づくりの参考にした本の記録。概念タグを通じて多面的・多角的な視点を得ることができる。</p>
+      <form method="POST" action="/books/logout" class="logout-form">
+        <button type="submit" class="logout-link">ログアウト</button>
+      </form>
     </div>
   </header>
 
@@ -63,6 +66,22 @@ const books = await getCollection('books');
     font-size: 1rem;
     color: var(--text-muted);
     margin: 0;
+  }
+
+  .logout-form {
+    margin: 0.75rem 0 0;
+  }
+  .logout-link {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .logout-link:hover {
+    color: var(--primary);
   }
 
   .books-container {

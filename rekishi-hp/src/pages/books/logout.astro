@@ -1,0 +1,60 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BOOKS_SESSION_COOKIE, BOOKS_SESSION_PATH } from '../../lib/auth';
+
+// 重要な状態変更（Cookie削除）はPOST時のみ行う。GETでは確認画面を表示するだけ。
+if (Astro.request.method === 'POST') {
+  Astro.cookies.delete(BOOKS_SESSION_COOKIE, { path: BOOKS_SESSION_PATH });
+  return Astro.redirect('/books/login');
+}
+---
+
+<BaseLayout title="ログアウト" noindex>
+  <div class="logout-container">
+    <div class="logout-card">
+      <h1 class="logout-title">ログアウトしますか？</h1>
+      <form method="POST" class="logout-form">
+        <button type="submit" class="logout-submit">ログアウトする</button>
+      </form>
+      <p class="logout-cancel"><a href="/books/">キャンセルして戻る</a></p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .logout-container {
+    display: flex;
+    justify-content: center;
+    padding: 5rem 1.5rem;
+  }
+  .logout-card {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  .logout-title {
+    font-size: 1.25rem;
+    font-family: "Noto Serif JP", serif;
+    color: var(--text);
+    margin: 0 0 1.5rem;
+  }
+  .logout-submit {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    padding: 0.6em 1.4em;
+    cursor: pointer;
+  }
+  .logout-cancel {
+    margin: 1.25rem 0 0;
+    font-size: 0.85rem;
+  }
+  .logout-cancel a {
+    color: var(--text-muted);
+  }
+</style>
