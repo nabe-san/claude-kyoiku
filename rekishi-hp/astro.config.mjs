@@ -3,9 +3,7 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   output: 'static',
-  adapter: vercel({
-    middlewareMode: 'edge',
-  }),
+  adapter: vercel(),
   env: {
     schema: {
       // /books/ 共有パスワード認証用。値は.envまたはVercelの環境変数で設定する（.envはGit管理外）。

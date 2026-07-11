@@ -87,6 +87,12 @@ export function sanitizeBooksRedirect(raw: string | null | undefined): string {
 
   try {
     const parsed = new URL(raw, 'http://localhost');
+    const isLoginOrLogout =
+      parsed.pathname === '/books/login' ||
+      parsed.pathname === '/books/login/' ||
+      parsed.pathname === '/books/logout' ||
+      parsed.pathname === '/books/logout/';
+    if (isLoginOrLogout) return fallback;
     if (parsed.pathname === '/books' || parsed.pathname.startsWith('/books/')) {
       return `${parsed.pathname}${parsed.search}`;
     }
