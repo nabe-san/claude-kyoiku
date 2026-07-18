@@ -64,6 +64,12 @@ claude開発/
 │
 ├── books/                  ← 参照用読書データ（.txt）歴史シミュレーションv2・授業自動生成で共有
 │
+├── Obsidian連携/           ← Obsidian Vault（デスクトップの MyObsidian）へのログ取り込み
+│   ├── import_claude_code_logs.py  ← Claude Codeのセッション履歴をMarkdown化
+│   ├── import_chat_exports.py      ← ChatGPT/Claude.aiのエクスポートをMarkdown化
+│   ├── import_books.py             ← books/ の読書テキストを参考文献ノートにMarkdown化
+│   └── _inbox/             ← ChatGPT/Claude.aiのエクスポートZIPの置き場
+│
 ├── 歴史シミュレーションv2/        ← 開発用（JSONシナリオ・先生用legacy含む）
 │   ├── index.html          ← シナリオ選択トップ画面
 │   ├── player.html         ← JSON共通プレイヤー（ポートレート・ヒーロー画像表示対応）
@@ -148,6 +154,27 @@ python generate.py --force   # 出力済みフォルダも強制再生成
 - `gas_lesson.js` 冒頭の `SUBJECTS` 定数に Google Drive フォルダIDと Classroom IDを設定する
 - スクリプトプロパティに `ANTHROPIC_API_KEY` を登録する
 - `checkAndProcess()` をトリガー（例：毎時実行）に設定すると自動処理される
+
+### Obsidian連携
+Obsidian Vault（デスクトップの `MyObsidian`）を「第二の脳」として使うため、各種チャットログをMarkdown化して取り込む。
+```bash
+cd Obsidian連携
+# Claude Codeのセッション履歴（~/.claude/projects/以下）を取り込む
+python import_claude_code_logs.py
+# → MyObsidian/ログ/ClaudeCode/<プロジェクト名>/ に出力（再実行で差分反映）
+
+# ChatGPT / Claude.aiのエクスポートを取り込む
+# 1. ChatGPT: 設定 → データ管理 → データをエクスポート
+#    Claude.ai: 設定 → アカウント → データをエクスポート
+# 2. メールで届いたZIPを Obsidian連携/_inbox/ に置く
+python import_chat_exports.py
+# → MyObsidian/ログ/ChatGPT/ または MyObsidian/ログ/Claude/ に出力
+
+# books/ の読書テキスト（歴史シミュレーションv2・授業自動生成と共有）を参考文献ノート化
+python import_books.py
+# → MyObsidian/参考文献/ に出力
+```
+`import_chat_exports.py` は公開されているエクスポート形式をもとに書いているが、実際のZIPの中身で形式が微妙に違う場合は都度調整する。
 
 ---
 
