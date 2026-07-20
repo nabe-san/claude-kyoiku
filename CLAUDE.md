@@ -53,12 +53,13 @@ claude開発/
 │   ├── gas_quiz.js         ← Google Apps Script（クイズ連携）
 │   └── requirements.txt
 │
-├── 授業自動生成/           ← 教科書画像 → 一問一答カード・テスト問題を一括生成
+├── 授業自動生成/           ← 教科書画像 → 一問一答カード・テスト問題・文字資料を一括生成
 │   ├── output/
 │   │   └── 第N回_タイトル/ ← 教科書/以下と同名フォルダに自動出力
 │   │       ├── analysis.txt
 │   │       ├── 一問一答カード.docx
-│   │       └── テスト問題.docx
+│   │       ├── テスト問題.docx
+│   │       └── 文字資料.docx
 │   ├── generate.py         （教科書/ 以下のフォルダを参照）
 │   └── requirements.txt
 │
@@ -95,9 +96,13 @@ claude開発/
 │
 ├── 参考資料/               ← 授業設計の参考資料（中核概念モデル等）
 │
-└── 授業記録/               ← Notta .txt → 授業記録PDF + Google Classroom 配信
-    ├── appsscript.json     ← GAS プロジェクト設定
-    └── gas_lesson.js       ← Google Apps Script 本体
+├── 授業記録/               ← Notta .txt → 授業記録PDF + Google Classroom 配信
+│   ├── appsscript.json     ← GAS プロジェクト設定
+│   └── gas_lesson.js       ← Google Apps Script 本体
+│
+└── rekishi-hp/             ← 歴史教師の探究ノート（Astro製・個人サイト、生徒向けではない）
+    ├── CLAUDE.md           ← このサイト専用の開発指針
+    └── src/                ← 授業単元・読書ノート・概念タグ（Vercelにprivateリポジトリからデプロイ）
 ```
 
 ---
@@ -114,32 +119,13 @@ python generate.py
 ```
 
 ### テスト問題作成
-```bash
-cd テスト問題作成
-pip install -r requirements.txt   # 初回のみ
-# exam_config.yaml の textbooks: に使用する教科書フォルダのパスを指定する
-# 例: - "C:\Users\kengo\...\教科書\歴史総合\第7回 日露戦争"
-python generate.py
-```
+教科書画像 → 4択テスト問題（Word出力）。実行方法・出題方針は `テスト問題作成/CLAUDE.md` を参照。
 
 ### 一問一答
-```bash
-cd 一問一答
-pip install -r requirements.txt   # 初回のみ
-# 教科書/<科目>/<授業回フォルダ>/ に画像を置く（各ツール共通の置き場所）
-python generate_anki.py
-```
-スキルからも実行できる：Claude Code で `/一問一答` と入力。
+教科書画像 → 一問一答カード（Word + Google Forms）。実行方法・生成ルールは `一問一答/CLAUDE.md` を参照。スキル `/一問一答` からも実行できる。
 
 ### 授業自動生成
-```bash
-cd 授業自動生成
-pip install -r requirements.txt   # 初回のみ
-# 教科書/<科目>/<授業回フォルダ>/ に教科書画像を置く（各ツール共通の置き場所）
-python generate.py           # 未処理フォルダのみ生成
-python generate.py --force   # 出力済みフォルダも強制再生成
-```
-スキルからも実行できる：Claude Code で `/授業自動生成` と入力。
+教科書画像 → 一問一答カード・テスト問題・文字資料を一括生成。実行方法・各出力物の方針は `授業自動生成/CLAUDE.md` を参照。スキル `/授業自動生成` からも実行できる。
 
 ### 歴史シミュレーション
 - 生徒用公開URL: `https://nabe-san.github.io/claude-kyoiku/歴史シミュレーションv2_public/`

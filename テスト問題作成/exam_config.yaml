@@ -37,7 +37,11 @@ sources:
   external:
     past_exams: []  # 今回は教科書のみ使用
     textbooks:
-      - "C:\\Users\\kengo\\OneDrive\\デスクトップ\\claude開発\\教科書\\歴史総合\\教科書 JPEG　前期中間２"
+      - "C:\\projects\\claude-kaihatsu\\教科書\\歴史総合\\第3回 明治維新"
+      - "C:\\projects\\claude-kaihatsu\\教科書\\歴史総合\\第4回 日本の産業革命"
+      - "C:\\projects\\claude-kaihatsu\\教科書\\歴史総合\\第5回 帝国主義"
+      - "C:\\projects\\claude-kaihatsu\\教科書\\歴史総合\\第6回 変容する東アジア"
+      - "C:\\projects\\claude-kaihatsu\\教科書\\歴史総合\\第7回 日露戦争"
     worksheets: []  # 今回は教科書のみ使用
     web_sources: [] # Web資料を使う場合は、URL・出典・本文メモを入れたtxt/docxフォルダを指定
 
