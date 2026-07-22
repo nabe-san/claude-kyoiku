@@ -13,7 +13,7 @@ concepts:
   - 国際法
   - 貧困
 relatedUnits:
-  []
+  - kokka-to-kokusaihou
 ---
 
 

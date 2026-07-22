@@ -10,7 +10,7 @@ concepts:
   - 民主主義
   - 支配
 relatedUnits:
-  []
+  - kokka-to-kokusaihou
 ---
 
 ## 学問の発展と探求

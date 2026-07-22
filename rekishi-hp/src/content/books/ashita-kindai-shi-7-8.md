@@ -13,7 +13,7 @@ concepts:
   - 対立
   - 安全保障
 relatedUnits:
-  []
+  - nichiro-sensou-to-higashiajia-no-hendou
 ---
 
 <!-- concepts: 帝国主義 -->

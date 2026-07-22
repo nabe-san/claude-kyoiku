@@ -13,7 +13,8 @@ concepts:
   - 安全保障
   - 協調
 relatedUnits:
-  []
+  - nichiro-sensou-to-higashiajia-no-hendou
+  - teikoku-shugi
 ---
 
 <!-- concepts: 植民地, 統治 -->

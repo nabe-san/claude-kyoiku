@@ -10,7 +10,7 @@ concepts:
   - 主権
   - 民族自決
 relatedUnits:
-  []
+  - teikoku-shugi
 ---
 
 ## 植民地帝国と国民国家
