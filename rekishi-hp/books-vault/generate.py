@@ -21,6 +21,8 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 
+from audit_citations import split_frontmatter, check_citations_text
+
 VAULT_DIR = Path(__file__).parent
 SRC_BOOKS_DIR = VAULT_DIR.parent / "src" / "content" / "books"
 CONCEPT_VOCABULARY_DIR = VAULT_DIR.parent / "src" / "data" / "concepts"
@@ -42,8 +44,27 @@ PUBLISH_PROMPT = """\
 
 【除外すべきブロック】
 - 同じ文が繰り返されている（反復ループ）
-- 途中で文が切れている（末尾が「…」「求めたの」「五年」など中途半端）
-- 1行だけの極端に短い引用（30字未満）
+- 30字未満の極端に短い引用（例外なく除外する）
+- 途中で文が切れていて、かつ次のブロックにも続きが見当たらない引用
+  （この Vault は「重要だと感じた箇所」だけを画像化して文字起こししたものなので、
+    Vault の時点で既に途切れている＝重要でない可能性が高い。無理に含めず除外してよい）
+
+【引用が2ブロックに分断されている場合の扱い】
+まれに、1つの連続した文章が、Vault内で見出し・出典が別々の2ブロックに分かれてしまって
+いることがある（例：ブロックAの引用が「…補給を」で終わり、次のブロックBの引用が
+「層困難にしたのである。」から始まる → 本来は「補給を一層困難にしたのである。」という
+1つの文）。
+後続ブロックの冒頭が明らかに前のブロックの文の続きになっており、欠落が数文字程度
+（目安：3字以内）で自然に補えると判断できる場合に限り、2つを1つの引用ブロックに
+統合し、欠落部分を文脈から自然な形で補ってよい（100%の正確性は求めない。1〜2文字
+程度の誤りは許容する）。欠落が数文字を超える場合や、続きかどうか確信が持てない場合は
+統合せず、不完全な方のブロックを除外すること。
+
+【短い引用の扱い】
+- 30字未満は上記の通り必ず除外する
+- 30字以上でも他の引用と比べて明らかに短い（目安：80字未満）引用は、1冊につき
+  最大1個までとする。該当候補が複数あれば、最も内容的に自立して読める
+  （説明なしで理解できる）ものを1つだけ残し、残りは除外する
 
 【選択数】
 13〜16 ブロックを選ぶ。重複・欠陥があれば躊躇なく除外してよい。
@@ -192,7 +213,7 @@ def call_gemini(vault_content: str, meta: dict, concepts: list, related_units: l
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(
         "gemini-2.5-flash",
-        generation_config=genai.GenerationConfig(temperature=0.3, max_output_tokens=4096),
+        generation_config=genai.GenerationConfig(temperature=0.3, max_output_tokens=16384),
     )
     print("Gemini API に送信中...")
     response = model.generate_content(prompt)
@@ -201,6 +222,30 @@ def call_gemini(vault_content: str, meta: dict, concepts: list, related_units: l
     text = re.sub(r'^```(?:yaml|markdown)?\s*\n', '', text)
     text = re.sub(r'\n```\s*$', '', text)
     return text.strip()
+
+
+def auto_clean(text: str) -> str:
+    """機械的に判断できる不備だけを自動で取り除く（見出し・概念タグ・出典行など
+    ブロック構造そのものには手を加えない、引用行内の記号のみの単純な置換）。
+    - '> >' の二重引用記号 → '> ' に統一
+    - 引用行に混入した '◎' などの書き込み記号を除去
+    """
+    text = re.sub(r'(?m)^>\s*>\s*', '> ', text)
+    text = re.sub(r'(?m)^(>.*)◎', r'\1', text)
+    return text
+
+
+def warn_remaining_issues(output: str) -> None:
+    """auto_clean 後も残る、AIの判断が必要な問題を警告として表示する（ファイルは変更しない）。"""
+    body = split_frontmatter(output)
+    results = check_citations_text(body)
+    if not results:
+        return
+    print(f"\n⚠ 引用チェックで{len(results)}件、要確認の箇所があります（自動修正はしていません）:")
+    for r in results:
+        print(f"  ● 「{r['heading']}」")
+        for issue in r['issues']:
+            print(f"      - {issue}")
 
 
 def main():
@@ -225,9 +270,11 @@ def main():
 
     output = call_gemini(vault_content, meta, concepts, related_units)
     output = filter_citation_concepts(output, vocabulary)
+    output = auto_clean(output)
 
     pub_path.write_text(output, encoding="utf-8")
     print(f"\n公開用ファイルを生成しました: {pub_path}")
+    warn_remaining_issues(output)
     print("  必要であれば最後だけ手動修正してください")
 
 
