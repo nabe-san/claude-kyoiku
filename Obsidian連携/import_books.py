@@ -23,8 +23,16 @@ import re
 from pathlib import Path
 
 BOOKS_DIR = Path(__file__).parent.parent / "books"
-VAULT_REF_DIR = Path.home() / "Desktop" / "MyObsidian" / "参考文献"
+VAULT_REF_DIR = Path.home() / "Desktop" / "MyObsidian" / "06_RawSources" / "books"
 META_PATH = Path(__file__).parent / "books_meta.json"
+
+# rekishi-hp の引用データ（import_citations.py）に一本化済みの本。
+# books/*.txt は歴史シミュレーションv2・授業自動生成とも共有しているため削除しないが、
+# Obsidianへの変換はこちらでは行わない（import_citations.py側の出力が正データ）。
+MIGRATED_TO_CITATIONS = {
+    "05_全体主義の起源1_反ユダヤ主義",
+    "02_歴史総合_私たちの物語をつくる",
+}
 
 BLOCK_HEADER_RE = re.compile(r"^\*{0,2}▼")
 PAGE_LINE_RE = re.compile(r"^\*{0,2}(\d{1,4})\*{0,2}$")
@@ -40,6 +48,21 @@ def load_meta() -> dict:
     if META_PATH.exists():
         return json.loads(META_PATH.read_text(encoding="utf-8"))
     return {}
+
+
+def read_existing_status(path: Path) -> str | None:
+    """出力先に同名ファイルが既にあり、frontmatterにstatusがあればその値を返す。
+    ファイルが存在しない、またはstatusがなければNone（＝新規扱い）。"""
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if not text.startswith("---"):
+        return None
+    end = text.find("\n---", 3)
+    if end == -1:
+        return None
+    m = re.search(r"^status:\s*(.+)$", text[:end], re.MULTILINE)
+    return m.group(1).strip() if m else None
 
 
 def split_blocks(body: str):
@@ -129,6 +152,8 @@ def main():
     meta = load_meta()
     count = 0
     for txt_path in sorted(BOOKS_DIR.glob("*.txt")):
+        if txt_path.stem in MIGRATED_TO_CITATIONS:
+            continue
         title = re.sub(r"^\d+_", "", txt_path.stem)
         body = txt_path.read_text(encoding="utf-8", errors="ignore")
         book_meta = meta.get(txt_path.stem, {})
@@ -138,6 +163,7 @@ def main():
         new_body = build_body(body, title, author, year)
 
         out_path = VAULT_REF_DIR / f"{sanitize_filename(title)}.md"
+        status = read_existing_status(out_path) or "unprocessed"
         lines = [
             "---",
             f"title: {title}",
@@ -149,6 +175,9 @@ def main():
         if year:
             lines.append(f"year: {year}")
         lines += [
+            "type: source_excerpt",
+            f"book_title: {display_title(title, author, year)}",
+            f"status: {status}",
             "---",
             "",
             f"# {title}",
