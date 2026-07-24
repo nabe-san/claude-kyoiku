@@ -413,7 +413,57 @@ function createFolderAndProcess(vaultFolder, meta, apiKey, setupFn) {
   }
 
   let bookFolder = getSubFolder(vaultFolder, slug);
-  if (!bookFolder) {
+
+  if (bookFolder) {
+    // 同名フォルダが既存の場合、本当に同じ本かを meta.json のタイトルで確認する。
+    // 一致しなければ「別の本に slug が衝突した」とみなし、連番を振って別フォルダに分離する。
+    // （似たタイトルの本（例：章ごとに分割したzip）を続けて投入すると、
+    //   generateSlug の20文字切り詰めで同じ slug になり、別の本の meta.json/processing.json を
+    //   無警告で上書きしてしまう事故が過去に発生したための保護）
+    const existingMetaContent = getFileContent(bookFolder, 'meta.json');
+    const existingMeta = existingMetaContent ? JSON.parse(existingMetaContent) : null;
+    const isSameBook = existingMeta
+      && existingMeta.title  === meta.title
+      && existingMeta.author === meta.author
+      && existingMeta.year   === meta.year;
+
+    if (!isSameBook) {
+      // 連番違いの既存フォルダの中に「同じ本の続き」が既にないか探してから、
+      // 本当に空いている番号にだけ新規フォルダを作る。
+      // （存在チェックだけで即新規作成すると、バッチ処理の再実行のたびに
+      //   -2, -3, -4 ... と新フォルダを量産してしまう事故が過去に発生したため）
+      const baseSlug = slug;
+      let n = 2;
+      let candidate = `${baseSlug}-${n}`;
+      let candidateFolder = getSubFolder(vaultFolder, candidate);
+      let resumedExisting = false;
+
+      while (candidateFolder) {
+        const candidateMetaContent = getFileContent(candidateFolder, 'meta.json');
+        const candidateMeta = candidateMetaContent ? JSON.parse(candidateMetaContent) : null;
+        const candidateIsSameBook = candidateMeta
+          && candidateMeta.title  === meta.title
+          && candidateMeta.author === meta.author
+          && candidateMeta.year   === meta.year;
+
+        if (candidateIsSameBook) {
+          slug = candidate;
+          bookFolder = candidateFolder;
+          resumedExisting = true;
+          Logger.log(`同じ本の続きを検出。処理を再開します: ${slug}`);
+          break;
+        }
+        candidate = `${baseSlug}-${++n}`;
+        candidateFolder = getSubFolder(vaultFolder, candidate);
+      }
+
+      if (!resumedExisting) {
+        slug = candidate;
+        Logger.log(`⚠ slug衝突を検出（既存: 『${existingMeta ? existingMeta.title : '不明'}』 / 新規: 『${meta.title}』）。別フォルダに分離します: ${slug}`);
+        bookFolder = vaultFolder.createFolder(slug);
+      }
+    }
+  } else {
     bookFolder = vaultFolder.createFolder(slug);
     Logger.log(`フォルダを作成しました: ${slug}/`);
   }
@@ -748,6 +798,13 @@ ${citation}
 - 授業活用メモ・教師向けコメントを書かない`;
 }
 
+/** 「少し待てば直る」性質のエラーかどうかを判定する（混雑・一時的な利用不可など） */
+function isTransientGeminiError(errorObj) {
+  if (!errorObj) return false;
+  if (errorObj.code === 503 || errorObj.status === 'UNAVAILABLE') return true;
+  return /high demand|overloaded|unavailable/i.test(errorObj.message || '');
+}
+
 function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
   const file   = DriveApp.getFileById(fileId);
   const blob   = file.getBlob();
@@ -764,17 +821,34 @@ function callGemini(apiKey, fileId, currOcr, prevOcr, nextOcr, meta) {
   };
 
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
-  const res = UrlFetchApp.fetch(url, {
-    method:          'post',
-    contentType:     'application/json',
-    payload:         JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
 
-  const result = JSON.parse(res.getContentText());
-  if (result.error) throw new Error('Gemini API エラー: ' + result.error.message);
+  // 混雑エラー（high demand等）はここで数回リトライする。
+  // resetErrors() を毎回手動で挟まなくても、一時的なエラーはこの中で自己解決させるため。
+  const retryDelaysMs = [3000, 8000];
+  let lastError = null;
 
-  return (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+  for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+    const res = UrlFetchApp.fetch(url, {
+      method:          'post',
+      contentType:     'application/json',
+      payload:         JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+
+    const result = JSON.parse(res.getContentText());
+
+    if (!result.error) {
+      return (result.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    }
+
+    lastError = result.error;
+    if (!isTransientGeminiError(result.error) || attempt === retryDelaysMs.length) break;
+
+    Logger.log(`  ⚠ Gemini混雑エラー。${retryDelaysMs[attempt] / 1000}秒後にリトライします（${attempt + 1}回目）`);
+    Utilities.sleep(retryDelaysMs[attempt]);
+  }
+
+  throw new Error('Gemini API エラー: ' + lastError.message);
 }
 
 // ==========================================
@@ -1063,11 +1137,13 @@ function buildPublishPrompt(vaultContent, meta, concepts, relatedUnits) {
 【Vault（全引用）】
 ${vaultContent}
 
-【選択基準（重要な順）】
-1. 概念理解に役立つ——知識ではなく思考の材料になる引用
-2. 授業との接続性が高い——授業テーマ「${conceptsStr}」に関連する
+【選択基準（優先順位順）】
+1. 授業との接続性が高い——授業テーマ「${conceptsStr}」に関連する（最優先基準）
+2. 概念理解に役立つ——知識ではなく思考の材料になる引用
 3. 著者の視点・論点がよく表れている——著者の独自の主張が読み取れる
 4. 引用だけで考える余白がある——解説なしで読者が自分で考えられる
+
+授業との接続性で優劣がつけがたい場合は、内容の重要性（上記2〜4への合致度）を根拠に判断してよい。
 
 【除外すべきブロック】
 - 同じ文が繰り返されている（反復ループ）
@@ -1075,7 +1151,7 @@ ${vaultContent}
 - 1行だけの極端に短い引用（30字未満）
 
 【選択数】
-13〜16 ブロックを選ぶ。重複・欠陥があれば躊躇なく除外してよい。
+20 ブロック程度を目安に選ぶ（引用が特に多い場合は最大25ブロックまで）。重複・欠陥があれば躊躇なく除外してよい。
 
 【出力フォーマット】
 フロントマターから始め、選んだ引用ブロックをそのまま並べる。
