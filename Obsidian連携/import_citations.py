@@ -21,6 +21,11 @@ import_books.py（books/*.txt＝「自動で画像文字化」の全文OCRを手
     引用データへの一本化を進める場合は、対象書籍について import_books.py 側の
     books/*.txt・books_meta.json のエントリを削除しておくことを推奨する。
 
+    本文は毎回 rekishi-hp 側のソースで丸ごと上書きするため、Vault側の出力ファイルに
+    直接書き込んだ手動編集（関連書籍・気づきなど）は次回実行時に消える。書籍同士の
+    関連付けは Vault ではなく rekishi-hp 側 frontmatter の relatedBookLinks に書くこと
+    （このスクリプトが「## 関連書籍」として自動反映する）。
+
 前提:
     rekishi-hp フォルダで事前に `git pull` を実行し、最新の引用データを取得しておくこと。
 
@@ -28,7 +33,10 @@ import_books.py（books/*.txt＝「自動で画像文字化」の全文OCRを手
     python import_citations.py
 """
 import re
+import unicodedata
 from pathlib import Path
+
+import yaml
 
 CITATIONS_DIR = Path(__file__).parent.parent / "rekishi-hp" / "src" / "content" / "books"
 VAULT_REF_DIR = Path.home() / "Desktop" / "MyObsidian" / "06_RawSources" / "books"
@@ -37,6 +45,7 @@ FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 
 
 def sanitize_filename(text: str, maxlen: int = 60) -> str:
+    text = unicodedata.normalize("NFC", text)
     text = re.sub(r'[\\/:*?"<>|\n\r\t]', " ", text).strip()
     text = re.sub(r"\s+", " ", text)
     return text[:maxlen] if text else "無題"
@@ -93,8 +102,21 @@ def get_list(fm_text: str, key: str) -> list[str]:
     return items
 
 
+def get_related_book_links(fm_text: str) -> list[dict]:
+    """`relatedBookLinks:` は `- slug: ...` / `note: ...` のオブジェクトのリストで、
+    get_list() の単純な正規表現では取り出せないため、この項目だけPyYAMLに委ねる。
+    frontmatter全体が壊れていても他フィールドの処理を止めないよう、失敗時は空リストを返す。"""
+    try:
+        data = yaml.safe_load(fm_text) or {}
+    except yaml.YAMLError:
+        return []
+    items = data.get("relatedBookLinks") or []
+    return [item for item in items if isinstance(item, dict) and item.get("slug")]
+
+
 def build_output(title: str, author: str, year: str, concepts: list[str],
-                  status: str, source_rel_path: str, body: str) -> str:
+                  status: str, source_rel_path: str, body: str,
+                  related_lines: list[str]) -> str:
     shown_title = display_title(title, author, year)
 
     lines = [
@@ -119,6 +141,12 @@ def build_output(title: str, author: str, year: str, concepts: list[str],
         "",
         f"# {shown_title}",
         "",
+    ]
+    if related_lines:
+        lines.append("## 関連書籍")
+        lines.extend(related_lines)
+        lines.append("")
+    lines += [
         body.strip(),
         "",
     ]
@@ -132,9 +160,22 @@ def main():
         return
 
     VAULT_REF_DIR.mkdir(parents=True, exist_ok=True)
-    count = 0
+    md_paths = sorted(CITATIONS_DIR.glob("*.md"))
 
-    for md_path in sorted(CITATIONS_DIR.glob("*.md")):
+    # 1パス目: relatedBookLinks のslugからWikilink先タイトルを解決するため、
+    # 全書籍のタイトルを先に集めておく（glob順とrelatedBookLinksの参照順は一致しないため）。
+    titles_by_slug: dict[str, str] = {}
+    for md_path in md_paths:
+        fm_text, _ = parse_frontmatter(md_path.read_text(encoding="utf-8", errors="ignore"))
+        if not fm_text:
+            continue
+        title = get_scalar(fm_text, "title") or md_path.stem
+        titles_by_slug[md_path.stem] = display_title(
+            title, get_scalar(fm_text, "author"), get_scalar(fm_text, "year")
+        )
+
+    count = 0
+    for md_path in md_paths:
         text = md_path.read_text(encoding="utf-8", errors="ignore")
         fm_text, body = parse_frontmatter(text)
 
@@ -147,12 +188,21 @@ def main():
         year = get_scalar(fm_text, "year")
         concepts = get_list(fm_text, "concepts")
 
+        related_lines = []
+        for link in get_related_book_links(fm_text):
+            target_title = titles_by_slug.get(link["slug"])
+            if not target_title:
+                print(f"警告: {md_path.name} の relatedBookLinks に未知のslug '{link['slug']}'")
+                continue
+            note = link.get("note")
+            related_lines.append(f"- [[{target_title}]]" + (f" — {note}" if note else ""))
+
         shown_title = display_title(title, author, year)
         out_path = VAULT_REF_DIR / f"{sanitize_filename(shown_title)}.md"
         status = read_existing_status(out_path) or "unprocessed"
 
         source_rel_path = f"rekishi-hp/src/content/books/{md_path.name}"
-        output = build_output(title, author, year, concepts, status, source_rel_path, body)
+        output = build_output(title, author, year, concepts, status, source_rel_path, body, related_lines)
 
         out_path.write_text(output, encoding="utf-8")
         count += 1

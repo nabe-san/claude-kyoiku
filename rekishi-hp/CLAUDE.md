@@ -284,11 +284,7 @@ books-vault/            ← 読書ノート全引用保管（.gitignore 必須�
 **サイト公開（generate.py をローカルで実行）**
 - [ ] `python generate.py [slug]` を実行した
 - [ ] 公開用 `src/content/books/[slug].md` が生成された
-- [ ] 必要なら最後だけ手動修正した
-- [ ] `concepts:` に既存タグが設定されているか確認した（3〜5個を目安）
-- [ ] 関連する授業単元があれば `relatedUnits:` に追加した
-- [ ] `summary:` は任意。書く場合は2〜3行以内
-- [ ] 書影があれば `src/assets/covers/[slug].jpg`（または .png/.webp）を置いた（frontmatter編集は不要）
+- [ ] スキル `/読書ノート公開レビュー [slug]` でレビューを実行した（機械チェックへの対応・`relatedUnits`/`relatedBookLinks`の横断判断・書影確認・ビルド確認を1本化したもの。手動でチェックリストを1件ずつ潰す代わりにこれを使う）
 
 ### 新しいコンポーネントを追加するとき
 

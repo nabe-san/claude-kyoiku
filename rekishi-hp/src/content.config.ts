@@ -39,6 +39,13 @@ const books = defineCollection({
     summary: z.string().optional(),
     concepts: z.array(z.string()).default([]),
     relatedUnits: z.array(z.string()).default([]),
+    // 書籍同士の関連（Obsidian Vault側の「## 関連書籍」の正本）。
+    // サイトのUIには表示しない。import_citations.pyがWikilinkへ変換する。
+    // 他コレクションのrelatedBooks（フラットなslug配列）とは型が違うため別名にしている。
+    relatedBookLinks: z.array(z.object({
+      slug: z.string(),
+      note: z.string().optional(),
+    })).default([]),
   }),
 });
 

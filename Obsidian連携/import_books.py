@@ -20,6 +20,7 @@ Obsidian Vaultの参考文献ノートに変換する。
 """
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 BOOKS_DIR = Path(__file__).parent.parent / "books"
@@ -39,6 +40,7 @@ PAGE_LINE_RE = re.compile(r"^\*{0,2}(\d{1,4})\*{0,2}$")
 
 
 def sanitize_filename(text: str, maxlen: int = 60) -> str:
+    text = unicodedata.normalize("NFC", text)
     text = re.sub(r'[\\/:*?"<>|\n\r\t]', " ", text).strip()
     text = re.sub(r"\s+", " ", text)
     return text[:maxlen] if text else "無題"
