@@ -18,6 +18,7 @@ import os
 import sys
 import re
 import json
+import requests
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -186,13 +187,6 @@ def read_existing_related_units(slug: str) -> list:
 
 
 def call_gemini(vault_content: str, meta: dict, concepts: list, related_units: list) -> str:
-    try:
-        import google.generativeai as genai
-    except ImportError:
-        print("エラー: google-generativeai がインストールされていません")
-        print("  pip install -r requirements.txt")
-        sys.exit(1)
-
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("エラー: GEMINI_API_KEY が設定されていません")
@@ -212,14 +206,30 @@ def call_gemini(vault_content: str, meta: dict, concepts: list, related_units: l
         related_units_yaml=related_units_yaml,
     )
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(
-        "gemini-2.5-flash",
-        generation_config=genai.GenerationConfig(temperature=0.3, max_output_tokens=16384),
-    )
+    # google.generativeai（非推奨SDK）の GenerationConfig は thinking_config に非対応のため、
+    # gas_vault.js の callGeminiForSelection() と同じくREST APIを直接叩く。
+    # 思考を無効化しないと、Vaultが大きい・内容が複雑な本でモデルの内部思考が長引き、
+    # タイムアウト（DEADLINE_EXCEEDED）を繰り返す。
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 65536,
+            "thinkingConfig": {"thinkingBudget": 0},
+        },
+    }
     print("Gemini API に送信中...")
-    response = model.generate_content(prompt)
-    text = response.text.strip()
+    res = requests.post(url, json=payload, timeout=600)
+    result = res.json()
+    if "error" in result:
+        raise RuntimeError(f"Gemini API エラー: {result['error'].get('message')}")
+
+    finish_reason = result.get("candidates", [{}])[0].get("finishReason", "UNKNOWN")
+    if finish_reason != "STOP":
+        print(f"⚠ 応答が途中で終了しました（{finish_reason}）")
+
+    text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
     # Gemini がコードブロックで囲んだ場合の除去（```yaml ... ``` や ``` ... ```）
     text = re.sub(r'^```(?:yaml|markdown)?\s*\n', '', text)
     text = re.sub(r'\n```\s*$', '', text)
