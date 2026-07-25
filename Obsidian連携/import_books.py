@@ -27,12 +27,16 @@ BOOKS_DIR = Path(__file__).parent.parent / "books"
 VAULT_REF_DIR = Path.home() / "Desktop" / "MyObsidian" / "06_RawSources" / "books"
 META_PATH = Path(__file__).parent / "books_meta.json"
 
-# rekishi-hp の引用データ（import_citations.py）に一本化済みの本。
+# rekishi-hp の引用データ（import_citations.py）に一本化済み、または
+# 教師の判断でObsidianへの全文フルテキスト変換が不要になった本。
 # books/*.txt は歴史シミュレーションv2・授業自動生成とも共有しているため削除しないが、
-# Obsidianへの変換はこちらでは行わない（import_citations.py側の出力が正データ）。
+# Obsidianへの変換はこちらでは行わない。
 MIGRATED_TO_CITATIONS = {
     "05_全体主義の起源1_反ユダヤ主義",
     "02_歴史総合_私たちの物語をつくる",
+    # 01_明日のための近代史: 5-6/7-8/9-10章のみ引用版あり（1-4章は未収録）。
+    # 教師の判断でフルテキスト版は不要と確認済み（2026-07-25）。
+    "01_明日のための近代史",
 }
 
 BLOCK_HEADER_RE = re.compile(r"^\*{0,2}▼")
