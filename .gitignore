@@ -39,9 +39,6 @@
 # 歴史HPの授業構成サムネイル画像
 !rekishi-hp/src/assets/unit-visuals/**
 
-# 歴史HPのページ背景画像
-!rekishi-hp/public/images/**
-
 # スライドテンプレート（大容量バイナリ）
 スライド作成/templates/
 

@@ -92,23 +92,21 @@ const civicsCurriculumParts = buildCurriculumParts(
 ---
 
 <BaseLayout title="授業一覧">
-  <div class="hero-band">
-    <header class="page-header">
-      <div class="container">
-        <h1 class="page-title">授業一覧</h1>
-        <p class="page-desc">「大きな問い」と授業の全体像を軸にした授業設計ノート。</p>
-      </div>
-    </header>
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-title">授業一覧</h1>
+      <p class="page-desc">「大きな問い」と授業の全体像を軸にした授業設計ノート。</p>
+    </div>
+  </header>
 
-    <!-- ── 科目フィルター ── -->
-    <div class="filter-bar">
-      <div class="container">
-        <div class="filter-buttons" role="group" aria-label="科目で絞り込む">
-          <button class="filter-btn active" data-subject="all">すべて</button>
-          <button class="filter-btn" data-subject="history-general">歴史総合</button>
-          <button class="filter-btn" data-subject="japanese-history">日本史探究</button>
-          <button class="filter-btn" data-subject="civics">公共</button>
-        </div>
+  <!-- ── 科目フィルター ── -->
+  <div class="filter-bar">
+    <div class="container">
+      <div class="filter-buttons" role="group" aria-label="科目で絞り込む">
+        <button class="filter-btn active" data-subject="all">すべて</button>
+        <button class="filter-btn" data-subject="history-general">歴史総合</button>
+        <button class="filter-btn" data-subject="japanese-history">日本史探究</button>
+        <button class="filter-btn" data-subject="civics">公共</button>
       </div>
     </div>
   </div>
@@ -204,18 +202,11 @@ const civicsCurriculumParts = buildCurriculumParts(
 </script>
 
 <style>
-  /* ── ヘッダー+フィルターの背景バンド ── */
-  .hero-band {
-    background-color: var(--bg-surface);
-    background-image: url('/images/units-hero-bg.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
-
   /* ── ページヘッダー ── */
   .page-header {
     padding: 3rem 0 2.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
   }
   .page-title {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
@@ -231,7 +222,7 @@ const civicsCurriculumParts = buildCurriculumParts(
 
   /* ── フィルターバー ── */
   .filter-bar {
-    background: rgba(245, 240, 232, 0.85);
+    background: var(--bg-surface);
     padding: 1.5rem 0;
     border-bottom: 1px solid var(--border);
     position: sticky;
