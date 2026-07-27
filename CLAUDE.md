@@ -100,9 +100,9 @@ claude開発/
 │   ├── appsscript.json     ← GAS プロジェクト設定
 │   └── gas_lesson.js       ← Google Apps Script 本体
 │
-└── rekishi-hp/             ← 歴史教師の探究ノート（Astro製・個人サイト、生徒向けではない）
-    ├── CLAUDE.md           ← このサイト専用の開発指針
-    └── src/                ← 授業単元・読書ノート・概念タグ（Vercelにprivateリポジトリからデプロイ）
+└── rekishi-hp_ARCHIVED/    ← 【凍結・Git非管理】歴史教師の探究ノートは独立リポジトリに移行済み（2026-07-27）
+                              　今後の開発は C:\projects\rekishi-hp（nabe-san/rekishi-hp, Vercel本番接続）で行う
+                              　このフォルダはローカル参照専用。中身は更新しない
 ```
 
 ---
