@@ -31,6 +31,24 @@
         "type": "string"
       }
     },
+    "relatedBookLinks": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug"
+        ]
+      }
+    },
     "$schema": {
       "type": "string"
     }

@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-VAULT_LOG_DIR = Path.home() / "Desktop" / "MyObsidian" / "ログ" / "ClaudeCode"
+VAULT_LOG_DIR = Path.home() / "Desktop" / "MyObsidian" / "07_RawLogs" / "ClaudeCode"
 
 # フォルダ名（伏字化されたパス）→ 分かりやすい表示名
 PROJECT_NAME_MAP = {

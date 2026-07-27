@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 INBOX_DIR = Path(__file__).parent / "_inbox"
-VAULT_LOG_DIR = Path.home() / "Desktop" / "MyObsidian" / "ログ"
+VAULT_LOG_DIR = Path.home() / "Desktop" / "MyObsidian" / "07_RawLogs"
 
 
 def sanitize_filename(text: str, maxlen: int = 40) -> str:
