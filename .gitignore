@@ -33,11 +33,9 @@
 !歴史シミュレーション/scenarios/**/*.png
 !歴史シミュレーション/scenarios/**/*.gif
 
-# 歴史HPの読書ノート書影
-!rekishi-hp/src/assets/covers/**
-
-# 歴史HPの授業構成サムネイル画像
-!rekishi-hp/src/assets/unit-visuals/**
+# 歴史HP（rekishi-hp）は独立リポジトリ（C:\projects\rekishi-hp, nabe-san/rekishi-hp）に移行済み
+# rekishi-hp_ARCHIVED/ はローカル凍結アーカイブのため追跡しない
+/rekishi-hp_ARCHIVED/
 
 # スライドテンプレート（大容量バイナリ）
 スライド作成/templates/
