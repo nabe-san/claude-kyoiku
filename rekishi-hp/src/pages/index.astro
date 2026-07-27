@@ -71,15 +71,15 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
         <p>授業設計の裏側を、3つの角度から記録する</p>
       </div>
       <div class="features-grid">
-        <div class="feature-card">
+        <a href="/units/" class="feature-card">
           <div class="feature-icon unit-icon"><LineIcon name="map" size={24} /></div>
           <h3>授業一覧</h3>
           <p>
             「大きな問い」を出発点に、授業全体の流れを整理したノート。
             授業のねらいや授業展開を見通すことができます。
           </p>
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="/books/" class="feature-card">
           <div class="feature-icon book-icon"><LineIcon name="book" size={24} /></div>
           <h3>読書ノート</h3>
           <p>
@@ -87,8 +87,8 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
             概念タグから、必要な引用や授業づくりのヒントを探せます。
           </p>
           {books.length === 0 && <span class="coming-soon">近日追加</span>}
-        </div>
-        <div class="feature-card">
+        </a>
+        <a href="/notes/" class="feature-card">
           <div class="feature-icon note-icon"><LineIcon name="thought" size={24} /></div>
           <h3>思考ノート</h3>
           <p>
@@ -96,7 +96,7 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
             授業で扱いながら残ってきた問いを少しずつ蓄積しています。
           </p>
           {notes.length === 0 && <span class="coming-soon">近日追加</span>}
-        </div>
+        </a>
       </div>
     </div>
   </section>
@@ -406,12 +406,22 @@ const conceptsWithSubjects = [...conceptSubjectsMap.entries()];
   }
 
   .feature-card {
+    display: block;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 2rem;
     position: relative;
     overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+
+  .feature-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
   }
 
   .feature-card::after {
