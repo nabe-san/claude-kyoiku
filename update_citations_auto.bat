@@ -5,9 +5,6 @@ set LOGFILE=C:\projects\claude-kaihatsu\Obsidian連携\sync_citations.log
 
 echo %date% %time% ジョブ開始 >> "%LOGFILE%"
 
-cd /d "C:\projects\claude-kaihatsu\rekishi-hp"
-git pull >> "%LOGFILE%" 2>&1
-
 cd /d "C:\projects\claude-kaihatsu\Obsidian連携"
 python import_citations.py >> "%LOGFILE%" 2>&1
 

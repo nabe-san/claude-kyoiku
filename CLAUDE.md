@@ -63,6 +63,16 @@ claude開発/
 │   ├── generate.py         （教科書/ 以下のフォルダを参照）
 │   └── requirements.txt
 │
+├── プリント作成/           ← 教科書画像 → 生徒作業用プリント＋模範解答（固定テンプレ・Word）
+│   ├── output/
+│   │   └── 第N回_タイトル/ ← 教科書/以下と同名フォルダに自動出力
+│   │       ├── structure.json      ← Phase2構造化データ（デザイン再描画用）
+│   │       ├── <タイトル>_学生用.docx
+│   │       └── <タイトル>_模範解答.docx
+│   ├── generate.py         （Phase1分析＋Phase2 JSON生成。教科書/分析キャッシュ をテスト問題作成と共有）
+│   ├── build_docx.py       （JSON→Word。デザイン調整はここだけでAPI不要）
+│   └── requirements.txt
+│
 ├── books/                  ← 参照用読書データ（.txt）歴史シミュレーションv2・授業自動生成で共有
 │
 ├── Obsidian連携/           ← Obsidian Vault（デスクトップの MyObsidian）へのログ取り込み
@@ -126,6 +136,9 @@ python generate.py
 
 ### 授業自動生成
 教科書画像 → 一問一答カード・テスト問題・文字資料を一括生成。実行方法・各出力物の方針は `授業自動生成/CLAUDE.md` を参照。スキル `/授業自動生成` からも実行できる。
+
+### プリント作成
+教科書画像 → 生徒作業用プリント＋模範解答（固定テンプレのWord）。実行方法・デザイン仕様は `プリント作成/CLAUDE.md` を参照。
 
 ### 歴史シミュレーション
 - 生徒用公開URL: `https://nabe-san.github.io/claude-kyoiku/歴史シミュレーションv2_public/`
