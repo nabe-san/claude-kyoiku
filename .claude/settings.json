@@ -11,5 +11,30 @@
       "Bash(mv \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2\\\\scenarios\\\\03_帝国主義_ドゥメール\" \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2\\\\scenarios\\\\02_帝国主義_ドゥメール\")",
       "Bash(mv \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2_public\\\\scenarios\\\\03_帝国主義_ドゥメール\" \"c:\\\\Users\\\\kengo\\\\Desktop\\\\claude開発\\\\歴史シミュレーションv2_public\\\\scenarios\\\\02_帝国主義_ドゥメール\")"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "python \"C:/projects/claude-kaihatsu/.claude/hooks/record_edit.py\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "python \"C:/projects/claude-kaihatsu/.claude/hooks/auto_commit.py\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
   }
 }
