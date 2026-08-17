@@ -110,6 +110,11 @@ claude開発/
 │   ├── appsscript.json     ← GAS プロジェクト設定
 │   └── gas_lesson.js       ← Google Apps Script 本体
 │
+├── 知識ログ/               ← スマホ発の調べものメモ → 週次Claude要約 → メールダイジェスト
+│   ├── CLAUDE.md           ← セットアップ手順書
+│   ├── pwa/                ← スマホ側キャプチャ画面（PWA。index.html/app.js/manifest.json/service-worker.js）
+│   └── gas/                ← GASプロジェクト（Web App受信 + 週次バッチ）
+│
 └── rekishi-hp_ARCHIVED/    ← 【凍結・Git非管理】歴史教師の探究ノートは独立リポジトリに移行済み（2026-07-27）
                               　今後の開発は C:\projects\rekishi-hp（nabe-san/rekishi-hp, Vercel本番接続）で行う
                               　このフォルダはローカル参照専用。中身は更新しない
@@ -153,6 +158,9 @@ python generate.py
 - `gas_lesson.js` 冒頭の `SUBJECTS` 定数に Google Drive フォルダIDと Classroom IDを設定する
 - スクリプトプロパティに `ANTHROPIC_API_KEY` を登録する
 - `checkAndProcess()` をトリガー（例：毎時実行）に設定すると自動処理される
+
+### 調べものログ（知識ログアプリ）
+スマホ（PWA）で調べたい語句を1タップ送信 → 中継スプレッドシートに蓄積 → 週次でClaude（Web検索ツール）が出典つき要約を生成 → メールダイジェストで届く。実行方法・セットアップ手順は `知識ログ/CLAUDE.md` を参照。
 
 ### Obsidian連携
 Obsidian Vault（デスクトップの `MyObsidian`）を「第二の脳」として使うため、各種チャットログをMarkdown化して取り込む。
