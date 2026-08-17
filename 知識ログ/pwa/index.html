@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="調べものログ">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="manifest" href="./manifest.json">
+<title>調べものログ</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #1a1a2e;
+    color: #eaeaea;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top, 24px) 20px calc(env(safe-area-inset-bottom, 24px) + 20px);
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 24px 0 8px;
+    color: #eaeaea;
+  }
+  .queue-badge {
+    font-size: 13px;
+    color: #f5a623;
+    min-height: 18px;
+    margin-bottom: 16px;
+  }
+  form {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 1px solid #3a3a5a;
+    background: #24243e;
+    color: #eaeaea;
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid #6c63ff; }
+  button {
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    background: #6c63ff;
+    color: #fff;
+    cursor: pointer;
+  }
+  button:active { background: #574fdb; }
+  button:disabled { background: #3a3a5a; color: #888; }
+  .status {
+    min-height: 20px;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 4px;
+  }
+  .status.ok { color: #4caf50; }
+  .status.pending { color: #f5a623; }
+  .status.error { color: #ff5c5c; }
+  .settings-link {
+    margin-top: 32px;
+    font-size: 13px;
+    color: #888;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 8px;
+  }
+  dialog {
+    border: none;
+    border-radius: 12px;
+    background: #24243e;
+    color: #eaeaea;
+    padding: 20px;
+    width: min(90vw, 420px);
+  }
+  dialog label {
+    display: block;
+    font-size: 13px;
+    margin: 12px 0 4px;
+    color: #aaa;
+  }
+  dialog input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #3a3a5a;
+    background: #1a1a2e;
+    color: #eaeaea;
+    font-size: 15px;
+  }
+  .dialog-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .dialog-actions button { flex: 1; }
+  .dialog-actions .cancel { background: #3a3a5a; }
+</style>
+</head>
+<body>
+  <h1>調べものログ</h1>
+  <div class="queue-badge" id="queueBadge"></div>
+
+  <form id="captureForm">
+    <textarea id="queryInput" placeholder="気になった人物・用語・出来事などを入力" autocomplete="off" required></textarea>
+    <button type="submit" id="submitBtn">送信</button>
+    <div class="status" id="statusMsg"></div>
+  </form>
+
+  <button class="settings-link" id="openSettings">⚙ 送信先の設定</button>
+
+  <dialog id="settingsDialog">
+    <label for="webAppUrlInput">GAS Web App URL</label>
+    <input type="url" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <label for="tokenInput">共有トークン</label>
+    <input type="text" id="tokenInput" placeholder="トークン">
+    <div class="dialog-actions">
+      <button type="button" class="cancel" id="settingsCancel">キャンセル</button>
+      <button type="button" id="settingsSave">保存</button>
+    </div>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>

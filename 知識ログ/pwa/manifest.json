@@ -1,0 +1,9 @@
+{
+  "name": "調べものログ",
+  "short_name": "調べものログ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": []
+}
