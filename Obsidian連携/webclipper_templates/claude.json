@@ -1,0 +1,28 @@
+{
+	"schemaVersion": "0.1.0",
+	"name": "Claude → Vault",
+	"behavior": "create",
+	"noteNameFormat": "{{date}}_{{title}}",
+	"path": "07_RawLogs/Claude",
+	"noteContentFormat": "{{content}}",
+	"properties": [
+		{
+			"name": "date",
+			"value": "{{date}}",
+			"type": "date"
+		},
+		{
+			"name": "source",
+			"value": "Claude",
+			"type": "text"
+		},
+		{
+			"name": "tags",
+			"value": "ログ, claude",
+			"type": "multitext"
+		}
+	],
+	"triggers": [
+		"https://claude.ai/chat"
+	]
+}

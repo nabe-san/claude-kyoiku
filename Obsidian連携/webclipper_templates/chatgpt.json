@@ -1,0 +1,29 @@
+{
+	"schemaVersion": "0.1.0",
+	"name": "ChatGPT → Vault",
+	"behavior": "create",
+	"noteNameFormat": "{{date}}_{{title}}",
+	"path": "07_RawLogs/ChatGPT",
+	"noteContentFormat": "{{content}}",
+	"properties": [
+		{
+			"name": "date",
+			"value": "{{date}}",
+			"type": "date"
+		},
+		{
+			"name": "source",
+			"value": "ChatGPT",
+			"type": "text"
+		},
+		{
+			"name": "tags",
+			"value": "ログ, chatgpt",
+			"type": "multitext"
+		}
+	],
+	"triggers": [
+		"https://chatgpt.com/c",
+		"https://chatgpt.com/share"
+	]
+}

@@ -10,6 +10,11 @@ Obsidian Vaultの Markdown ノートに変換する。
   1. ダウンロードしたZIP（そのままでOK。中のconversations.jsonでも可）を
      このファイルと同じ階層の _inbox フォルダに置く
   2. python import_chat_exports.py を実行
+
+同じ日付・タイトルのノートが出力先に既にある場合はスキップする
+（再実行しても重複作成しない。Web Clipperで先に個別保存した分も二重生成しない）。
+
+Downloadsフォルダの監視・自動取り込みは watch_and_import_chat_exports.py を参照。
 """
 import json
 import re
@@ -38,8 +43,18 @@ def ts_to_date(ts) -> str:
         return "unknown-date"
 
 
-def write_note(out_dir: Path, date_str: str, title: str, uid: str, source: str, turns: list) -> Path:
+def note_exists(out_dir: Path, date_str: str, title: str) -> bool:
+    """同じ日付・タイトルのノートが既に存在するか（再実行の重複防止／Web Clipperで先に保存済みの分をスキップ）"""
+    if not out_dir.exists():
+        return False
+    safe_title = sanitize_filename(title)
+    return any(out_dir.glob(f"{date_str}_{safe_title}*.md"))
+
+
+def write_note(out_dir: Path, date_str: str, title: str, uid: str, source: str, turns: list) -> Path | None:
     out_dir.mkdir(parents=True, exist_ok=True)
+    if note_exists(out_dir, date_str, title):
+        return None
     safe_title = sanitize_filename(title)
     out_path = out_dir / f"{date_str}_{safe_title}_{uid[:8]}.md"
 
@@ -67,8 +82,8 @@ def write_note(out_dir: Path, date_str: str, title: str, uid: str, source: str, 
 
 # ---------- ChatGPT (conversations.json: ノードがmappingで木構造) ----------
 
-def convert_chatgpt(conversations: list, out_dir: Path) -> int:
-    count = 0
+def convert_chatgpt(conversations: list, out_dir: Path) -> tuple[int, int]:
+    written = skipped = 0
     for convo in conversations:
         mapping = convo.get("mapping", {})
         title = convo.get("title") or "無題"
@@ -103,15 +118,17 @@ def convert_chatgpt(conversations: list, out_dir: Path) -> int:
             continue
 
         uid = convo.get("id") or convo.get("conversation_id") or title
-        write_note(out_dir, ts_to_date(create_time), title, uid, "ChatGPT", turns)
-        count += 1
-    return count
+        if write_note(out_dir, ts_to_date(create_time), title, uid, "ChatGPT", turns) is None:
+            skipped += 1
+        else:
+            written += 1
+    return written, skipped
 
 
 # ---------- Claude.ai (conversations.json: chat_messagesがフラットな配列) ----------
 
-def convert_claude_ai(conversations: list, out_dir: Path) -> int:
-    count = 0
+def convert_claude_ai(conversations: list, out_dir: Path) -> tuple[int, int]:
+    written = skipped = 0
     for convo in conversations:
         title = convo.get("name") or "無題"
         uid = convo.get("uuid", title)
@@ -134,18 +151,29 @@ def convert_claude_ai(conversations: list, out_dir: Path) -> int:
         if not turns:
             continue
 
-        write_note(out_dir, ts_to_date(convo.get("created_at")), title, uid, "Claude", turns)
-        count += 1
-    return count
+        if write_note(out_dir, ts_to_date(convo.get("created_at")), title, uid, "Claude", turns) is None:
+            skipped += 1
+        else:
+            written += 1
+    return written, skipped
 
 
 def load_conversations_json(path: Path):
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as zf:
-            for name in zf.namelist():
-                if name.endswith("conversations.json"):
+            names = zf.namelist()
+            for name in names:
+                if Path(name).name == "conversations.json":
                     with zf.open(name) as f:
                         return json.load(f)
+            # ChatGPTの新形式エクスポート：conversations-000.json のように分割されている場合がある
+            shard_names = sorted(n for n in names if re.search(r"conversations-\d+\.json$", n))
+            if shard_names:
+                merged = []
+                for name in shard_names:
+                    with zf.open(name) as f:
+                        merged.extend(json.load(f))
+                return merged
         return None
     if path.suffix.lower() == ".json":
         return json.loads(path.read_text(encoding="utf-8"))
@@ -177,12 +205,12 @@ def main():
 
         if isinstance(data, list) and data and "mapping" in data[0]:
             out_dir = VAULT_LOG_DIR / "ChatGPT"
-            n = convert_chatgpt(data, out_dir)
-            print(f"{path.name}: ChatGPTの会話 {n}件を変換 → {out_dir}")
+            written, skipped = convert_chatgpt(data, out_dir)
+            print(f"{path.name}: ChatGPTの会話 {written}件を変換（{skipped}件は既存のためスキップ） → {out_dir}")
         elif isinstance(data, list) and data and "chat_messages" in data[0]:
             out_dir = VAULT_LOG_DIR / "Claude"
-            n = convert_claude_ai(data, out_dir)
-            print(f"{path.name}: Claude.aiの会話 {n}件を変換 → {out_dir}")
+            written, skipped = convert_claude_ai(data, out_dir)
+            print(f"{path.name}: Claude.aiの会話 {written}件を変換（{skipped}件は既存のためスキップ） → {out_dir}")
         else:
             print(f"スキップ（未知の形式）: {path.name}")
 
