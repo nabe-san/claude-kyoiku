@@ -154,33 +154,9 @@ Copy-Item -Recurse "scenarios/_json_template" "scenarios/XX_タイトル_人物�
 - `passages`（物語・決断・結果解説）
 - `ending`（エピローグ・学びの要点・概念カード）
 
-### Step 4：写真を設定する
+### Step 4：scenarios.json（トップ画面）にカードを登録する
 
-```powershell
-# ① 写真をダウンロード（Wikimedia Commons などから）
-Invoke-WebRequest -Uri "https://upload.wikimedia.org/..." -OutFile "temp.jpg"
-
-# ② Base64エンコード
-$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes("temp.jpg"))
-
-# ③ HTMLのCHARS定義に貼り付け
-# photo: 'data:image/jpeg;base64,' + $b64  の形式で設定
-```
-
-HTMLの `CHARS` に設定：
-```javascript
-protagonist: {
-  name: '桂太郎',
-  photo: 'data:image/jpeg;base64,/9j/4AAQSkZJRgAB...',  // ← ここに貼る
-  bg: 'linear-gradient(180deg, #6a7a5a 0%, #3a4a2a 100%)'
-}
-```
-
-写真がない場合は `photo: null` → シルエットSVGが自動表示される。
-
-### Step 5：scenarios.json（トップ画面）を更新
-
-`歴史シミュレーションv2/scenarios.json` にカード情報を追加する。生徒用に開くシナリオは `url` ではなく `data` を指定する。
+`歴史シミュレーションv2/scenarios.json` にカード情報を追加する。生徒用に開くシナリオは `url` ではなく `data` を指定する。`image`（カードの扉絵）は Step 5 のスクリプトが自動で設定するので、この時点では省略してよい。
 
 ```json
 {
@@ -192,12 +168,44 @@ protagonist: {
 }
 ```
 
-### Step 6：公開用フォルダへ反映
+### Step 5：人物イラスト・ヒーロー画像を自動生成する
 
-公開する場合は、次も更新する。
+人物イラスト（`characters.*.photo`）とカード扉絵・タイトル画面のヒーロー画像（`scenarios.json` の `image` / `scenario.json` の `meta.heroImage`）は、**`generate_portraits.py` で自動生成する**。手動でのダウンロード・Base64貼り付けは行わない。
 
-- `../歴史シミュレーションv2_public/scenarios.json`
-- `../歴史シミュレーションv2_public/scenarios/XX_タイトル_人物名/scenario.json`
+1. `portraits_todo/XX_タイトル_人物名.json` をキューファイルとして作成する（既存シナリオのファイルを参考にする）。登場人物ごとに1件（`type`省略で人物イラスト扱い）、扉絵用に1件（`type: "hero"`）を書く。
+
+```json
+[
+  {
+    "id": "character-id",
+    "prompt": "英語での見た目の説明（年代・服装・表情・背景色のヒントなど）",
+    "scenario": "scenarios/XX_タイトル_人物名/scenario.json",
+    "characterKey": "protagonist"
+  },
+  {
+    "id": "scene-id-hero",
+    "type": "hero",
+    "prompt": "英語での場面の説明（登場人物・状況・構図・雰囲気など）",
+    "scenario": "scenarios/XX_タイトル_人物名/scenario.json",
+    "scenarioListId": "example_id"
+  }
+]
+```
+
+2. `python generate_portraits.py portraits_todo/XX_タイトル_人物名.json --dry-run` でプロンプトを確認する（課金なし）。
+3. 問題なければ `python generate_portraits.py portraits_todo/XX_タイトル_人物名.json` を実行する（OpenAI APIの課金が発生する。先生に一言確認してから実行する）。
+4. 実行すると自動的に反映される：
+   - `assets/portraits/<id>.webp` / `assets/scenes/<id>.webp`（開発用・公開用の両方）
+   - 各 `scenario.json` の `characters.<characterKey>.photo` または `meta.heroImage`（開発用・公開用の両方。公開用にまだシナリオが無ければスキップ）
+   - `scenarios.json` の該当カードの `image`（開発用・公開用の両方）
+
+画風は既存シナリオと統一されるよう `generate_portraits.py` 内の `PORTRAIT_STYLE_PREFIX` / `HERO_STYLE_PREFIX` で共通指定している（変更不要）。
+
+### Step 6：公開用フォルダへの反映を確認する
+
+画像・`scenarios.json`・各シナリオの `photo`/`heroImage` は Step 5 のスクリプトが開発用・公開用の両方に書き込み済み。残っているのは本文（`meta`・`passages`・`ending` など）の反映のみ：
+
+- `../歴史シミュレーションv2_public/scenarios/XX_タイトル_人物名/scenario.json` に本文の変更を反映する
 
 公開用フォルダに `index_legacy.html` や先生用メモを入れない。
 

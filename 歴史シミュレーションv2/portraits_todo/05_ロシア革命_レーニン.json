@@ -28,5 +28,12 @@
     "prompt": "Lev Kamenev, Bolshevik Central Committee member, circa 1917, around 34 years old. Receding hairline with dark hair, round wire spectacles, a trimmed dark mustache and short beard, thoughtful and cautious expression. Wearing a plain dark suit jacket with a high-buttoned collar, a bureaucratic and unassuming appearance. A subtle hint of muted warm ochre in the background, evoking an indoor committee room.",
     "scenario": "scenarios/05_ロシア革命_レーニン/scenario.json",
     "characterKey": "kamenev"
+  },
+  {
+    "id": "lenin-finland-station-hero",
+    "type": "hero",
+    "prompt": "Petrograd, Finland Station, April 1917, night. Vladimir Lenin, a balding man in his late 40s with a reddish-brown goatee beard, stands atop an armored car addressing a dense crowd of cheering workers and soldiers below, one arm raised mid-gesture. Revolutionary red banners and flags are visible among the crowd. The station building with large arched windows and steam-train lights looms in the background, with smoke and dramatic low lighting from lanterns and torches. Wide cinematic composition, low angle looking up toward Lenin, conveying the electric energy of the moment.",
+    "scenario": "scenarios/05_ロシア革命_レーニン/scenario.json",
+    "scenarioListId": "05_lenin_russian_revolution"
   }
 ]

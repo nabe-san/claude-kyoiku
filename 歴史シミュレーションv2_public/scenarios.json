@@ -1,68 +1,69 @@
 {
-    "scenarios":  [
-                      {
-                          "id":  "01_katsura_russo_japanese_war",
-                          "title":  "桂太郎と日露戦争の選択",
-                          "tag":  "第1回",
-                          "era":  "1901〜1905年",
-                          "concept":  "因果と帰結 / 歴史的パースペクティブ",
-                          "bigQuestion":  "国家はなぜ戦争を選択し、その結果を国民にどう説明するのか？",
-                          "description":  "日本初の本格的な対外戦争。首相として財政・外交・軍事の制約の中で「開戦か講和か」を追体験する。",
-                          "bg":  "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
-                          "status":  "ready",
-                          "data":  "scenarios/01_日露戦争_桂太郎/scenario.json",
-                          "image":  "assets/scenes/katsura-russo-war-hero.webp"
-                      },
-                      {
-                          "id":  "02_doumer_indochina",
-                          "title":  "文明化の使命 ── ドゥメールの決断",
-                          "tag":  "帝国主義",
-                          "era":  "1897〜1901年 仏領インドシナ",
-                          "concept":  "帝国主義と植民地主義 / 文明化の使命 / 解釈と論争性",
-                          "bigQuestion":  "近代化に見える政策は、誰に利益を与え、誰に負担を押しつけたのか？",
-                          "description":  "仏領インドシナ総督ドゥメールの視点で植民地統治を追体験。アヘン専売・強制労働・文化破壊を考える。",
-                          "data":  "scenarios/02_帝国主義_ドゥメール/scenario.json",
-                          "bg":  "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)",
-                          "status":  "ready",
-                          "image":  "assets/scenes/doumer-indochina-hero.webp"
-                      },
-                      {
-                          "id":  "03_iran_constitutional_revolution",
-                          "title":  "大国のはざまで ── テヘランの少年の選択",
-                          "tag":  "帝国主義",
-                          "era":  "1905〜1908年 イラン立憲革命",
-                          "concept":  "帝国主義と植民地主義 / 歴史的パースペクティブ",
-                          "bigQuestion":  "自分たちの国のことを自分たちで決められないとき、人々はどうすればよいのか？",
-                          "description":  "テヘランのバザール少年アリーの目を通して、英露に翻弄されたイラン立憲革命を追体験する。",
-                          "data":  "scenarios/03_帝国主義_イラン立憲革命/scenario.json",
-                          "bg":  "linear-gradient(180deg,#7a5a3a 0%,#3a2a18 100%)",
-                          "status":  "ready",
-                          "image":  "assets/scenes/iran-constitutional-hero.png"
-                      },
-                      {
-                          "id":  "04_dongdu_phan_boi_chau",
-                          "title":  "希望と裏切り ── ファン・ボイ・チャウの選択",
-                          "tag":  "日露戦争の影響",
-                          "era":  "1905〜1912年 東遊（ドンズー）運動",
-                          "concept":  "帝国主義と植民地主義 / 因果と帰結",
-                          "bigQuestion":  "アジア解放のモデルだった日本は、なぜアジアの独立運動を裏切ることになったのか？",
-                          "description":  "日露戦争の勝利に希望を託し、日本留学に若者を送り込んだベトナムの独立運動家。日本自身が帝国主義国家として振る舞い始めたとき、彼はどんな選択を迫られたのか。",
-                          "data":  "scenarios/04_日露戦争影響_ドンズー運動/scenario.json",
-                          "bg":  "linear-gradient(180deg,#6a5a3a 0%,#3a2a18 100%)",
-                          "status":  "ready",
-                          "image":  "assets/scenes/dongdu-hero.jpg"
-                      },
-                      {
-                          "id":  "05_lenin_russian_revolution",
-                          "title":  "レーニンとロシア革命の選択",
-                          "tag":  "戦争と社会主義",
-                          "era":  "1917〜1921年 ロシア革命",
-                          "concept":  "因果と帰結 / 自由と統治（権力と権利）",
-                          "bigQuestion":  "革命政権は、生き残るためにどこまで自らの理想と自由を犠牲にできるのか？",
-                          "description":  "亡命指導者レーニンの視点で、二月革命から十月革命・内戦・戦時共産主義までを追体験する。理想と生存のはざまでの決断を考える。",
-                          "data":  "scenarios/05_ロシア革命_レーニン/scenario.json",
-                          "bg":  "linear-gradient(180deg,#7a4040 0%,#401818 100%)",
-                          "status":  "ready"
-                      }
-                  ]
+  "scenarios": [
+    {
+      "id": "01_katsura_russo_japanese_war",
+      "title": "桂太郎と日露戦争の選択",
+      "tag": "第1回",
+      "era": "1901〜1905年",
+      "concept": "因果と帰結 / 歴史的パースペクティブ",
+      "bigQuestion": "国家はなぜ戦争を選択し、その結果を国民にどう説明するのか？",
+      "description": "日本初の本格的な対外戦争。首相として財政・外交・軍事の制約の中で「開戦か講和か」を追体験する。",
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
+      "status": "ready",
+      "data": "scenarios/01_日露戦争_桂太郎/scenario.json",
+      "image": "assets/scenes/katsura-russo-war-hero.webp"
+    },
+    {
+      "id": "02_doumer_indochina",
+      "title": "文明化の使命 ── ドゥメールの決断",
+      "tag": "帝国主義",
+      "era": "1897〜1901年 仏領インドシナ",
+      "concept": "帝国主義と植民地主義 / 文明化の使命 / 解釈と論争性",
+      "bigQuestion": "近代化に見える政策は、誰に利益を与え、誰に負担を押しつけたのか？",
+      "description": "仏領インドシナ総督ドゥメールの視点で植民地統治を追体験。アヘン専売・強制労働・文化破壊を考える。",
+      "data": "scenarios/02_帝国主義_ドゥメール/scenario.json",
+      "bg": "linear-gradient(180deg,#5a3a2a 0%,#2a1a0a 100%)",
+      "status": "ready",
+      "image": "assets/scenes/doumer-indochina-hero.webp"
+    },
+    {
+      "id": "03_iran_constitutional_revolution",
+      "title": "大国のはざまで ── テヘランの少年の選択",
+      "tag": "帝国主義",
+      "era": "1905〜1908年 イラン立憲革命",
+      "concept": "帝国主義と植民地主義 / 歴史的パースペクティブ",
+      "bigQuestion": "自分たちの国のことを自分たちで決められないとき、人々はどうすればよいのか？",
+      "description": "テヘランのバザール少年アリーの目を通して、英露に翻弄されたイラン立憲革命を追体験する。",
+      "data": "scenarios/03_帝国主義_イラン立憲革命/scenario.json",
+      "bg": "linear-gradient(180deg,#7a5a3a 0%,#3a2a18 100%)",
+      "status": "ready",
+      "image": "assets/scenes/iran-constitutional-hero.png"
+    },
+    {
+      "id": "04_dongdu_phan_boi_chau",
+      "title": "希望と裏切り ── ファン・ボイ・チャウの選択",
+      "tag": "日露戦争の影響",
+      "era": "1905〜1912年 東遊（ドンズー）運動",
+      "concept": "帝国主義と植民地主義 / 因果と帰結",
+      "bigQuestion": "アジア解放のモデルだった日本は、なぜアジアの独立運動を裏切ることになったのか？",
+      "description": "日露戦争の勝利に希望を託し、日本留学に若者を送り込んだベトナムの独立運動家。日本自身が帝国主義国家として振る舞い始めたとき、彼はどんな選択を迫られたのか。",
+      "data": "scenarios/04_日露戦争影響_ドンズー運動/scenario.json",
+      "bg": "linear-gradient(180deg,#6a5a3a 0%,#3a2a18 100%)",
+      "status": "ready",
+      "image": "assets/scenes/dongdu-hero.jpg"
+    },
+    {
+      "id": "05_lenin_russian_revolution",
+      "title": "レーニンとロシア革命の選択",
+      "tag": "戦争と社会主義",
+      "era": "1917〜1921年 ロシア革命",
+      "concept": "因果と帰結 / 自由と統治（権力と権利）",
+      "bigQuestion": "革命政権は、生き残るためにどこまで自らの理想と自由を犠牲にできるのか？",
+      "description": "亡命指導者レーニンの視点で、二月革命から十月革命・内戦・戦時共産主義までを追体験する。理想と生存のはざまでの決断を考える。",
+      "data": "scenarios/05_ロシア革命_レーニン/scenario.json",
+      "bg": "linear-gradient(180deg,#7a4040 0%,#401818 100%)",
+      "status": "ready",
+      "image": "assets/scenes/lenin-finland-station-hero.webp"
+    }
+  ]
 }
