@@ -1,0 +1,33 @@
+[
+  {
+    "id": "shidehara",
+    "prompt": "Shidehara Kijuro, Japanese career diplomat, circa 1921-1925, in his late 40s to early 50s. Balding head with hair receding at the temples, round wire-rimmed spectacles, a neatly trimmed dark mustache, calm and composed intellectual expression, a career bureaucrat rather than a soldier. Wearing a formal dark Western-style diplomat's suit with a high stiff collar and necktie, dignified and understated. A subtle hint of muted warm ochre in the background, evoking an embassy or conference-room interior.",
+    "scenario": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+    "characterKey": "protagonist"
+  },
+  {
+    "id": "balfour",
+    "prompt": "Arthur Balfour, elderly British statesman and plenipotentiary, circa 1921, in his early 70s. Tall and thin, wispy white hair, a long aristocratic face, drooping white mustache, heavy-lidded eyes with a shrewd, world-weary expression. Wearing a formal dark British diplomatic suit with a wing collar and cravat, old-world aristocratic bearing. A subtle hint of muted cool blue-grey in the background, evoking a formal conference hall.",
+    "scenario": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+    "characterKey": "balfour"
+  },
+  {
+    "id": "gu-weijun",
+    "prompt": "Wellington Koo (Gu Weijun), young Chinese diplomat representing the Beijing government, circa 1921-1922, mid-30s. Short neat black hair combed back, clean-shaven, sharp intelligent eyes, a composed and articulate expression reflecting Western academic training. Wearing a formal dark Western-style diplomat's suit with a high collar and necktie, poised and modern in bearing. A subtle hint of muted neutral warm grey in the background, evoking a conference chamber.",
+    "scenario": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+    "characterKey": "guweijun"
+  },
+  {
+    "id": "sun-wen",
+    "prompt": "Sun Yat-sen (Sun Wen), Chinese revolutionary leader and head of the Guangzhou nationalist government, circa 1924, late 50s. Balding head with short dark hair at the sides, round wire-rimmed spectacles, a distinctive trimmed mustache, dignified and resolute expression of a lifelong revolutionary and orator. Wearing a high-collared buttoned Zhongshan-style jacket (a modern Chinese formal tunic, not a Western suit and not traditional robes), composed and commanding presence. A subtle hint of muted warm olive-green in the background, evoking an outdoor lecture setting.",
+    "scenario": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+    "characterKey": "sunwen"
+  },
+  {
+    "id": "shidehara-washington-hero",
+    "type": "hero",
+    "prompt": "The Washington Naval Conference, November 1921. A grand formal hall with high ceilings, tall arched windows, and ornate chandeliers. National flags of the participating powers hang along the walls above rows of long tables arranged facing each other, with delegates in formal dark Western suits seated behind name-placards and papers. Warm lamplight mixes with daylight from the windows, giving the room a solemn, ceremonial atmosphere of international significance. Wide cinematic composition capturing the full scale of the hall and the assembled delegations, conveying both grandeur and quiet tension.",
+    "scenario": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+    "scenarioListId": "06_shidehara_washington_system"
+  }
+]

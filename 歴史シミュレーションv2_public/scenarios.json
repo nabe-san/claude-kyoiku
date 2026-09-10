@@ -64,6 +64,19 @@
       "bg": "linear-gradient(180deg,#7a4040 0%,#401818 100%)",
       "status": "ready",
       "image": "assets/scenes/lenin-finland-station-hero.webp"
+    },
+    {
+      "id": "06_shidehara_washington_system",
+      "title": "幣原喜重郎と国際協調の限界",
+      "tag": "ヴェルサイユ体制・ワシントン体制",
+      "era": "1919〜1925年 ヴェルサイユ体制・ワシントン体制",
+      "concept": "解釈と論争性 / 国民国家とナショナリズム",
+      "bigQuestion": "戦争を防ぐためのルールは、誰を守り、誰を守らなかったのか？",
+      "description": "外交官・幣原喜重郎の視点で、日英同盟の解消・山東問題・ソ連承認という三つの決断を追体験する。国際協調のなかに最初から組み込まれていた限界を考える。",
+      "data": "scenarios/06_ワシントン体制_幣原喜重郎/scenario.json",
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
+      "status": "ready",
+      "image": "assets/scenes/shidehara-washington-hero.webp"
     }
   ]
 }
