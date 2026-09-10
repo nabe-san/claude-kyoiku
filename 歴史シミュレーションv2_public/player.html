@@ -21,6 +21,12 @@ body {
 .game-label { font-size: 12px; color: #907850; letter-spacing: 4px; }
 .back-link { display: inline-block; margin-bottom: 10px; color: #8b2020; text-decoration: none; font-size: 12px; letter-spacing: 2px; }
 .back-link:hover { text-decoration: underline; }
+.scene-nav { display: flex; gap: 12px; margin-bottom: 28px; }
+.nav-back-btn { background: #f5ead2; border: 1px solid #c8a84b88; color: #6a4a20; padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 2px; border-radius: 3px; }
+.nav-back-btn:hover { background: #ecddc0; }
+.scene-nav .nav-back-btn { flex: 1; }
+.scene-nav .continue-btn, .scene-nav .restart-btn { flex: 2; width: auto; margin-bottom: 0; }
+.nav-back-standalone { display: block; width: 100%; margin-bottom: 28px; }
 .timeline { display: flex; justify-content: space-between; padding: 12px 0 4px; margin-top: 14px; font-size: 12px; gap: 4px; }
 .tl-item { flex: 1; text-align: center; color: #a09060; white-space: nowrap; padding: 6px 2px; border-bottom: 2px solid #c8c080; }
 .tl-item.past { color: #604020; border-color: #907040; }
@@ -157,7 +163,7 @@ body {
 const SILHOUETTE_SVG = '<svg viewBox="0 0 80 185" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="58" rx="18" ry="22" fill="#c8a84b"/><path d="M8 185 L8 108 Q8 94 25 89 L40 84 L55 89 Q72 94 72 108 L72 185Z" fill="#c8a84b"/></svg>';
 
 let SCENARIO, CHARS, P, TL, META, ENDING;
-let S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+let S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [], history: [] };
 let timerInterval = null;
 let timerRemaining = 60;
 let timerRunning = false;
@@ -198,6 +204,12 @@ function renderHeader() {
   return `<div class="game-header page-enter"><a class="back-link" href="index.html">← シナリオ一覧へ戻る</a><div class="game-label">${escapeHtml(META.subject || '歴史総合')} — 歴史シミュレーション</div>${tlHtml()}</div>`;
 }
 
+function navBackBtn(standalone) {
+  if (!S.history || !S.history.length) return '';
+  const cls = standalone ? 'nav-back-btn nav-back-standalone' : 'nav-back-btn';
+  return `<button class="${cls}" onclick="goBack()">← 前の場面に戻る</button>`;
+}
+
 function buildChar(charKey) {
   const c = charKey && CHARS[charKey];
   if (!c) return `<div class="vn-char"><div class="char-silhouette">${SILHOUETTE_SVG}</div></div>`;
@@ -214,7 +226,16 @@ function render() {
   const passage = P[S.passage];
   if (!passage || passage.type === 'title') return renderTitle();
   if (passage.type === 'story') return renderStory(passage);
-  if (passage.type === 'decision') return S.showResult ? renderResult(passage) : renderDecision(passage);
+  if (passage.type === 'decision') {
+    const logEntry = S.log.find(r => r.passageId === S.passage);
+    if (logEntry) {
+      S.pendingChoice = passage.choices[logEntry.choiceIndex];
+      S.showResult = true;
+      return renderResult(passage);
+    }
+    S.showResult = false;
+    return renderDecision(passage);
+  }
   if (passage.type === 'ending') return renderEnding();
 }
 
@@ -268,13 +289,14 @@ function renderStory(passage) {
       <div class="vn-stage" style="background:${stageBg}">${stageInner}</div>
       ${isStatus ? '' : `<div class="vn-box">${boxContent}</div>`}
     </div>
-    <button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ</button>`;
+    <div class="scene-nav page-enter">${navBackBtn(false)}<button class="continue-btn${isLast ? '' : ' hidden-btn'}" onclick="goNext('${passage.next || ''}')">次のシーンへ</button></div>`;
 }
 
 function advanceLine() {
   const passage = P[S.passage];
   if (!passage || passage.type !== 'story') return;
   if (S.lineIdx < (passage.lines || []).length - 1) {
+    S.history.push({ passage: S.passage, lineIdx: S.lineIdx });
     S.lineIdx++;
     renderStory(passage);
   }
@@ -291,6 +313,7 @@ function renderDecision(passage) {
       <div class="decision-tag">${escapeHtml(passage.tag || '決断')}</div>
       <div class="decision-context">${passage.context || ''}</div>
       <div class="choices">${choicesHtml}</div>
+      ${navBackBtn(true)}
       <div class="keyboard-hint">A/B/C または 1/2/3 キーでも選択できます</div>
     </div>`;
   startTimer();
@@ -307,7 +330,7 @@ function choose(index) {
   clearInterval(timerInterval);
   timerRunning = false;
   if (getChoiceHistorical(ch)) S.matches++;
-  S.log.push({ tag: passage.tag || '決断', text: ch.text, isMatch: getChoiceHistorical(ch) });
+  S.log.push({ passageId: S.passage, choiceIndex: index, tag: passage.tag || '決断', text: ch.text, isMatch: getChoiceHistorical(ch) });
   S.pendingChoice = ch;
   S.showResult = true;
   renderResult(passage);
@@ -344,7 +367,7 @@ function renderResult(passage) {
         <div class="result-historical-why">── なぜその判断をしたのか ──</div>
         <div class="result-historical-body">${ch.historicalText || ch.ht || ''}</div>
       </div>
-      <button class="continue-btn" onclick="goNextFromResult()">次のシーンへ</button>
+      <div class="scene-nav page-enter">${navBackBtn(false)}<button class="continue-btn" onclick="goNextFromResult()">次のシーンへ</button></div>
     </div>`;
 }
 
@@ -382,7 +405,7 @@ function renderEnding() {
       <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
       <div class="concept-grid">${cards}</div>
     </div>
-    <button class="restart-btn" onclick="restart()">もう一度プレイ</button>`;
+    <div class="scene-nav page-enter">${navBackBtn(false)}<button class="restart-btn" onclick="restart()">もう一度プレイ</button></div>`;
 }
 
 function startTimer() {
@@ -414,6 +437,7 @@ function resetTimer() {
 
 function goNext(next) {
   if (!next) return;
+  S.history.push({ passage: S.passage, lineIdx: S.lineIdx });
   S.passage = next;
   S.lineIdx = 0;
   S.showResult = false;
@@ -422,9 +446,20 @@ function goNext(next) {
   render();
 }
 
+function goBack() {
+  if (!S.history || !S.history.length) return;
+  const prev = S.history.pop();
+  S.passage = prev.passage;
+  S.lineIdx = prev.lineIdx;
+  S.showResult = false;
+  S.pendingChoice = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  render();
+}
+
 function restart() {
   clearInterval(timerInterval);
-  S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [] };
+  S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [], history: [] };
   window.scrollTo({ top: 0, behavior: 'smooth' });
   render();
 }
