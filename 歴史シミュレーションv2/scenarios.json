@@ -77,6 +77,19 @@
       "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
       "status": "ready",
       "image": "assets/scenes/shidehara-washington-hero.webp"
+    },
+    {
+      "id": "07_sykes_palestine_origins",
+      "title": "サイクスと中東秩序の設計",
+      "tag": "第一次世界大戦",
+      "era": "1915〜1919年 中東分割",
+      "concept": "歴史的パースペクティブ / 帝国主義と植民地主義",
+      "bigQuestion": "なぜイギリスは、後から見ると矛盾する複数の約束を「両立できる」と考えたのか？",
+      "description": "英外交官マーク・サイクスの視点で、アラブ・フランス・シオニストへの約束が一つずつ組み立てられていく過程を追体験する。「イギリスは嘘を三つついた」ではなく、なぜ当時それぞれの約束が両立可能だと信じられたのかを考える。",
+      "data": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+      "bg": "linear-gradient(180deg,#8a7a5a 0%,#5a4a30 100%)",
+      "status": "ready",
+      "image": "assets/scenes/sykes-picot-hero.webp"
     }
   ]
 }

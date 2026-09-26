@@ -1,0 +1,33 @@
+[
+  {
+    "id": "sykes",
+    "prompt": "Mark Sykes, British diplomat and Foreign Office adviser on Middle Eastern affairs, circa 1916, mid-30s. Neatly combed dark hair parted to the side, a trimmed mustache, sharp confident eyes of a well-traveled aristocrat-diplomat, composed and calculating expression. Wearing a formal dark Edwardian-era British suit with a high starched collar and necktie, a pocket watch chain visible, dignified bearing of a career diplomat. A subtle hint of muted warm ochre in the background, evoking a Foreign Office study lined with maps.",
+    "scenario": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+    "characterKey": "protagonist"
+  },
+  {
+    "id": "picot",
+    "prompt": "Georges-Picot, French diplomat, circa 1916, early 40s. Neatly groomed dark hair, a well-trimmed mustache, refined and shrewd French aristocratic features, composed but watchful expression. Wearing a formal dark French diplomatic suit with a high collar and cravat, old-world continental elegance. A subtle hint of muted deep red in the background, evoking a Parisian foreign ministry office.",
+    "scenario": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+    "characterKey": "picot"
+  },
+  {
+    "id": "clayton",
+    "prompt": "Gilbert Clayton, British head of the Arab Bureau in Cairo, circa 1917, late 30s to mid-40s. Short neat hair, a trimmed mustache, sun-weathered face from years in Egypt, alert and pragmatic intelligence-officer expression. Wearing a khaki British military/colonial uniform with shoulder insignia, practical desert-service attire rather than a formal suit. A subtle hint of muted warm sand-gold in the background, evoking a Cairo office with shuttered windows against the sun.",
+    "scenario": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+    "characterKey": "clayton"
+  },
+  {
+    "id": "weizmann",
+    "prompt": "Chaim Weizmann, Zionist leader and chemist, circa 1917, early 40s. Balding head with dark hair at the sides, round wire-rimmed spectacles, a trimmed goatee beard, intense and persuasive intellectual expression. Wearing a formal dark early-20th-century suit with a high collar and necktie, the bearing of a scientist-turned-statesman. A subtle hint of muted warm grey-brown in the background, evoking a London meeting room.",
+    "scenario": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+    "characterKey": "weizmann"
+  },
+  {
+    "id": "sykes-picot-hero",
+    "type": "hero",
+    "prompt": "Two diplomats, one British and one French in formal Edwardian-era suits, leaning over a large map spread across a wooden table in a dim study, dividing lines drawn in colored pencil across the Ottoman Middle East. Warm lamplight from a desk lamp illuminates the map and their focused faces, tall bookshelves and framed documents in the shadowy background. Wide cinematic composition conveying quiet, consequential secrecy and the weight of decisions made far from the people they affect.",
+    "scenario": "scenarios/07_パレスチナ問題起源_サイクス/scenario.json",
+    "scenarioListId": "07_sykes_palestine_origins"
+  }
+]

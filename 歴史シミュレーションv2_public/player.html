@@ -125,6 +125,12 @@ body {
 .learning-points li { padding-left: .2em; margin-bottom: 8px; color: #1e1208; font-size: 16px; }
 .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .concept-card { background: #faf6ec; border: 1px solid #c8a84b55; border-top: 4px solid #8b2020; border-radius: 3px; padding: 22px 24px; box-shadow: 0 3px 14px rgba(42,26,10,.09); }
+.sources-box { background: #faf6ec; border: 1px solid #c8a84b44; border-radius: 3px; padding: 18px 24px; }
+.sources-list { margin-left: 1.3em; line-height: 1.9; font-size: 14px; color: #5a4a30; }
+.sources-list li { margin-bottom: 8px; }
+.sources-list a { color: #8b2020; text-decoration: underline; }
+.sources-list a:hover { color: #6a1818; }
+.source-note { display: block; font-size: 12px; color: #907850; margin-top: 2px; }
 .concept-card:nth-child(2) { border-top-color: #1a6030; }
 .concept-card:nth-child(3) { border-top-color: #1a3060; }
 .concept-card:nth-child(4) { border-top-color: #7a5010; }
@@ -379,6 +385,16 @@ function renderEnding() {
   const learningPoints = ENDING.learningPoints || [];
   const learningHtml = learningPoints.length ? `<div class="ending-section page-enter"><div class="ending-section-title">── このシミュレーションで学ぶこと ──</div><div class="learning-points"><ol>${learningPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ol></div></div>` : '';
   const cards = (ENDING.conceptCards || []).map(card => `<div class="concept-card"><div class="concept-tag">${escapeHtml(card.tag)}</div><div class="concept-title">${escapeHtml(card.title)}</div><div class="concept-body">${card.body}</div></div>`).join('');
+  const sources = ENDING.sources || [];
+  const sourcesHtml = sources.length ? `<div class="ending-section page-enter">
+      <div class="ending-section-title">── 参考資料 ──</div>
+      <div class="sources-box"><ul class="sources-list">${sources.map(src => {
+        const label = escapeHtml(src.title || '') + (src.author ? `（${escapeHtml(src.author)}）` : '');
+        const linked = src.url ? `<a href="${escapeHtml(src.url)}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
+        const note = src.note ? `<span class="source-note">${escapeHtml(src.note)}</span>` : '';
+        return `<li>${linked}${note}</li>`;
+      }).join('')}</ul></div>
+    </div>` : '';
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
     <div class="ending-section page-enter"><div class="ending-section-title">── エピローグ ──</div><div class="narration">${ENDING.narration || ''}</div></div>
@@ -396,6 +412,7 @@ function renderEnding() {
       <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
       <div class="concept-grid">${cards}</div>
     </div>
+    ${sourcesHtml}
     <div class="scene-nav page-enter">${navBackBtn(false)}<button class="restart-btn" onclick="restart()">もう一度プレイ</button></div>`;
 }
 
