@@ -75,7 +75,7 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 実在の歴史的人物ではなく架空の人物（民衆・商人・学生など）を主人公にする場合は：
 
 - `meta.protagonistType: "fictional"` を設定すること
-- これにより結果画面の表示が「史実と一致」→「歴史の流れに沿った選択」に自動で切り替わる
+- これにより結果画面の表示が「正解」→「歴史の流れに沿った選択」に自動で切り替わる
 - `isHistorical: true` の選択肢は「当時の多くの人々が実際に選んだ行動」を表す
 - `historicalText` は「なぜその選択が歴史的に多数派だったか」を説明する文にする
 
@@ -91,14 +91,11 @@ v1（歴史シミュレーション）からUI・画像管理を全面刷新。�
 ### JSONシナリオで必ず入れる項目
 
 - `meta.title`, `meta.titleHtml`, `meta.bigQuestion`, `meta.description`
-- `meta.scenarioPoints`：タイトル画面に出す「シナリオの要点」
 - `passages`：タイトル・物語・決断・終了画面
-- `ending.narration`：エピローグ
-- `ending.learningPoints`：終了画面に出す「このシミュレーションで学ぶこと」
-- `ending.conceptCards`：歴史的概念カード
+- `ending.conceptCards`：歴史的概念カード（4枚。本文中の要点は `<strong>` で強調する）
 - `ending.sources`：シナリオ作成の根拠資料一覧（終了画面の一番最後に表示）
 
-`learningPoints` は生徒に考えさせる振り返りではなく、先生側から短文で示し、生徒が紙のプリントに転記しやすい形にする。
+`meta.scenarioPoints`（シナリオの要点）・`meta.note`（選択肢の注意書き）・`ending.narration`（エピローグ）・`ending.learningPoints`（学びの要点）はいずれも画面には表示されない（廃止済み）。既存シナリオに残っている場合も無害だが、新規シナリオでは書く必要がない。
 
 ### `ending.sources`（根拠資料）の書き方
 
@@ -165,11 +162,11 @@ Copy-Item -Recurse "scenarios/_json_template" "scenarios/XX_タイトル_人物�
 ```
 
 `scenarios/XX_タイトル_人物名/scenario.json` を編集する。主な編集箇所：
-- `meta`（タイトル・大きな問い・シナリオの要点）
+- `meta`（タイトル・大きな問い・説明文）
 - `characters`（登場人物・役割・写真）
 - `timeline`
 - `passages`（物語・決断・結果解説）
-- `ending`（エピローグ・学びの要点・概念カード）
+- `ending`（概念カード・参考資料）
 
 ### Step 4：scenarios.json（トップ画面）にカードを登録する
 
@@ -241,13 +238,10 @@ Copy-Item -Recurse "scenarios/_json_template" "scenarios/XX_タイトル_人物�
 1. **タイトル画面**
    - 大きな問い
    - シナリオ説明
-   - シナリオの要点（`meta.scenarioPoints`）
 2. **導入シーン**（背景・人物紹介・状況説明）
 3. **決断①〜③/④**（A/B/C選択 → 結果 → 史実解説）
 4. **エンディング**
-   - エピローグ
    - 選択記録
-   - 学びの要点（`ending.learningPoints`）
    - 歴史的概念カード
 
 ---

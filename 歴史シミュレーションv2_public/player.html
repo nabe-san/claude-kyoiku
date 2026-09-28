@@ -60,22 +60,17 @@ body {
 .vso-title { font-size: 14px; color: #c8a84b; letter-spacing: 4px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #c8a84b55; text-align: center; }
 .vso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
 .vso-item { font-size: 17px; color: #e0d0b0; line-height: 1.8; }
-.continue-btn, .start-btn, .restart-btn { display: block; width: 100%; background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b; padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 3px; border-radius: 3px; margin-bottom: 28px; }
+.continue-btn, .restart-btn { display: block; width: 100%; background: #2a1a0a; border: 1px solid #c8a84b; color: #c8a84b; padding: 14px; font-family: inherit; font-size: 14px; cursor: pointer; letter-spacing: 3px; border-radius: 3px; margin-bottom: 28px; }
 .continue-btn.hidden-btn { opacity: 0; pointer-events: none; }
+.start-btn { display: block; width: 100%; background: linear-gradient(135deg, #a82828 0%, #8b2020 100%); border: none; color: #fff8e6; padding: 20px; font-family: inherit; font-size: 18px; font-weight: bold; cursor: pointer; letter-spacing: 4px; border-radius: 4px; margin-bottom: 28px; box-shadow: 0 8px 22px rgba(139,32,32,.4); }
 .title-content { text-align: center; padding: 46px 20px 20px; }
 .title-main { font-size: 34px; line-height: 1.4; margin-bottom: 10px; color: #1e1208; }
 .title-sub { font-size: 13px; color: #907850; letter-spacing: 5px; margin-bottom: 24px; }
-.title-desc, .decision-context, .narration, .concept-intro { background: #faf6ec; border: 1px solid #c8a84b44; padding: 22px 28px; line-height: 1.95; border-radius: 3px; text-align: left; }
+.title-desc, .decision-context, .concept-intro { background: #faf6ec; border: 1px solid #c8a84b44; padding: 22px 28px; line-height: 1.95; border-radius: 3px; text-align: left; }
 .title-desc { max-width: 760px; margin: 0 auto 18px; font-size: 17px; }
-.scenario-points { max-width: 760px; margin: 0 auto 18px; background: #faf6ec; border: 1px solid #c8a84b44; border-left: 5px solid #c8a84b; padding: 20px 26px; text-align: left; line-height: 1.85; border-radius: 3px; }
-.scenario-points-title { font-size: 11px; color: #8b2020; letter-spacing: 2px; margin-bottom: 10px; }
-.scenario-points ul { margin-left: 1.2em; }
-.scenario-points li { margin-bottom: 7px; }
-.scenario-points li:last-child { margin-bottom: 0; }
 .big-question { max-width: 760px; margin: 0 auto 18px; background: #fff8e6; border: 1px solid #c8a84b66; border-left: 5px solid #8b2020; padding: 18px 24px; text-align: left; line-height: 1.8; }
 .big-question-label { font-size: 12px; color: #8b2020; letter-spacing: 2px; margin-bottom: 6px; }
 .big-question-text { font-size: 17px; color: #1e1208; }
-.title-note { max-width: 760px; margin: 0 auto 32px; font-size: 11px; color: #907850; line-height: 2; text-align: left; }
 .image-note { background: #f3ead0; border-top: 1px solid #c8a84b33; padding: 6px 10px; font-size: 10px; color: #9a8358; letter-spacing: 1px; text-align: center; }
 .decision-tag, .ending-section-title { display: inline-block; background: #8b2020; color: #faf6ec; padding: 5px 14px; font-size: 12px; letter-spacing: 2px; border-radius: 2px; margin-bottom: 14px; }
 .decision-context { margin-bottom: 18px; border-left: 5px solid #c8a84b; }
@@ -83,12 +78,10 @@ body {
 .choice-btn { background: #faf6ec; border: 1px solid #c8a84b88; color: #1e1208; padding: 16px 20px 16px 58px; text-align: left; cursor: pointer; font-family: inherit; font-size: 17px; line-height: 1.75; border-radius: 3px; position: relative; }
 .choice-btn::before { content: attr(data-label); position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border-radius: 50%; color: #faf6ec; background: #8b2020; line-height: 30px; text-align: center; font-weight: bold; }
 .keyboard-hint { text-align: center; font-size: 12px; color: #907850; letter-spacing: 2px; margin-bottom: 20px; }
-.timer-area { background: #f5e8c8; border: 1px solid #c8a84b66; padding: 12px 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; justify-content: center; color: #5a3a18; }
-.timer-count { font-size: 22px; color: #8b2020; min-width: 70px; text-align: center; font-weight: bold; }
-.match-banner { display: flex; align-items: center; gap: 14px; padding: 14px 24px; margin-bottom: 24px; border-radius: 3px; font-size: 17px; font-weight: bold; letter-spacing: 1px; }
-.match-banner.match { background: #e4f5ea; color: #1a5a28; border: 1px solid #3a9048; }
-.match-banner.mismatch { background: #fdf5e2; color: #6a4010; border: 1px solid #c09030; }
-.match-icon { font-size: 22px; }
+.match-banner { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 24px; margin-bottom: 28px; border-radius: 6px; font-size: 30px; font-weight: bold; letter-spacing: 4px; box-shadow: 0 6px 22px rgba(42,26,10,.14); }
+.match-banner.match { background: #e4f5ea; color: #1a5a28; border: 3px solid #2a8040; }
+.match-banner.mismatch { background: #fdf5e2; color: #8a4a10; border: 3px solid #c09030; }
+.match-icon { font-size: 46px; line-height: 1; }
 .result-historical { border-radius: 6px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 10px 36px rgba(30,100,50,.2); border: 3px solid #1a7030; }
 .result-historical-header { background: linear-gradient(135deg, #1a5a28 0%, #2a8040 100%); padding: 16px 28px; display: flex; align-items: center; gap: 14px; }
 .result-historical-tag { font-size: 11px; color: #a0f0c0; letter-spacing: 2px; border: 1px solid #a0f0c055; padding: 4px 12px; border-radius: 2px; flex-shrink: 0; }
@@ -103,9 +96,6 @@ body {
 .result-historical-sub { color: #2a5c38; font-size: 18px; font-weight: bold; }
 .ending-section { margin-bottom: 28px; }
 .ending-section-title { background: transparent; color: #8b2020; padding: 0 0 8px; border-bottom: 1px solid #8b202044; border-radius: 0; display: block; }
-.narration { font-size: 18px; line-height: 2.15; }
-.narration p { margin-bottom: 1em; }
-.narration p:last-child { margin-bottom: 0; }
 .emphasis { color: #8b2020; font-weight: bold; }
 .score-display { padding: 28px 32px; margin-bottom: 20px; background: #faf6ec; border: 1px solid #c8a84b55; border-radius: 3px; display: grid; grid-template-columns: auto 1fr; gap: 0 28px; align-items: center; }
 .score-num-wrap { text-align: center; }
@@ -123,8 +113,8 @@ body {
 .learning-points { background: #fff8e6; border: 1px solid #c8a84b66; border-left: 5px solid #8b2020; border-radius: 3px; padding: 20px 26px; margin-bottom: 20px; }
 .learning-points ol { margin-left: 1.4em; line-height: 1.9; }
 .learning-points li { padding-left: .2em; margin-bottom: 8px; color: #1e1208; font-size: 16px; }
-.concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.concept-card { background: #faf6ec; border: 1px solid #c8a84b55; border-top: 4px solid #8b2020; border-radius: 3px; padding: 22px 24px; box-shadow: 0 3px 14px rgba(42,26,10,.09); }
+.concept-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+.concept-card { background: #faf6ec; border: 1px solid #c8a84b55; border-top: 6px solid #8b2020; border-radius: 4px; padding: 30px 34px; box-shadow: 0 4px 18px rgba(42,26,10,.1); }
 .sources-box { background: #faf6ec; border: 1px solid #c8a84b44; border-radius: 3px; padding: 18px 24px; }
 .sources-list { margin-left: 1.3em; line-height: 1.9; font-size: 14px; color: #5a4a30; }
 .sources-list li { margin-bottom: 8px; }
@@ -134,12 +124,13 @@ body {
 .concept-card:nth-child(2) { border-top-color: #1a6030; }
 .concept-card:nth-child(3) { border-top-color: #1a3060; }
 .concept-card:nth-child(4) { border-top-color: #7a5010; }
-.concept-tag { font-size: 10px; letter-spacing: 2px; color: #8b2020; margin-bottom: 8px; }
+.concept-tag { font-size: 12px; letter-spacing: 2px; color: #8b2020; margin-bottom: 10px; }
 .concept-card:nth-child(2) .concept-tag { color: #1a6030; }
 .concept-card:nth-child(3) .concept-tag { color: #1a3060; }
 .concept-card:nth-child(4) .concept-tag { color: #7a5010; }
-.concept-title { font-size: 18px; font-weight: bold; color: #1e1208; margin-bottom: 12px; line-height: 1.4; }
-.concept-body { font-size: 14px; color: #3a2a10; line-height: 1.9; }
+.concept-title { font-size: 23px; font-weight: bold; color: #1e1208; margin-bottom: 16px; line-height: 1.45; }
+.concept-body { font-size: 17px; color: #3a2a10; line-height: 2; }
+.concept-body strong { color: #1e1208; }
 .error { margin-top: 40px; background: #fff8e6; border: 1px solid #c09030; padding: 24px; line-height: 1.9; border-radius: 4px; }
 .error code { background: #f5e8c8; padding: 2px 6px; border-radius: 2px; font-family: Consolas, monospace; font-size: 13px; }
 @media (max-width: 700px) {
@@ -155,6 +146,7 @@ body {
   .vn-status-overlay { grid-template-columns: 1fr; gap: 12px; padding: 24px; }
   .vn-status-portrait { display: none; }
   .vso-grid, .concept-grid { grid-template-columns: 1fr; }
+  .concept-card { padding: 22px 20px; }
   .score-display { grid-template-columns: 1fr; text-align: center; }
 }
 </style>
@@ -166,9 +158,6 @@ const SILHOUETTE_SVG = '<svg viewBox="0 0 80 185" xmlns="http://www.w3.org/2000/
 
 let SCENARIO, CHARS, P, TL, META, ENDING;
 let S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [], history: [] };
-let timerInterval = null;
-let timerRemaining = 60;
-let timerRunning = false;
 
 async function loadScenario() {
   try {
@@ -182,7 +171,6 @@ async function loadScenario() {
     P = SCENARIO.passages || {};
     TL = SCENARIO.timeline || [];
     ENDING = SCENARIO.ending || {};
-    timerRemaining = META.timerSeconds || 60;
     document.title = META.title || '歴史シミュレーション';
     render();
   } catch (error) {
@@ -248,8 +236,6 @@ function renderTitle() {
   const heroAlt = META.heroImage ? (META.title || 'シナリオ扉絵') : (c.name || '主人公');
   const hero = heroImage ? `<img class="${heroClass}" src="${escapeHtml(heroImage)}" alt="${escapeHtml(heroAlt)}">` : `<div class="char-silhouette">${SILHOUETTE_SVG}</div>`;
   const imageNoteHtml = META.imageNote ? `<div class="image-note">${escapeHtml(META.imageNote)}</div>` : '';
-  const scenarioPoints = META.scenarioPoints || [];
-  const scenarioPointsHtml = scenarioPoints.length ? `<div class="scenario-points"><div class="scenario-points-title">シナリオの要点</div><ul>${scenarioPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul></div>` : '';
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
     <div class="vn-scene page-enter"><div class="vn-stage title-stage" style="background:${c.bg || getStageBg('protagonist')}"><div class="vn-char">${hero}</div></div>${imageNoteHtml}</div>
@@ -258,8 +244,6 @@ function renderTitle() {
       <div class="title-sub">${escapeHtml(META.subtitle || '歴史の分岐点を追体験する')}</div>
       ${META.bigQuestion ? `<div class="big-question"><div class="big-question-label">大きな問い</div><div class="big-question-text">${escapeHtml(META.bigQuestion)}</div></div>` : ''}
       <div class="title-desc">${META.description || ''}</div>
-      ${scenarioPointsHtml}
-      <div class="title-note">${META.note || ''}</div>
       <button class="start-btn" onclick="goNext('${META.start || 'intro'}')">シミュレーション開始</button>
     </div>`;
 }
@@ -311,14 +295,12 @@ function renderDecision(passage) {
     <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
     <div class="vn-scene page-enter"><div class="vn-stage" style="background:${getStageBg('protagonist')}">${buildChar('protagonist')}</div></div>
     <div class="page-enter">
-      <div class="timer-area"><div class="timer-count" id="timerCount">--</div><div>グループで審議してください</div><button class="restart-btn" style="width:auto;margin:0;padding:8px 12px;" onclick="resetTimer()">リセット</button></div>
       <div class="decision-tag">${escapeHtml(passage.tag || '決断')}</div>
       <div class="decision-context">${passage.context || ''}</div>
       <div class="choices">${choicesHtml}</div>
       ${navBackBtn(true)}
       <div class="keyboard-hint">A/B/C または 1/2/3 キーでも選択できます</div>
     </div>`;
-  startTimer();
 }
 
 function getChoiceHistorical(ch) {
@@ -329,8 +311,6 @@ function choose(index) {
   const passage = P[S.passage];
   const ch = (passage.choices || [])[index];
   if (!ch) return;
-  clearInterval(timerInterval);
-  timerRunning = false;
   if (getChoiceHistorical(ch)) S.matches++;
   S.log.push({ passageId: S.passage, choiceIndex: index, tag: passage.tag || '決断', text: ch.text, isMatch: getChoiceHistorical(ch) });
   S.pendingChoice = ch;
@@ -343,8 +323,10 @@ function renderResult(passage) {
   const historicalChoice = (passage.choices || []).find(getChoiceHistorical);
   const isMatch = getChoiceHistorical(ch);
   const isFictional = META.protagonistType === 'fictional';
-  const matchLabel = isFictional ? '歴史の流れに沿った選択' : '史実と一致';
-  const mismatchLabel = isFictional ? '別の視点からの選択' : '史実とは異なる判断';
+  const matchLabel = isFictional ? '歴史の流れに沿った選択' : '正解';
+  const mismatchLabel = isFictional ? '別の視点からの選択' : '不正解';
+  const matchIcon = '◎';
+  const mismatchIcon = isFictional ? '△' : '✕';
   const historicalTag = isFictional ? '当時の人々の行動' : '史実の判断';
   const historicalTitle = isFictional ? '当時、実際に起きたこと' : `${escapeHtml((CHARS.protagonist || {}).name || '主人公')}が実際に選んだこと`;
   document.getElementById('app').innerHTML = `
@@ -352,7 +334,7 @@ function renderResult(passage) {
     <div class="scene-header page-enter"><div class="scene-year">${escapeHtml(passage.year || '')}</div><div class="scene-title">${escapeHtml(passage.title || '')}</div></div>
     <div class="page-enter">
       <div class="match-banner ${isMatch ? 'match' : 'mismatch'}">
-        <span class="match-icon">${isMatch ? '◎' : '△'}</span>
+        <span class="match-icon">${isMatch ? matchIcon : mismatchIcon}</span>
         <span>${isMatch ? matchLabel : mismatchLabel}</span>
       </div>
       <div class="result-historical">
@@ -382,8 +364,6 @@ function renderEnding() {
   const evalText = score === total ? evals.perfect : score >= Math.ceil(total / 2) ? evals.good : evals.low;
   const isFictional = META.protagonistType === 'fictional';
   const log = S.log.map(r => `<div class="choice-record"><span class="record-badge ${r.isMatch ? 'match' : 'mismatch'}">${r.isMatch ? (isFictional ? '◎' : '一致') : (isFictional ? '△' : '相違')}</span><div><div class="record-decision">${escapeHtml(r.tag)}</div><div class="record-text">${r.text}</div></div></div>`).join('');
-  const learningPoints = ENDING.learningPoints || [];
-  const learningHtml = learningPoints.length ? `<div class="ending-section page-enter"><div class="ending-section-title">── このシミュレーションで学ぶこと ──</div><div class="learning-points"><ol>${learningPoints.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ol></div></div>` : '';
   const cards = (ENDING.conceptCards || []).map(card => `<div class="concept-card"><div class="concept-tag">${escapeHtml(card.tag)}</div><div class="concept-title">${escapeHtml(card.title)}</div><div class="concept-body">${card.body}</div></div>`).join('');
   const sources = ENDING.sources || [];
   const sourcesHtml = sources.length ? `<div class="ending-section page-enter">
@@ -397,7 +377,6 @@ function renderEnding() {
     </div>` : '';
   document.getElementById('app').innerHTML = `
     ${renderHeader()}
-    <div class="ending-section page-enter"><div class="ending-section-title">── エピローグ ──</div><div class="narration">${ENDING.narration || ''}</div></div>
     <div class="ending-section page-enter">
       <div class="ending-section-title">── 選択記録 ──</div>
       <div class="score-display">
@@ -406,7 +385,6 @@ function renderEnding() {
       </div>
       <div class="choice-log">${log}</div>
     </div>
-    ${learningHtml}
     <div class="ending-section page-enter">
       <div class="ending-section-title">── 歴史的概念カード ──</div>
       <div class="concept-intro">このシミュレーションが深めた歴史の見方・考え方を整理します。</div>
@@ -414,33 +392,6 @@ function renderEnding() {
     </div>
     ${sourcesHtml}
     <div class="scene-nav page-enter">${navBackBtn(false)}<button class="restart-btn" onclick="restart()">もう一度プレイ</button></div>`;
-}
-
-function startTimer() {
-  timerRemaining = META.timerSeconds || 60;
-  timerRunning = true;
-  updateTimer();
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    if (!timerRunning) return;
-    timerRemaining--;
-    updateTimer();
-    if (timerRemaining <= 0) {
-      timerRunning = false;
-      clearInterval(timerInterval);
-    }
-  }, 1000);
-}
-
-function updateTimer() {
-  const el = document.getElementById('timerCount');
-  if (!el) return;
-  const sec = Math.max(0, timerRemaining);
-  el.textContent = `${String(Math.floor(sec / 60)).padStart(2,'0')}:${String(sec % 60).padStart(2,'0')}`;
-}
-
-function resetTimer() {
-  startTimer();
 }
 
 function goNext(next) {
@@ -466,7 +417,6 @@ function goBack() {
 }
 
 function restart() {
-  clearInterval(timerInterval);
   S = { passage: 'title', lineIdx: 0, showResult: false, pendingChoice: null, matches: 0, log: [], history: [] };
   window.scrollTo({ top: 0, behavior: 'smooth' });
   render();
